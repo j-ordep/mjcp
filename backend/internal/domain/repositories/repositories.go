@@ -7,10 +7,10 @@ import (
 
 // VolunteerRepository define o contrato para operações com voluntários
 type VolunteerRepository interface {
-	Create(ctx context.Context, volunteer *entities.Volunteer) error
-	GetByID(ctx context.Context, id string) (*entities.Volunteer, error)
-	GetAll(ctx context.Context) ([]*entities.Volunteer, error)
-	Update(ctx context.Context, volunteer *entities.Volunteer) error
+	Create(ctx context.Context, volunteer *entities.User) error
+	GetByID(ctx context.Context, id string) (*entities.User, error)
+	GetAll(ctx context.Context) ([]*entities.User, error)
+	Update(ctx context.Context, volunteer *entities.User) error
 	Delete(ctx context.Context, id string) error
 }
 
@@ -30,15 +30,6 @@ type ScheduleRepository interface {
 	GetByEventID(ctx context.Context, eventID string) ([]*entities.Schedule, error)
 	GetAll(ctx context.Context) ([]*entities.Schedule, error)
 	Update(ctx context.Context, schedule *entities.Schedule) error
-	Delete(ctx context.Context, id string) error
-}
-
-// EventRepository define o contrato para operações com eventos
-type EventRepository interface {
-	Create(ctx context.Context, event *entities.Event) error
-	GetByID(ctx context.Context, id string) (*entities.Event, error)
-	GetAll(ctx context.Context) ([]*entities.Event, error)
-	Update(ctx context.Context, event *entities.Event) error
 	Delete(ctx context.Context, id string) error
 }
 

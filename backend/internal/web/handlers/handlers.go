@@ -24,7 +24,7 @@ func NewVolunteerHandler(createUseCase *usecases.CreateVolunteerUseCase, getUseC
 
 // Create handler para criar um voluntário
 func (h *VolunteerHandler) Create(w http.ResponseWriter, r *http.Request) {
-	var volunteer entities.Volunteer
+	var volunteer entities.User
 
 	if err := json.NewDecoder(r.Body).Decode(&volunteer); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -52,7 +52,7 @@ func (h *VolunteerHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 	// w.WriteHeader(http.StatusOK)
 	// json.NewEncoder(w).Encode(volunteers)
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode([]entities.Volunteer{})
+	json.NewEncoder(w).Encode([]entities.User{})
 }
 
 // ScheduleHandler gerencia as requisições HTTP relacionadas a escalas

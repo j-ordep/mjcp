@@ -17,7 +17,7 @@ func NewCreateVolunteerUseCase(repo repositories.VolunteerRepository) *CreateVol
 }
 
 // Execute executa o caso de uso
-func (uc *CreateVolunteerUseCase) Execute(ctx context.Context, volunteer *entities.Volunteer) error {
+func (uc *CreateVolunteerUseCase) Execute(ctx context.Context, volunteer *entities.User) error {
 	// Validações de negócio podem ser adicionadas aqui
 	// Por exemplo: verificar se email já existe, validar formato, etc.
 	
@@ -35,35 +35,26 @@ func NewGetVolunteersUseCase(repo repositories.VolunteerRepository) *GetVoluntee
 }
 
 // Execute executa o caso de uso
-func (uc *GetVolunteersUseCase) Execute(ctx context.Context) ([]*entities.Volunteer, error) {
+func (uc *GetVolunteersUseCase) Execute(ctx context.Context) ([]*entities.User, error) {
 	return uc.repo.GetAll(ctx)
 }
 
 // CreateScheduleUseCase representa o caso de uso para criar uma escala
 type CreateScheduleUseCase struct {
 	scheduleRepo repositories.ScheduleRepository
-	eventRepo    repositories.EventRepository
 }
 
 // NewCreateScheduleUseCase cria uma nova instância do use case
 func NewCreateScheduleUseCase(
 	scheduleRepo repositories.ScheduleRepository,
-	eventRepo repositories.EventRepository,
 ) *CreateScheduleUseCase {
 	return &CreateScheduleUseCase{
 		scheduleRepo: scheduleRepo,
-		eventRepo:    eventRepo,
 	}
 }
 
 // Execute executa o caso de uso
 func (uc *CreateScheduleUseCase) Execute(ctx context.Context, schedule *entities.Schedule) error {
-	// Validar se o evento existe
-	_, err := uc.eventRepo.GetByID(ctx, schedule.EventID)
-	if err != nil {
-		return err
-	}
-
 	// Criar a escala
 	return uc.scheduleRepo.Create(ctx, schedule)
 }
