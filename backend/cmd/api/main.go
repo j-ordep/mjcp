@@ -5,8 +5,7 @@ import (
 
 	"github.com/j-ordep/mjcp/backend/config"
 	"github.com/j-ordep/mjcp/backend/db"
-	"github.com/j-ordep/mjcp/backend/internal/application/usecases"
-	"github.com/j-ordep/mjcp/backend/internal/server"
+	"github.com/j-ordep/mjcp/backend/internal/web/server"
 	"github.com/joho/godotenv"
 )
 
@@ -25,14 +24,8 @@ func main() {
     }
     defer db.Close()
 
-
-	// Inicializar use cases (temporário com nil)
-	createVolunteerUC := usecases.NewCreateVolunteerUseCase(nil)
-	getVolunteersUC := usecases.NewGetVolunteersUseCase(nil)
-	createScheduleUC := usecases.NewCreateScheduleUseCase(nil, nil)
-
 	// Criar servidor
-	srv := server.NewServer(createVolunteerUC, getVolunteersUC, createScheduleUC, config.Config.APIPort)
+	srv := server.NewServer(config.Config.APIPort)
 
 	// Configurar rotas
 	srv.ConfigureRoutes()

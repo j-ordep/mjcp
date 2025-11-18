@@ -6,31 +6,19 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/j-ordep/mjcp/backend/internal/application/usecases"
 	"github.com/j-ordep/mjcp/backend/internal/web/handlers"
 )
 
 type Server struct {
-	router            *chi.Mux
-	server            *http.Server
-	port              string
-	createVolunteerUC *usecases.CreateVolunteerUseCase
-	getVolunteersUC   *usecases.GetVolunteersUseCase
-	createScheduleUC  *usecases.CreateScheduleUseCase
+	router *chi.Mux
+	server *http.Server
+	port   string
 }
 
-func NewServer(
-	createVolunteerUC *usecases.CreateVolunteerUseCase,
-	getVolunteersUC *usecases.GetVolunteersUseCase,
-	createScheduleUC *usecases.CreateScheduleUseCase,
-	port string,
-) *Server {
+func NewServer(port string) *Server {
 	return &Server{
-		router:            chi.NewRouter(),
-		createVolunteerUC: createVolunteerUC,
-		getVolunteersUC:   getVolunteersUC,
-		createScheduleUC:  createScheduleUC,
-		port:              port,
+		router: chi.NewRouter(),
+		port:   port,
 	}
 }
 
@@ -41,13 +29,13 @@ func (s *Server) ConfigureRoutes() {
 	s.router.Use(middleware.SetHeader("Content-Type", "application/json"))
 
 	// Handlers
-	volunteerHandler := handlers.NewVolunteerHandler(s.createVolunteerUC, s.getVolunteersUC)
-	scheduleHandler := handlers.NewScheduleHandler(s.createScheduleUC)
+	userHandler := handlers.NewUserHandler()
+	scheduleHandler := handlers.NewScheduleHandler()
 
 	// Rotas
 	s.router.Get("/health", healthCheck)
-	s.router.Post("/volunteers", volunteerHandler.Create)
-	s.router.Get("/volunteers", volunteerHandler.GetAll)
+	s.router.Post("/user", userHandler.Create)
+	s.router.Get("/user", userHandler.GetAll)
 	s.router.Post("/schedules", scheduleHandler.Create)
 }
 
