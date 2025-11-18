@@ -1,49 +1,46 @@
 package main
 
 import (
-	"log"
+	"log/slog"
 
-	"github.com/gin-gonic/gin"
+	"github.com/j-ordep/mjcp/backend/config"
+	"github.com/j-ordep/mjcp/backend/db"
+	"github.com/j-ordep/mjcp/backend/internal/application/usecases"
+	"github.com/j-ordep/mjcp/backend/internal/server"
+	"github.com/joho/godotenv"
 )
 
 func main() {
-	// Inicializar o router Gin
-	r := gin.Default()
-
-	// Health check endpoint
-	r.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"status":  "ok",
-			"service": "mjcp-backend",
-		})
-	})
-
-	// Grupo de rotas da API v1
-	v1 := r.Group("/api/v1")
-	{
-		// Rotas de voluntários (exemplo)
-		// volunteers := v1.Group("/volunteers")
-		// {
-		//     volunteers.GET("", volunteerHandler.GetAll)
-		//     volunteers.POST("", volunteerHandler.Create)
-		//     volunteers.GET("/:id", volunteerHandler.GetByID)
-		//     volunteers.PUT("/:id", volunteerHandler.Update)
-		//     volunteers.DELETE("/:id", volunteerHandler.Delete)
-		// }
-
-		// Placeholder para demonstração
-		v1.GET("/", func(c *gin.Context) {
-			c.JSON(200, gin.H{
-				"message": "MJCP API v1",
-				"version": "1.0.0",
-			})
-		})
+	err := godotenv.Load()
+	if err != nil {
+		slog.Warn("cannot load .env", "error", err.Error())
 	}
+	config.LoadEnv()
+
+	// Conectar ao banco
+    db, err := db.NewConnect()
+    if err != nil {
+        slog.Error("Failed to connect to database", "error", err)
+        return
+    }
+    defer db.Close()
+
+
+	// Inicializar use cases (temporário com nil)
+	createVolunteerUC := usecases.NewCreateVolunteerUseCase(nil)
+	getVolunteersUC := usecases.NewGetVolunteersUseCase(nil)
+	createScheduleUC := usecases.NewCreateScheduleUseCase(nil, nil)
+
+	// Criar servidor
+	srv := server.NewServer(createVolunteerUC, getVolunteersUC, createScheduleUC, config.Config.APIPort)
+
+	// Configurar rotas
+	srv.ConfigureRoutes()
 
 	// Iniciar servidor
-	port := ":8080"
-	log.Printf("Server starting on port %s", port)
-	if err := r.Run(port); err != nil {
-		log.Fatalf("Failed to start server: %v", err)
+	slog.Info("Starting server", "port", config.Config.APIPort)
+
+	if err := srv.Start(); err != nil {
+		slog.Error("Failed to start server", "error", err)
 	}
 }
