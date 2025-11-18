@@ -2,165 +2,252 @@
 
 API REST desenvolvida em Go seguindo os princípios de Clean Architecture.
 
+## 🚀 Tecnologias
+
+- **Go 1.24**
+- **Chi Router** - Roteamento HTTP leve e idiomático
+- **PostgreSQL** - Banco de dados relacional
+- **godotenv** - Gerenciamento de variáveis de ambiente
+
 ## 📁 Estrutura do Projeto
 
 ```
 backend/
 ├── cmd/
-│   └── api/              # Ponto de entrada da aplicação
-│       └── main.go
+│   └── api/
+│       └── main.go           # Ponto de entrada da aplicação
+├── config/
+│   └── config.go             # Configurações e variáveis de ambiente
+├── db/
+│   └── db.go                 # Conexão e pool de banco de dados
 ├── internal/
-│   ├── domain/           # Camada de Domínio (Entities)
-│   │   ├── entities/     # Entidades de negócio
-│   │   └── repositories/ # Interfaces de repositórios
-│   ├── application/      # Camada de Aplicação (Use Cases)
-│   │   └── usecases/     # Casos de uso/regras de negócio
-│   ├── infrastructure/   # Camada de Infraestrutura
-│   │   ├── database/     # Implementação de repositórios
-│   │   └── http/         # Cliente HTTP, APIs externas
-│   └── presentation/     # Camada de Apresentação
-│       └── handlers/     # Handlers HTTP (controllers)
-├── pkg/                  # Pacotes reutilizáveis
-├── configs/              # Arquivos de configuração
-└── tests/                # Testes de integração
+│   ├── domain/
+│   │   ├── entities/         # Entidades de negócio
+│   │   └── repository/       # Interfaces de repositórios
+│   ├── dto/                  # Data Transfer Objects
+│   ├── repository/           # Implementações de repositórios
+│   ├── service/              # Lógica de negócio e casos de uso
+│   └── web/
+│       ├── handlers/         # Handlers HTTP (controllers)
+│       └── server/           # Configuração do servidor HTTP
+├── .env                      # Variáveis de ambiente (não commitar)
+├── go.mod
+└── README.md
 ```
 
-## 🏗️ Clean Architecture - Camadas
+## 🏗️ Arquitetura
 
-### 1. Domain (Domínio)
-- **Responsabilidade**: Regras de negócio e entidades
-- **Dependências**: Nenhuma (camada mais interna)
-- **Conteúdo**:
-  - `entities/`: Estruturas de dados do negócio (Volunteer, Schedule, Ministry, etc.)
-  - `repositories/`: Interfaces que definem contratos de acesso a dados
+### Camadas da Aplicação
 
-### 2. Application (Aplicação)
-- **Responsabilidade**: Casos de uso e orquestração de regras de negócio
-- **Dependências**: Apenas Domain
-- **Conteúdo**:
-  - `usecases/`: Implementação de casos de uso (CreateSchedule, AssignVolunteer, etc.)
+**Domain (Domínio)**
+- Entidades de negócio puras
+- Interfaces de repositórios
+- Sem dependências externas
 
-### 3. Infrastructure (Infraestrutura)
-- **Responsabilidade**: Implementações concretas de acesso a dados e serviços externos
-- **Dependências**: Domain (implementa interfaces)
-- **Conteúdo**:
-  - `database/`: Implementação de repositórios (PostgreSQL, MongoDB, etc.)
-  - `http/`: Clientes HTTP para APIs externas
+**Service (Serviço)**
+- Casos de uso e regras de negócio
+- Orquestração entre repositórios
+- Validações de domínio
 
-### 4. Presentation (Apresentação)
-- **Responsabilidade**: Interface com o mundo externo (HTTP/REST)
-- **Dependências**: Application e Domain
-- **Conteúdo**:
-  - `handlers/`: Handlers HTTP que recebem requests e retornam responses
+**Repository (Repositório)**
+- Implementação de acesso a dados
+- Queries SQL
+- Mapeamento objeto-relacional
 
-## 🎯 Princípios e Boas Práticas
+**Web (Apresentação)**
+- Handlers HTTP
+- Roteamento
+- Middlewares
+- Serialização JSON
 
-### Dependency Rule
-As dependências apontam sempre para dentro:
-```
-Presentation → Application → Domain
-Infrastructure → Domain
-```
+### Entidades Principais
 
-### Entidades Principais (Sugestão)
-- **Volunteer**: Voluntário da igreja
+- **User**: Voluntário da igreja
 - **Ministry**: Ministério (louvor, som, mídia, etc.)
-- **Schedule**: Escala de um evento
-- **Event**: Evento da igreja (culto, ensaio, etc.)
+- **UserMinistry**: Relacionamento usuário-ministério
+- **Role**: Papéis (Membro, Líder, Professor)
+- **MinistryRoleAssignment**: Atribuição de papéis em ministérios
+- **Schedule**: Escala para um evento
 - **Availability**: Disponibilidade do voluntário
+- **Assignment**: Vinculação de usuário a uma escala
 
-### Padrões Recomendados
-1. **Repository Pattern**: Abstração de acesso a dados
-2. **Dependency Injection**: Injeção de dependências via construtores
-3. **DTO (Data Transfer Objects)**: Separação entre entidades de domínio e API
-4. **Error Handling**: Erros customizados por camada
-5. **Middleware**: Autenticação, logging, CORS
+## ⚙️ Configuração
 
-## 🧪 Testes
+### Variáveis de Ambiente
 
-### Estrutura de Testes
+Crie um arquivo `.env` na raiz do projeto:
+
+```env
+# API
+API_HOST=localhost
+API_PORT=8080
+
+# Database
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=postgres
+DB_PASS=senha
+DB_NAME=mjcp
+
+# CORS
+CORS_ALLOWED_ORIGINS=http://localhost:3000
 ```
-- Unit Tests: Cada camada tem seus próprios testes
-  - domain/entities/*_test.go
-  - application/usecases/*_test.go
-  
-- Integration Tests: tests/integration/
-  - Testes de API end-to-end
-  - Testes com banco de dados
 
-- Mocks: tests/mocks/
-  - Mocks de repositórios
-  - Mocks de serviços externos
-```
+### Sistema de Configuração
 
-### Ferramentas Sugeridas
-- `testing`: Package nativo do Go
-- `testify`: Assertions e mocks
-- `gomock`: Geração de mocks
-- `httptest`: Testes de handlers HTTP
+O sistema utiliza um loader automático de variáveis de ambiente com:
+- ✅ Validação de campos obrigatórios
+- ✅ Valores padrão
+- ✅ Marcação de campos sensíveis
+- ✅ Type-safe com struct tipada
 
 ## 🚀 Como Executar
 
 ### Pré-requisitos
-- Go 1.21+
-- PostgreSQL (ou outro banco de dados)
+- Go 1.24+
+- PostgreSQL 14+
 
-### Desenvolvimento
+### Instalação
+
 ```bash
+# Clonar repositório
+git clone https://github.com/j-ordep/mjcp.git
+cd mjcp/backend
+
 # Instalar dependências
 go mod download
 
+# Configurar .env
+cp .env.example .env
+# Editar .env com suas configurações
+
 # Executar aplicação
 go run cmd/api/main.go
+```
+
+### Desenvolvimento
+
+```bash
+# Executar com hot reload (usar air ou similar)
+air
 
 # Executar testes
 go test ./...
 
-# Executar testes com coverage
-go test ./... -coverprofile=coverage.out
-go tool cover -html=coverage.out
+# Formatar código
+go fmt ./...
+
+# Verificar imports
+goimports -w .
 ```
 
-## 📦 Dependências Principais
+## 📡 API Endpoints
 
-- **gin-gonic/gin**: Framework web
-- **godotenv**: Gerenciamento de variáveis de ambiente
-- **sqlx** (futuro): Database toolkit
-- **jwt-go** (futuro): Autenticação JWT
-- **validator** (futuro): Validação de structs
+### Health Check
+```
+GET /health
+```
 
-## 🔄 Organização Futura
+### Usuários
+```
+POST /user           # Criar usuário
+GET  /user           # Listar todos os usuários
+```
 
-### Fase 1 - MVP
-- CRUD de voluntários
-- CRUD de ministérios
-- Criação de escalas básicas
+### Escalas
+```
+POST /schedules      # Criar escala
+```
 
-### Fase 2 - Funcionalidades Avançadas
-- Sistema de disponibilidade
-- Notificações (email/push)
-- Histórico de escalas
-- Relatórios e estatísticas
+## 🗄️ Banco de Dados
 
-### Fase 3 - Otimizações
-- Cache com Redis
-- Background jobs
-- Auditoria e logs
-- Métricas e monitoring
+### Pool de Conexões
+
+Configurações otimizadas:
+- **MaxOpenConns**: 25 conexões simultâneas
+- **MaxIdleConns**: 5 conexões idle
+- **ConnMaxLifetime**: 5 minutos
+
+### Migrations
+
+(A implementar - sugestão: golang-migrate ou goose)
 
 ## 🔐 Segurança
 
-- Autenticação JWT
-- CORS configurado
-- Validação de inputs
-- SQL injection prevention (prepared statements)
-- Rate limiting
-- HTTPS obrigatório em produção
+- [ ] Autenticação JWT (planejado)
+- [x] CORS configurável
+- [x] Validação de inputs via DTOs
+- [x] Prepared statements (proteção SQL injection)
+- [x] Middleware de recuperação de panic
+- [ ] Rate limiting (planejado)
+
+## 🧪 Testes
+
+```bash
+# Executar todos os testes
+go test ./...
+
+# Com coverage
+go test ./... -coverprofile=coverage.out
+go tool cover -html=coverage.out
+
+# Testes de uma camada específica
+go test ./internal/service/...
+```
+
+## 📦 Dependências
+
+```go
+require (
+    github.com/go-chi/chi/v5 v5.2.3      // Router HTTP
+    github.com/joho/godotenv v1.5.1      // Carregar .env
+    github.com/lib/pq v1.10.9            // Driver PostgreSQL
+)
+```
+
+## 🛠️ Ferramentas Recomendadas
+
+- **Air**: Hot reload para desenvolvimento
+- **golangci-lint**: Linter completo
+- **sqlc**: Geração de código SQL type-safe
+- **testify**: Biblioteca de asserções para testes
+
+## 🎯 Roadmap
+
+### ✅ Fase 1 - Fundação
+- [x] Estrutura base do projeto
+- [x] Servidor HTTP com Chi
+- [x] Conexão com PostgreSQL
+- [x] Sistema de configuração
+- [x] Entidades de domínio
+
+### 🔄 Fase 2 - Features Core
+- [ ] CRUD completo de usuários
+- [ ] CRUD de ministérios
+- [ ] Sistema de disponibilidade
+- [ ] Criação e gerenciamento de escalas
+- [ ] Atribuição de papéis
+
+### 📋 Fase 3 - Avançado
+- [ ] Autenticação e autorização
+- [ ] Notificações (email/push)
+- [ ] Relatórios e estatísticas
+- [ ] Histórico de escalas
+- [ ] Dashboard administrativo
 
 ## 📝 Convenções de Código
 
-- Nomes em inglês para código
-- Comentários em português (documentação de negócio)
-- Seguir Go Code Review Comments
-- Usar gofmt/goimports
-- Lint com golangci-lint
+- Código em inglês
+- Comentários de negócio em português
+- Seguir [Effective Go](https://go.dev/doc/effective_go)
+- Usar `gofmt` e `goimports`
+- Handlers retornam `error` quando apropriado
+- DTOs para entrada/saída de dados
+
+## 📄 Licença
+
+[Definir licença]
+
+## 👥 Contribuindo
+
+[Definir guia de contribuição]

@@ -36,12 +36,12 @@ type Role struct {
 
 // que usuário tem qual papel em qual ministério; por exemplo, líder
 type MinistryRoleAssignment struct {
-	ID         string    `json:"id"`
-	UserID     string    `json:"user_id"` // quem recebe o papel
-	MinistryID string    `json:"ministry_id"`
-	RoleID     string    `json:"role_id"`
-	AssignedAt time.Time `json:"assigned_at"`
-	GrantedByUserID   string    `json:"granted_by_user_id"` // quem deu o papel
+	ID              string    `json:"id"`
+	UserID          string    `json:"user_id"` // quem recebe o papel
+	MinistryID      string    `json:"ministry_id"`
+	RoleID          string    `json:"role_id"`
+	AssignedAt      time.Time `json:"assigned_at"`
+	GrantedByUserID string    `json:"granted_by_user_id"` // quem deu o papel
 }
 
 // Schedule representa uma escala para um evento
@@ -57,20 +57,20 @@ type Schedule struct { // melhorar esse nome
 
 // Availability representa a disponibilidade de um voluntário
 type Availability struct {
-	ID         string    `json:"id"`
-	UserID     string    `json:"user_id"`
-	Date       time.Time `json:"date"`
-	Status     bool      `json:"available"` // disponivel?
-	CreatedAt  time.Time `json:"created_at"`
-	UpdatedAt  time.Time `json:"updated_at"`
+	ID        string    `json:"id"`
+	UserID    string    `json:"user_id"`
+	Date      time.Time `json:"date"`
+	Status    bool      `json:"available"` // disponivel?
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 // vinculação de usuário a um slot de escala (quem vai servir em qual evento)
 type Assignment struct {
-	ID              string    `json:"id"`
-	ScheduleID      string    `json:"schedule_id"` // qual evento (culto?)
-	UserID          string    `json:"user_id"`
-	RoleID          string    `json:"role_id"`  // papel que a pessoa vai exercer naquele evento
-	AssignedByUserID string   `json:"assigned_by_user_id"` // escalado aonde ou por quem
-	AssignedAt      time.Time `json:"assigned_at"`
+	ID               string    `json:"id"`
+	ScheduleID       string    `json:"schedule_id"` // qual evento (culto?)
+	UserID           string    `json:"user_id"`
+	RoleID           string    `json:"role_id"`             // papel que a pessoa vai exercer naquele evento
+	AssignedByUserID string    `json:"assigned_by_user_id"` // escalado aonde ou por quem
+	AssignedAt       time.Time `json:"assigned_at"`
 }
