@@ -4,7 +4,7 @@ import (
 	"log/slog"
 
 	"github.com/j-ordep/mjcp/backend/config"
-	"github.com/j-ordep/mjcp/backend/db"
+	"github.com/j-ordep/mjcp/backend/internal/infra/db"
 	"github.com/j-ordep/mjcp/backend/internal/web/server"
 	"github.com/joho/godotenv"
 )

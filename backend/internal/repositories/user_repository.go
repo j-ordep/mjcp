@@ -3,7 +3,8 @@ package repository
 import (
 	"database/sql"
 
-	"github.com/j-ordep/mjcp/backend/internal/domain/entities"
+	"github.com/j-ordep/mjcp/backend/internal/domain/entity"
+	"github.com/j-ordep/mjcp/backend/internal/domain/errors"
 )
 
 type UserRepository struct {
@@ -14,22 +15,59 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 	return &UserRepository{db: db}
 }
 
-func Create(user *entities.User) error {
+func (r *UserRepository) Create(user *entity.User) error {
+
+	stmt, err := r.db.Prepare(`
+		INSERT INTO accounts (id, name, email, api_key, balance, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)	
+	`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(
+		user.ID,
+		user.Name,
+		user.Email,
+		user.Phone,
+		user.CreatedAt,
+		user.UpdatedAt,
+	)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func GetByID(id string) (*entities.User, error) {
+func (r *UserRepository) GetAll() ([]entity.User, error) {
 	return nil, nil
 }
 
-func GetAll() ([]entities.User, error) {
+func (r *UserRepository) GetByID(id string) (*entity.User, error) {
 	return nil, nil
 }
 
-func Update(user *entities.User) error {
+func (r *UserRepository) GetByEmail(email string) (*entity.User, error) {
+    var user entity.User
+
+    err := r.db.QueryRow("SELECT id, name, email, phone, created_at, updated_at WHERE email = $1", email).Scan(user)
+    
+    if err == sql.ErrNoRows {
+        return nil, errors.ErrUserNotFound
+    }
+    if err != nil {
+        return nil, err
+    }
+    
+    return &user, nil
+}
+
+func (r *UserRepository) Update(user *entity.User) error {
 	return nil
 }
 
-func Delete(id string) error {
+func (r *UserRepository) Delete(id string) error {
 	return nil
 }

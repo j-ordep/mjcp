@@ -6,7 +6,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/j-ordep/mjcp/backend/internal/web/handlers"
 )
 
 type Server struct {
@@ -29,14 +28,14 @@ func (s *Server) ConfigureRoutes() {
 	s.router.Use(middleware.SetHeader("Content-Type", "application/json"))
 
 	// Handlers
-	userHandler := handlers.NewUserHandler()
-	scheduleHandler := handlers.NewScheduleHandler()
+	// userHandler := handler.NewUserHandler()
+	// scheduleHandler := handler.NewScheduleHandler()
 
 	// Rotas
-	s.router.Get("/health", healthCheck)
-	s.router.Post("/user", userHandler.Create)
-	s.router.Get("/user", userHandler.GetAll)
-	s.router.Post("/schedules", scheduleHandler.Create)
+	// s.router.Get("/health", healthCheck)
+	// s.router.Post("/user", userHandler.Create)
+	// s.router.Get("/user", userHandler.GetAll)
+	// s.router.Post("/schedules", scheduleHandler.Create)
 }
 
 func healthCheck(w http.ResponseWriter, r *http.Request) {
