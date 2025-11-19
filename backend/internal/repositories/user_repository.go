@@ -22,7 +22,7 @@ func GetByID(id string) (*entities.User, error) {
 	return nil, nil
 }
 
-func GetAll() ([]*entities.User, error) {
+func GetAll() ([]entities.User, error) {
 	return nil, nil
 }
 
