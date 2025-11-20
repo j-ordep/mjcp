@@ -16,6 +16,23 @@ func NewUserHandler(service *service.UserService) *UserHandler {
 	return &UserHandler{service: service}
 }
 
+func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
+	var input dto.LoginUserInput
+	if err := json.NewDecoder(r.Body).Decode(input); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	user, err := h.service.Login(input)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	
+    w.WriteHeader(http.StatusOK)
+    json.NewEncoder(w).Encode(user)
+}
+
 func (h *UserHandler) Create(w http.ResponseWriter, r *http.Request) {
     var input dto.CreateUserInput
 
@@ -47,8 +64,4 @@ func (h *UserHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 	// json.NewEncoder(w).Encode(volunteers)
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode("")
-}
-
-func (h *UserHandler) Login() {
-
 }
