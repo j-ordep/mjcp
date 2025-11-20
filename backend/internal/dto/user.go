@@ -6,16 +6,21 @@ import (
 	"github.com/j-ordep/mjcp/backend/internal/domain/entity"
 )
 
+type LoginUserInput struct {
+	Email    string `json:"email"`
+	Password string `json:"password" binding:"required"`
+}
+
+type LoginUserOutput struct {
+	User  UserOutput `json:"user"`
+	Token string     `json:"token"`
+}
+
 type CreateUserInput struct {
 	Name     string `json:"name"`
 	Email    string `json:"email"`
 	Password string `json:"password" binding:"required,min=6"`
 	Phone    string `json:"phone"`
-}
-
-type LoginUserInput struct {
-	Email    string `json:"email"`
-	Password string `json:"password" binding:"required"`
 }
 
 type UserOutput struct {
@@ -38,10 +43,10 @@ func ToUserDomain(input CreateUserInput) (*entity.User, error) {
 
 func FromUserDomain(user *entity.User) UserOutput {
 	return UserOutput{
-		ID: user.ID,
-		Name: user.Name,
-		Email: user.Email,
-		Phone: user.Phone,
+		ID:        user.ID,
+		Name:      user.Name,
+		Email:     user.Email,
+		Phone:     user.Phone,
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.UpdatedAt,
 	}
