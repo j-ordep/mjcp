@@ -4,16 +4,21 @@ import (
 	"github.com/j-ordep/mjcp/backend/internal/domain/errors"
 	"github.com/j-ordep/mjcp/backend/internal/domain/repository"
 	"github.com/j-ordep/mjcp/backend/internal/dto"
-	"github.com/j-ordep/mjcp/backend/internal/infra/jwt"
+	"github.com/j-ordep/mjcp/backend/internal/infra/auth"
+	"github.com/j-ordep/mjcp/backend/internal/service/validators"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type UserService struct {
-	repo repository.UserRepository
+    repo      repository.UserRepository
+    validator *validators.UserValidator
 }
 
 func NewUserService(repo repository.UserRepository) *UserService {
-	return &UserService{repo: repo}
+    return &UserService{
+        repo:      repo,
+        validator: validators.NewUserValidator(repo),
+    }
 }
 
 func (s *UserService) Login(input dto.LoginUserInput) (*dto.LoginUserOutput, error) {
@@ -26,7 +31,7 @@ func (s *UserService) Login(input dto.LoginUserInput) (*dto.LoginUserOutput, err
 		return nil, errors.ErrInvalidCredentials
 	}
 
-	token, err := jwt.GenerateToken(user.ID, user.Name, user.Email)
+	token, err := auth.GenerateToken(user.ID, user.Name, user.Email)
 	if err != nil{
 		return nil, errors.ErrInvalidCredentials
 	}
@@ -45,12 +50,8 @@ func (s *UserService) Create(input dto.CreateUserInput) (*dto.UserOutput, error)
 		return nil, err
 	}
 
-    existingUser, err := s.repo.GetByEmail(user.Email)
-    if err != nil && err != errors.ErrUserNotFound {
+	if err := s.validator.ValidateUser(user); err != nil {
         return nil, err
-    }
-    if existingUser != nil {
-        return nil, errors.ErrDuplicatedEmail
     }
 
 	err = s.repo.Create(user)
@@ -59,11 +60,19 @@ func (s *UserService) Create(input dto.CreateUserInput) (*dto.UserOutput, error)
 	}
 
 	output := dto.FromUserDomain(user)
-	return &output, nil
+	return output, nil
 }
 
-// func GetUserByEmail(email string) (*dto.UserOutput ,error){
+func (s *UserService) GetAll() ([]*dto.UserOutput ,error){
+	users, err := s.repo.GetAll()
+	if err != nil {
+		return nil, err
+	}
 
-// 	output := dto.FromUserDomain(user)
-// 	return &output, nil
-// }
+	usersOutput := make([]*dto.UserOutput, len(users))
+	for i, user := range users {
+		usersOutput[i] = dto.FromUserDomain(user)
+	}
+
+	return usersOutput, nil
+}

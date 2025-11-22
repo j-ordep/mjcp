@@ -4,28 +4,42 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/go-playground/validator/v10"
+	"github.com/j-ordep/mjcp/backend/internal/domain/errors"
 	"github.com/j-ordep/mjcp/backend/internal/dto"
 	"github.com/j-ordep/mjcp/backend/internal/service"
 )
 
 type UserHandler struct {
 	service *service.UserService
+	validate *validator.Validate
 }
 
 func NewUserHandler(service *service.UserService) *UserHandler {
-	return &UserHandler{service: service}
+    return &UserHandler{
+        service:  service,
+        validate: validator.New(),
+    }
 }
 
 func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var input dto.LoginUserInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		w.WriteHeader(http.StatusBadRequest)
+        json.NewEncoder(w).Encode(map[string]string{"error": "Invalid request body"})
+        return
 	}
+
+	if err := h.validate.Struct(input); err != nil {
+        w.WriteHeader(http.StatusBadRequest)
+        json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+        return
+    }
 
 	output, err := h.service.Login(input)
 	if err != nil {
-        http.Error(w, err.Error(), http.StatusUnauthorized)
+        w.WriteHeader(http.StatusUnauthorized)
+        json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
         return
 	}
 
@@ -37,14 +51,31 @@ func (h *UserHandler) Create(w http.ResponseWriter, r *http.Request) {
     var input dto.CreateUserInput
 
     if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
+        json.NewEncoder(w).Encode(map[string]string{"error": "Invalid request body"})
         return
     }
 
-    user, err := h.service.Create(input)
+	// Validar estrutura (campos vazios, formato email, etc)
+    if err := h.validate.Struct(input); err != nil {
+        w.WriteHeader(http.StatusBadRequest)
+        json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+        return
+    }
+
+	user, err := h.service.Create(input)
     if err != nil {
-        w.WriteHeader(http.StatusInternalServerError)
-        json.NewEncoder(w).Encode(map[string]string{"error": "Failed to create user"})
+        switch err {
+        case errors.ErrDuplicatedEmail:
+            w.WriteHeader(http.StatusConflict)
+            json.NewEncoder(w).Encode(map[string]string{"error": "Email already exists"})
+        case errors.ErrDuplicatedPhone:
+            w.WriteHeader(http.StatusConflict)
+            json.NewEncoder(w).Encode(map[string]string{"error": "Phone already exists"})
+        default:
+            w.WriteHeader(http.StatusInternalServerError)
+            json.NewEncoder(w).Encode(map[string]string{"error": "Failed to create user"})
+        }
         return
     }
 
@@ -53,15 +84,13 @@ func (h *UserHandler) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UserHandler) GetAll(w http.ResponseWriter, r *http.Request) {
-	// volunteers, err := h.getUseCase.Execute(r.Context())
-	// if err != nil {
-	// 	w.WriteHeader(http.StatusInternalServerError)
-	// 	json.NewEncoder(w).Encode(map[string]string{"error": "Failed to get volunteers"})
-	// 	return
-	// }
+	users, err := h.service.GetAll()
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to get users"})
+		return
+	}
 
-	// w.WriteHeader(http.StatusOK)
-	// json.NewEncoder(w).Encode(volunteers)
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode("")
+	json.NewEncoder(w).Encode(users)
 }

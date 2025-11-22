@@ -8,6 +8,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/j-ordep/mjcp/backend/internal/service"
 	"github.com/j-ordep/mjcp/backend/internal/web/handler"
+	mw "github.com/j-ordep/mjcp/backend/internal/web/middleware"
 )
 
 type Server struct {
@@ -26,19 +27,20 @@ func NewServer(port string, userService *service.UserService) *Server {
 }
 
 func (s *Server) ConfigureRoutes() {
-	// Middlewares
 	s.router.Use(middleware.Logger)
 	s.router.Use(middleware.Recoverer)
 	s.router.Use(middleware.SetHeader("Content-Type", "application/json"))
-
 
 	userHandler := handler.NewUserHandler(s.userService)
 
 	s.router.Get("/health", healthCheck)
 	s.router.Post("/user", userHandler.Create)
-	s.router.Get("/user", userHandler.GetAll)
 	s.router.Post("/login", userHandler.Login)
-
+	
+	s.router.Group(func(r chi.Router) {
+		r.Use(mw.Authenticate)
+		r.Get("/users", userHandler.GetAll)
+	})
 }
 
 func healthCheck(w http.ResponseWriter, r *http.Request) {
