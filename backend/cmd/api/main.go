@@ -5,6 +5,8 @@ import (
 
 	"github.com/j-ordep/mjcp/backend/config"
 	"github.com/j-ordep/mjcp/backend/internal/infra/db"
+	"github.com/j-ordep/mjcp/backend/internal/repositories"
+	"github.com/j-ordep/mjcp/backend/internal/service"
 	"github.com/j-ordep/mjcp/backend/internal/web/server"
 	"github.com/joho/godotenv"
 )
@@ -16,7 +18,6 @@ func main() {
 	}
 	config.LoadEnv()
 
-	// Conectar ao banco
     db, err := db.NewConnect()
     if err != nil {
         slog.Error("Failed to connect to database", "error", err)
@@ -24,13 +25,12 @@ func main() {
     }
     defer db.Close()
 
-	// Criar servidor
-	srv := server.NewServer(config.Config.APIPort)
+	userRepository := repositories.NewUserRepository(db)
+	userService := service.NewUserService(userRepository)
 
-	// Configurar rotas
+	srv := server.NewServer(config.Config.APIPort, userService)
 	srv.ConfigureRoutes()
 
-	// Iniciar servidor
 	slog.Info("Starting server", "port", config.Config.APIPort)
 
 	if err := srv.Start(); err != nil {
