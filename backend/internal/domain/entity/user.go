@@ -7,7 +7,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// User representa um voluntário da igreja
 type User struct {
 	ID        string    `json:"id"`
 	Name      string    `json:"name"`
@@ -19,15 +18,16 @@ type User struct {
 }
 
 func NewUser(name, email, password, phone string) (*User, error) {
-	hashPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		return nil, err
-	}
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+    if err != nil {
+        return nil, err
+    }
+	
 	return &User{
 		ID: uuid.New().String(),
 		Name: name,
 		Email: email,
-		Password: string(hashPassword),
+		Password: string(hash),
 		Phone: phone,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
