@@ -9,31 +9,24 @@ import (
 )
 
 type CFG struct {
-	APIHost                     string `env:"API_HOST,default=,sensitive=true"`
-	APIPort                     string `env:"API_PORT,default=8080,required=true,sensitive=true"`
+	CORS_ALLOWED_ORIGINS string `env:"CORS_ALLOWED_ORIGINS"`
 
-	DBHost                      string `env:"DB_HOST"`
-	DBPort                      string `env:"DB_PORT"`
-	DBUser                      string `env:"DB_USER"`
-	DBPassword                  string `env:"DB_PASS,sensitive=true"`
-	DBName                      string `env:"DB_NAME"`
+	APIHost              string `env:"API_HOST,default=,sensitive=true"`
+	APIPort              string `env:"API_PORT,default=8080,required=true,sensitive=true"`
 
-	CORS_ALLOWED_ORIGINS        string `env:"CORS_ALLOWED_ORIGINS"`
+	DBHost               string `env:"DB_HOST"`
+	DBPort               string `env:"DB_PORT"`
+	DBUser               string `env:"DB_USER"`
+	DBPassword           string `env:"DB_PASSWORD,sensitive=true"`
+	DBName               string `env:"DB_NAME"`
 
-	ClientID                    string `env:"KC_CLIENT_ID"`
-	BaseURL                     string `env:"KC_BASE_URL"`
-	Realm                       string `env:"KC_REALM"`
-	KeycloakSecret              string `env:"KC_SECRET,sensitive=true"`
-	
-	MinioEndpoint               string `env:"MINIO_ENDPOINT,sensitive=true"`
-	MinioAccessKey              string `env:"MINIO_ACCESS_KEY,sensitive=true"`
-	MinioSecretKey              string `env:"MINIO_SECRET_KEY,sensitive=true"`
-	URLCheckPrice               string `env:"URL_CHECK_PRICE"`
-	UrlMinio                    string `env:"URL_MINIO"`
-	
-	SwaggerHost                 string `env:"SWAGGER_HOST"`
-	APIBasePath                 string `env:"API_BASE_PATH,default=/api"`
-	SwaggerScheme               string `env:"SWAGGER_SCHEME,default=http"`
+	JwtSecret            string `env:"JWT_SECRET"`
+
+	KcClientID           string `env:"KC_CLIENT_ID"`
+	KcBaseURL            string `env:"KC_BASE_URL"`
+	KcRealm              string `env:"KC_REALM"`
+	KcSecret             string `env:"KC_SECRET,sensitive=true"`
+
 }
 
 var Config CFG
