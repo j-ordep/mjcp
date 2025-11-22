@@ -5,7 +5,7 @@ import (
 	"github.com/j-ordep/mjcp/backend/internal/domain/repository"
 	"github.com/j-ordep/mjcp/backend/internal/dto"
 	"github.com/j-ordep/mjcp/backend/internal/infra/auth"
-	"github.com/j-ordep/mjcp/backend/internal/service/validation"
+	"github.com/j-ordep/mjcp/backend/internal/validation"
 	"golang.org/x/crypto/bcrypt"
 )
 
