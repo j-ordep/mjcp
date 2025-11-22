@@ -5,19 +5,19 @@ import (
 	"github.com/j-ordep/mjcp/backend/internal/domain/repository"
 	"github.com/j-ordep/mjcp/backend/internal/dto"
 	"github.com/j-ordep/mjcp/backend/internal/infra/auth"
-	"github.com/j-ordep/mjcp/backend/internal/service/validators"
+	"github.com/j-ordep/mjcp/backend/internal/service/validation"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type UserService struct {
     repo      repository.UserRepository
-    validator *validators.UserValidator
+    validator *validation.UserValidator
 }
 
 func NewUserService(repo repository.UserRepository) *UserService {
     return &UserService{
         repo:      repo,
-        validator: validators.NewUserValidator(repo),
+        validator: validation.NewUserValidator(repo),
     }
 }
 

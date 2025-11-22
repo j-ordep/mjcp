@@ -1,4 +1,4 @@
-package validators
+package validation
 
 import (
     "github.com/j-ordep/mjcp/backend/internal/domain/entity"
