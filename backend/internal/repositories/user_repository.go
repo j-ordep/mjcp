@@ -1,4 +1,4 @@
-package repository
+package repositories
 
 import (
 	"database/sql"
@@ -18,7 +18,7 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 func (r *UserRepository) Create(user *entity.User) error {
 
 	stmt, err := r.db.Prepare(`
-		INSERT INTO accounts (id, name, email, api_key, balance, created_at, updated_at)
+		INSERT INTO users (id, name, email, password, phone, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)	
 	`)
 	if err != nil {
@@ -30,6 +30,7 @@ func (r *UserRepository) Create(user *entity.User) error {
 		user.ID,
 		user.Name,
 		user.Email,
+		user.Password,
 		user.Phone,
 		user.CreatedAt,
 		user.UpdatedAt,
@@ -41,7 +42,7 @@ func (r *UserRepository) Create(user *entity.User) error {
 	return nil
 }
 
-func (r *UserRepository) GetAll() ([]entity.User, error) {
+func (r *UserRepository) GetAll() ([]*entity.User, error) {
 	return nil, nil
 }
 
@@ -52,7 +53,19 @@ func (r *UserRepository) GetByID(id string) (*entity.User, error) {
 func (r *UserRepository) GetByEmail(email string) (*entity.User, error) {
     var user entity.User
 
-    err := r.db.QueryRow("SELECT id, name, email, phone, created_at, updated_at WHERE email = $1", email).Scan(user)
+    err := r.db.QueryRow(`
+        SELECT id, name, email, password, phone, created_at, updated_at 
+        FROM users 
+        WHERE email = $1
+    `, email).Scan(
+        &user.ID,
+        &user.Name,
+        &user.Email,
+        &user.Password,
+        &user.Phone,
+        &user.CreatedAt,
+        &user.UpdatedAt,
+    )
     
     if err == sql.ErrNoRows {
         return nil, errors.ErrUserNotFound
