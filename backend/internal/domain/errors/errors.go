@@ -12,4 +12,5 @@ var (
 	// ErrUnauthorizedAccess é retornado quando há tentativa de acesso não autorizado a um recurso
 	ErrUnauthorizedAccess = errors.New("unauthorized access")
 
+	ErrInvalidCredentials = errors.New("invalid credentials")
 )
