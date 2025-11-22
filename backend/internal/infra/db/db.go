@@ -9,8 +9,6 @@ import (
 	_ "github.com/lib/pq"
 )
 
-var DB *sql.DB
-
 func NewConnect() (*sql.DB, error) {
 	dsn := fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
@@ -34,13 +32,5 @@ func NewConnect() (*sql.DB, error) {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
-	DB = db
 	return db, nil
-}
-
-func Close() error {
-	if DB != nil {
-		return DB.Close()
-	}
-	return nil
 }
