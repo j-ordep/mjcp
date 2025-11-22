@@ -18,19 +18,19 @@ func NewUserHandler(service *service.UserService) *UserHandler {
 
 func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var input dto.LoginUserInput
-	if err := json.NewDecoder(r.Body).Decode(input); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	user, err := h.service.Login(input)
+	output, err := h.service.Login(input)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+        http.Error(w, err.Error(), http.StatusUnauthorized)
+        return
 	}
-	
+
     w.WriteHeader(http.StatusOK)
-    json.NewEncoder(w).Encode(user)
+    json.NewEncoder(w).Encode(output)
 }
 
 func (h *UserHandler) Create(w http.ResponseWriter, r *http.Request) {
