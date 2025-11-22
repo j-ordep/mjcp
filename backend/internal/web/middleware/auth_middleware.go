@@ -2,34 +2,31 @@ package middleware
 
 import (
 	"net/http"
+	"strings"
+
+	"github.com/j-ordep/mjcp/backend/internal/infra/auth"
 )
 
-type AuthMiddleware struct {
-	
-}
+func Authenticate(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        authHeader := r.Header.Get("Authorization")
+        if authHeader == "" {
+            http.Error(w, "missing authorization header", http.StatusUnauthorized)
+            return
+        }
 
-func NewAuthMiddleware() *AuthMiddleware {
-	return &AuthMiddleware{}
-}
+        token := strings.TrimPrefix(authHeader, "Bearer ")
+        if token == authHeader {
+            http.Error(w, "invalid authorization format", http.StatusUnauthorized)
+            return
+        }
 
-func (m *AuthMiddleware) Authenticate(next http.Handler) http.Handler {
-	return  http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		apiKey := r.Header.Get("X-API-KEY")
-		if apiKey == "" {
-			http.Error(w, "X-API-KEY is required", http.StatusUnauthorized)
-			return 
-		}
+        _, err := auth.VerifyToken(token)
+        if err != nil {
+            http.Error(w, "invalid or expired token", http.StatusUnauthorized)
+            return
+        }
 
-		// _, err := m.accountService.FindByAPIKey(apiKey)
-		// if err != nil {
-		// 	if err == domain.ErrUnauthorizedAccess {
-		// 		http.Error(w, err.Error(), http.StatusUnauthorized)
-		// 		return 
-		// 	}
-
-		// 	http.Error(w, err.Error(), http.StatusInternalServerError)
-		// 	return 
-		// }
-		next.ServeHTTP(w, r)
-	})
+        next.ServeHTTP(w, r)
+    })
 }
