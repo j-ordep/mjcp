@@ -4,7 +4,7 @@ import (
 	"database/sql"
 
 	"github.com/j-ordep/mjcp/backend/internal/domain/entity"
-	"github.com/j-ordep/mjcp/backend/internal/domain/errors"
+	"github.com/j-ordep/mjcp/backend/internal/domain/apperrors"
 )
 
 type UserRepository struct {
@@ -99,7 +99,7 @@ func (r *UserRepository) GetByEmail(email string) (*entity.User, error) {
     )
     
     if err == sql.ErrNoRows {
-        return nil, errors.ErrUserNotFound
+        return nil, apperrors.ErrUserNotFound
     }
     if err != nil {
         return nil, err
@@ -126,7 +126,7 @@ func (r *UserRepository) GetByPhone(phone string) (*entity.User, error) {
     )
     
     if err == sql.ErrNoRows {
-        return nil, errors.ErrUserNotFound
+        return nil, apperrors.ErrUserNotFound
     }
     if err != nil {
         return nil, err

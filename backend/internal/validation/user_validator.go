@@ -2,7 +2,7 @@ package validation
 
 import (
     "github.com/j-ordep/mjcp/backend/internal/domain/entity"
-    "github.com/j-ordep/mjcp/backend/internal/domain/errors"
+    "github.com/j-ordep/mjcp/backend/internal/domain/apperrors"
     "github.com/j-ordep/mjcp/backend/internal/domain/repository"
 )
 
@@ -17,7 +17,7 @@ func NewUserValidator(repo repository.UserRepository) *UserValidator {
 func (v *UserValidator) ValidateUser(user *entity.User) error {
     existingUser, err := v.repo.GetByEmail(user.Email)
     
-    if err != nil && err != errors.ErrUserNotFound {
+    if err != nil && err != apperrors.ErrUserNotFound {
         return err
     }
     
@@ -26,11 +26,11 @@ func (v *UserValidator) ValidateUser(user *entity.User) error {
     }
     
     if existingUser.Email == user.Email {
-        return errors.ErrDuplicatedEmail
+        return apperrors.ErrDuplicatedEmail
     }
     
     if existingUser.Phone == user.Phone {
-        return errors.ErrDuplicatedPhone
+        return apperrors.ErrDuplicatedPhone
     }
     
     return nil

@@ -4,7 +4,7 @@ import (
     "fmt"
 
     "github.com/golang-jwt/jwt/v5"
-    "github.com/j-ordep/mjcp/backend/internal/domain/errors"
+    "github.com/j-ordep/mjcp/backend/internal/domain/apperrors"
     "github.com/j-ordep/mjcp/backend/config"
 )
 
@@ -17,12 +17,12 @@ func VerifyToken(tokenString string) (jwt.MapClaims, error) {
     })
 
     if err != nil {
-        return nil, errors.ErrInvalidToken
+        return nil, apperrors.ErrInvalidToken
     }
 
     if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
         return claims, nil
     }
 
-    return nil, errors.ErrInvalidToken
+    return nil, apperrors.ErrInvalidToken
 }

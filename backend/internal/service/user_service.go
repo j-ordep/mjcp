@@ -1,7 +1,7 @@
 package service
 
 import (
-	"github.com/j-ordep/mjcp/backend/internal/domain/errors"
+	"github.com/j-ordep/mjcp/backend/internal/domain/apperrors"
 	"github.com/j-ordep/mjcp/backend/internal/domain/repository"
 	"github.com/j-ordep/mjcp/backend/internal/dto"
 	"github.com/j-ordep/mjcp/backend/internal/infra/auth"
@@ -28,12 +28,12 @@ func (s *UserService) Login(input dto.LoginUserInput) (*dto.LoginUserOutput, err
 	}
 
 	if bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password)) != nil {
-		return nil, errors.ErrInvalidCredentials
+		return nil, apperrors.ErrInvalidCredentials
 	}
 
 	token, err := auth.GenerateToken(user.ID, user.Name, user.Email)
 	if err != nil{
-		return nil, errors.ErrInvalidCredentials
+		return nil, apperrors.ErrInvalidCredentials
 	}
 
 	userOutput := dto.FromUserDomain(user)

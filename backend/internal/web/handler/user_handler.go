@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/j-ordep/mjcp/backend/internal/domain/errors"
+	"github.com/j-ordep/mjcp/backend/internal/domain/apperrors"
 	"github.com/j-ordep/mjcp/backend/internal/dto"
 	"github.com/j-ordep/mjcp/backend/internal/service"
 )
@@ -66,10 +66,10 @@ func (h *UserHandler) Create(w http.ResponseWriter, r *http.Request) {
 	user, err := h.service.Create(input)
     if err != nil {
         switch err {
-        case errors.ErrDuplicatedEmail:
+        case apperrors.ErrDuplicatedEmail:
             w.WriteHeader(http.StatusConflict)
             json.NewEncoder(w).Encode(map[string]string{"error": "Email already exists"})
-        case errors.ErrDuplicatedPhone:
+        case apperrors.ErrDuplicatedPhone:
             w.WriteHeader(http.StatusConflict)
             json.NewEncoder(w).Encode(map[string]string{"error": "Phone already exists"})
         default:
