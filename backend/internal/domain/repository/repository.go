@@ -4,12 +4,12 @@ import (
 	"github.com/j-ordep/mjcp/backend/internal/domain/entity"
 )
 
-// UserRepository define o contrato para operações com voluntários
 type UserRepository interface {
 	Create(user *entity.User) error
 	GetAll() ([]*entity.User, error)
 	GetByID(id string) (*entity.User, error)
 	GetByEmail(email string) (*entity.User, error)
+	GetByPhone(phone string) (*entity.User, error)
 	Update(user *entity.User) error
 	Delete(id string) error
 }
