@@ -40,6 +40,8 @@ func (s *Server) ConfigureRoutes() {
 	s.router.Group(func(r chi.Router) {
 		r.Use(mw.Authenticate)
 		r.Get("/users", userHandler.GetAll)
+		r.Get("/user", userHandler.GetByID)
+		r.Get("/user", userHandler.Search)
 	})
 }
 

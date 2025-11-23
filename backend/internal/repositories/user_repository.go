@@ -2,9 +2,10 @@ package repositories
 
 import (
 	"database/sql"
+	"fmt"
 
-	"github.com/j-ordep/mjcp/backend/internal/domain/entity"
 	"github.com/j-ordep/mjcp/backend/internal/domain/apperrors"
+	"github.com/j-ordep/mjcp/backend/internal/domain/entity"
 )
 
 type UserRepository struct {
@@ -82,57 +83,84 @@ func (r *UserRepository) GetByID(id string) (*entity.User, error) {
 }
 
 func (r *UserRepository) GetByEmail(email string) (*entity.User, error) {
-    var user entity.User
+	var user entity.User
 
-    err := r.db.QueryRow(`
+	err := r.db.QueryRow(`
         SELECT id, name, email, password, phone, created_at, updated_at 
         FROM users 
         WHERE email = $1
     `, email).Scan(
-        &user.ID,
-        &user.Name,
-        &user.Email,
-        &user.Password,
-        &user.Phone,
-        &user.CreatedAt,
-        &user.UpdatedAt,
-    )
-    
-    if err == sql.ErrNoRows {
-        return nil, apperrors.ErrUserNotFound
-    }
-    if err != nil {
-        return nil, err
-    }
-    
-    return &user, nil
+		&user.ID,
+		&user.Name,
+		&user.Email,
+		&user.Password,
+		&user.Phone,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+
+	if err == sql.ErrNoRows {
+		return nil, apperrors.ErrUserNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
 }
 
-func (r *UserRepository) GetByPhone(phone string) (*entity.User, error) {
-    var user entity.User
+func (r *UserRepository) Search(filters map[string]string) ([]*entity.User, error) {
+	query := `SELECT id, name, email, password, phone, created_at, updated_at FROM users WHERE 1=1`
+	var args []interface{}
+	argIndex := 1
 
-    err := r.db.QueryRow(`
-        SELECT id, name, email, password, phone, created_at, updated_at 
-        FROM users 
-        WHERE phone = $1
-    `, phone).Scan(
-        &user.ID,
-        &user.Name,
-        &user.Email,
-        &user.Password,
-        &user.Phone,
-        &user.CreatedAt,
-        &user.UpdatedAt,
-    )
-    
-    if err == sql.ErrNoRows {
-        return nil, apperrors.ErrUserNotFound
-    }
-    if err != nil {
-        return nil, err
-    }
-    
-    return &user, nil
+	if name, ok := filters["name"]; ok && name != "" {
+		query += fmt.Sprintf(` AND name ILIKE $%d`, argIndex)
+		args = append(args, "%"+name+"%")
+		argIndex++
+	}
+
+	if email, ok := filters["email"]; ok && email != "" {
+		query += fmt.Sprintf(` AND email ILIKE $%d`, argIndex)
+		args = append(args, "%"+email+"%")
+		argIndex++
+	}
+
+	if phone, ok := filters["phone"]; ok && phone != "" {
+		query += fmt.Sprintf(` AND phone ILIKE $%d`, argIndex)
+		args = append(args, "%"+phone+"%")
+		argIndex++
+	}
+
+	rows, err := r.db.Query(query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []*entity.User
+	for rows.Next() {
+		var user entity.User
+		err := rows.Scan(
+			&user.ID,
+			&user.Name,
+			&user.Email,
+			&user.Password,
+			&user.Phone,
+			&user.CreatedAt,
+			&user.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, &user)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return users, nil
 }
 
 func (r *UserRepository) Update(user *entity.User) error {

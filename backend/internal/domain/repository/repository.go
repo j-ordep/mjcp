@@ -9,7 +9,7 @@ type UserRepository interface {
 	GetAll() ([]*entity.User, error)
 	GetByID(id string) (*entity.User, error)
 	GetByEmail(email string) (*entity.User, error)
-	GetByPhone(phone string) (*entity.User, error)
+	Search(filters map[string]string) ([]*entity.User, error)
 	Update(user *entity.User) error
 	Delete(id string) error
 }
