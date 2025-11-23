@@ -38,8 +38,17 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	output, err := h.service.Login(input)
 	if err != nil {
-		w.WriteHeader(http.StatusUnauthorized)
-		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		switch err {
+		case apperrors.ErrUserNotFound:
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(map[string]string{"error": "User not found"})
+		case apperrors.ErrInvalidCredentials:
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(map[string]string{"error": "Invalid credentials"})
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": "Failed to login"})
+		}
 		return
 	}
 
@@ -98,8 +107,14 @@ func (h *UserHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 func (h *UserHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	user, err := h.service.GetByID(r.URL.Query().Get("id"))
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to get users"})
+		switch err {
+		case apperrors.ErrUserNotFound:
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(map[string]string{"error": "User not found"})
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": "Failed to get user"})
+		}
 		return
 	}
 
