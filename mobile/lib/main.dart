@@ -1,57 +1,23 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 
+import 'src/application/auth/login_usecase.dart';
+import 'src/data/repositories_impl/auth_repository_impl.dart';
+import 'src/presentation/login/login_page.dart';
+
 void main() {
-  runApp(const MyApp());
-}
+  final dio = Dio(BaseOptions(baseUrl: "https://suaapi.com"));
+  final authRepo = AuthRepositoryImpl(dio);
+  final loginUseCase = LoginUseCase(authRepo);
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'MJCP - Escalas Igreja',
+  runApp(
+    MaterialApp(
+      title: 'MJCP Mobile',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const HomePage(),
-    );
-  }
-}
-
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('MJCP - Sistema de Escalas'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.calendar_today,
-              size: 100,
-              color: Colors.blue,
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'Bem-vindo ao MJCP',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              'Sistema de Gerenciamento de Escalas',
-              style: TextStyle(fontSize: 16),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+      home: LoginPage(loginUseCase: loginUseCase),
+    ),
+  );
 }
