@@ -11,22 +11,22 @@ import (
 type CFG struct {
 	CORS_ALLOWED_ORIGINS string `env:"CORS_ALLOWED_ORIGINS"`
 
-	APIHost              string `env:"API_HOST,default=,sensitive=true"`
-	APIPort              string `env:"API_PORT,default=8080,required=true,sensitive=true"`
+	APIHost string `env:"API_HOST,default=,sensitive=true"`
+	APIPort string `env:"API_PORT,default=8080,required=true,sensitive=true"`
+	BaseURL string `env:"BASE_URL,default=http://localhost:8080"`
 
-	DBHost               string `env:"DB_HOST"`
-	DBPort               string `env:"DB_PORT"`
-	DBUser               string `env:"DB_USER"`
-	DBPassword           string `env:"DB_PASSWORD,sensitive=true"`
-	DBName               string `env:"DB_NAME"`
+	DBHost     string `env:"DB_HOST"`
+	DBPort     string `env:"DB_PORT"`
+	DBUser     string `env:"DB_USER"`
+	DBPassword string `env:"DB_PASSWORD,sensitive=true"`
+	DBName     string `env:"DB_NAME"`
 
-	JwtSecret            string `env:"JWT_SECRET"`
+	JwtSecret string `env:"JWT_SECRET"`
 
-	KcClientID           string `env:"KC_CLIENT_ID"`
-	KcBaseURL            string `env:"KC_BASE_URL"`
-	KcRealm              string `env:"KC_REALM"`
-	KcSecret             string `env:"KC_SECRET,sensitive=true"`
-
+	KcClientID string `env:"KC_CLIENT_ID"`
+	KcBaseURL  string `env:"KC_BASE_URL"`
+	KcRealm    string `env:"KC_REALM"`
+	KcSecret   string `env:"KC_SECRET,sensitive=true"`
 }
 
 var Config CFG

@@ -187,7 +187,47 @@ func (r *UserRepository) Search(filters map[string]string) ([]*entity.User, erro
 }
 
 func (r *UserRepository) Update(user *entity.User) error {
-	stmt, err := r.db.Prepare(`
+	// Se password foi alterado, atualiza também
+	var stmt *sql.Stmt
+	var err error
+
+	if user.Password != "" {
+		stmt, err = r.db.Prepare(`
+			UPDATE users 
+			SET name = $1, email = $2, phone = $3, password = $4, updated_at = $5
+			WHERE id = $6
+		`)
+		if err != nil {
+			return err
+		}
+		defer stmt.Close()
+
+		result, err := stmt.Exec(
+			user.Name,
+			user.Email,
+			user.Phone,
+			user.Password,
+			user.UpdatedAt,
+			user.ID,
+		)
+		if err != nil {
+			return err
+		}
+
+		rowsAffected, err := result.RowsAffected()
+		if err != nil {
+			return err
+		}
+
+		if rowsAffected == 0 {
+			return apperrors.ErrUserNotFound
+		}
+
+		return nil
+	}
+
+	// Update sem password
+	stmt, err = r.db.Prepare(`
 		UPDATE users 
 		SET name = $1, email = $2, phone = $3, updated_at = $4
 		WHERE id = $5

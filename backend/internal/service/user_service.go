@@ -5,7 +5,7 @@ import (
 
 	"github.com/j-ordep/mjcp/backend/internal/domain/apperrors"
 	"github.com/j-ordep/mjcp/backend/internal/domain/repository"
-	"github.com/j-ordep/mjcp/backend/internal/dto"
+	userDTO "github.com/j-ordep/mjcp/backend/internal/dto/user"
 	"github.com/j-ordep/mjcp/backend/internal/infra/auth"
 	"github.com/j-ordep/mjcp/backend/internal/validation"
 	"golang.org/x/crypto/bcrypt"
@@ -23,134 +23,133 @@ func NewUserService(repo repository.UserRepository) *UserService {
 	}
 }
 
-func (s *UserService) Login(input dto.LoginUserInput) (*dto.LoginUserOutput, error) {
-	user, err := s.repo.GetByEmail(input.Email)
+func (s *UserService) Login(input userDTO.LoginUserInput) (*userDTO.LoginUserOutput, error) {
+	userEntity, err := s.repo.GetByEmail(input.Email)
 	if err != nil {
 		return nil, err
 	}
 
-	if bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password)) != nil {
+	if bcrypt.CompareHashAndPassword([]byte(userEntity.Password), []byte(input.Password)) != nil {
 		return nil, apperrors.ErrInvalidCredentials
 	}
 
-	token, err := auth.GenerateToken(user.ID, user.Name, user.Email)
+	token, err := auth.GenerateToken(userEntity.ID, userEntity.Name, userEntity.Email)
 	if err != nil {
 		return nil, apperrors.ErrInvalidCredentials
 	}
 
-	userOutput := dto.FromUserDomain(user)
+	userOutput := userDTO.FromUserDomain(userEntity)
 
-	return &dto.LoginUserOutput{
+	return &userDTO.LoginUserOutput{
 		User:  userOutput,
 		Token: token,
 	}, nil
 }
 
-func (s *UserService) Create(input dto.CreateUserInput) (*dto.UserOutput, error) {
-	user, err := dto.ToUserDomain(input)
+func (s *UserService) Create(input userDTO.CreateUserInput) (*userDTO.UserOutput, error) {
+	userEntity, err := userDTO.ToUserDomain(input)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := s.validator.ValidateUser(user); err != nil {
+	// Valida se email ou telefone já existem no banco
+	if err := s.validator.ValidateUser(userEntity); err != nil {
 		return nil, err
 	}
 
-	err = s.repo.Create(user)
+	err = s.repo.Create(userEntity)
 	if err != nil {
 		return nil, err
 	}
 
-	output := dto.FromUserDomain(user)
+	output := userDTO.FromUserDomain(userEntity)
 	return output, nil
 }
 
-func (s *UserService) GetAll() ([]*dto.UserOutput, error) {
+func (s *UserService) GetAll() ([]*userDTO.UserOutput, error) {
 	users, err := s.repo.GetAll()
 	if err != nil {
 		return nil, err
 	}
 
-	usersOutput := make([]*dto.UserOutput, len(users))
-	for i, user := range users {
-		usersOutput[i] = dto.FromUserDomain(user)
+	usersOutput := make([]*userDTO.UserOutput, len(users))
+	for i, u := range users {
+		usersOutput[i] = userDTO.FromUserDomain(u)
 	}
 
 	return usersOutput, nil
 }
 
-func (s *UserService) GetByID(id string) (*dto.UserOutput, error) {
-	user, err := s.repo.GetByID(id)
+func (s *UserService) GetByID(id string) (*userDTO.UserOutput, error) {
+	userEntity, err := s.repo.GetByID(id)
 	if err != nil {
 		return nil, err
 	}
 
-	return dto.FromUserDomain(user), nil
+	return userDTO.FromUserDomain(userEntity), nil
 }
 
-func (s *UserService) Search(filters map[string]string) ([]*dto.UserOutput, error) {
+func (s *UserService) Search(filters map[string]string) ([]*userDTO.UserOutput, error) {
 	users, err := s.repo.Search(filters)
 	if err != nil {
 		return nil, err
 	}
 
-	usersOutput := make([]*dto.UserOutput, len(users))
-	for i, user := range users {
-		usersOutput[i] = dto.FromUserDomain(user)
+	usersOutput := make([]*userDTO.UserOutput, len(users))
+	for i, u := range users {
+		usersOutput[i] = userDTO.FromUserDomain(u)
 	}
 
 	return usersOutput, nil
 }
 
-func (s *UserService) Update(id string, input dto.UpdateUserInput) (*dto.UserOutput, error) {
-	// Buscar usuário existente
-	user, err := s.repo.GetByID(id)
+func (s *UserService) Update(id string, input userDTO.UpdateUserInput) (*userDTO.UserOutput, error) {
+	userEntity, err := s.repo.GetByID(id)
 	if err != nil {
 		return nil, err
 	}
 
-	// Atualizar campos
-	user.Name = input.Name
-	user.Email = input.Email
-	user.Phone = input.Phone
-	user.UpdatedAt = time.Now()
+	userEntity.Name = input.Name
+	userEntity.Email = input.Email
+	userEntity.Phone = input.Phone
+	userEntity.UpdatedAt = time.Now()
 
 	// Validar se email ou phone não estão duplicados (exceto o próprio usuário)
-	if err := s.validator.ValidateUserUpdate(user); err != nil {
+	if err := s.validator.ValidateUserUpdate(userEntity); err != nil {
 		return nil, err
 	}
 
 	// Atualizar no banco
-	err = s.repo.Update(user)
+	err = s.repo.Update(userEntity)
 	if err != nil {
 		return nil, err
 	}
 
-	return dto.FromUserDomain(user), nil
+	return userDTO.FromUserDomain(userEntity), nil
 }
 
-func (s *UserService) UpdatePhone(id string, input dto.UpdatePhoneInput) (*dto.UserOutput, error) {
+func (s *UserService) UpdatePhone(id string, input userDTO.UpdatePhoneInput) (*userDTO.UserOutput, error) {
 	// Buscar usuário existente
-	user, err := s.repo.GetByID(id)
+	userEntity, err := s.repo.GetByID(id)
 	if err != nil {
 		return nil, err
 	}
 
 	// Atualizar apenas o telefone
-	user.UpdatePhone(input.Phone)
+	userEntity.UpdatePhone(input.Phone)
 
 	// Validar se phone não está duplicado (exceto o próprio usuário)
-	if err := s.validator.ValidatePhoneUpdate(user); err != nil {
+	if err := s.validator.ValidatePhoneUpdate(userEntity); err != nil {
 		return nil, err
 	}
 
 	// Atualizar no banco
-	err = s.repo.Update(user)
+	err = s.repo.Update(userEntity)
 	if err != nil {
 		return nil, err
 	}
 
-	return dto.FromUserDomain(user), nil
+	return userDTO.FromUserDomain(userEntity), nil
 }
 
 func (s *UserService) Delete(id string) error {

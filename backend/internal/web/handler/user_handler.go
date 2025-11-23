@@ -7,7 +7,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-playground/validator/v10"
 	"github.com/j-ordep/mjcp/backend/internal/domain/apperrors"
-	"github.com/j-ordep/mjcp/backend/internal/dto"
+	userDTO "github.com/j-ordep/mjcp/backend/internal/dto/user"
 	"github.com/j-ordep/mjcp/backend/internal/service"
 	"github.com/j-ordep/mjcp/backend/internal/web/utils"
 )
@@ -25,7 +25,7 @@ func NewUserHandler(service *service.UserService) *UserHandler {
 }
 
 func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
-	var input dto.LoginUserInput
+	var input userDTO.LoginUserInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid request body"})
@@ -59,7 +59,7 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UserHandler) Create(w http.ResponseWriter, r *http.Request) {
-	var input dto.CreateUserInput
+	var input userDTO.CreateUserInput
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -153,7 +153,7 @@ func (h *UserHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var input dto.UpdateUserInput
+	var input userDTO.UpdateUserInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid request body"})
@@ -197,7 +197,7 @@ func (h *UserHandler) UpdatePhone(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var input dto.UpdatePhoneInput
+	var input userDTO.UpdatePhoneInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid request body"})

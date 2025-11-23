@@ -41,3 +41,11 @@ type AvailabilityRepository interface {
 	Update(availability *entity.Availability) error
 	Delete(id string) error
 }
+
+// PasswordResetTokenRepository define o contrato para operações com tokens de reset de senha
+type PasswordResetTokenRepository interface {
+	Create(token *entity.PasswordResetToken) error
+	GetByToken(token string) (*entity.PasswordResetToken, error)
+	MarkAsUsed(token string) error
+	DeleteExpiredTokens() error
+}

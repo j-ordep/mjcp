@@ -1,20 +1,10 @@
-package dto
+package user
 
 import (
 	"time"
 
 	"github.com/j-ordep/mjcp/backend/internal/domain/entity"
 )
-
-type LoginUserInput struct {
-	Email    string `json:"email" validate:"required,email"`
-	Password string `json:"password" validate:"required"`
-}
-
-type LoginUserOutput struct {
-	User  *UserOutput `json:"user"`
-	Token string      `json:"token"`
-}
 
 type CreateUserInput struct {
 	Name     string `json:"name" validate:"required,min=3,max=100"`
