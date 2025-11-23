@@ -40,8 +40,11 @@ func (s *Server) ConfigureRoutes() {
 	s.router.Group(func(r chi.Router) {
 		r.Use(mw.Authenticate)
 		r.Get("/users", userHandler.GetAll)
-		r.Get("/user", userHandler.GetByID)
 		r.Get("/user", userHandler.Search)
+		r.Get("/user/{id}", userHandler.GetByID)
+		r.Put("/user/{id}", userHandler.Update)
+		r.Patch("/user/{id}/phone", userHandler.UpdatePhone)
+		r.Delete("/user/{id}", userHandler.Delete)
 	})
 }
 

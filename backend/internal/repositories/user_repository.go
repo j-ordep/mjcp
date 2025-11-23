@@ -79,7 +79,30 @@ func (r *UserRepository) GetAll() ([]*entity.User, error) {
 }
 
 func (r *UserRepository) GetByID(id string) (*entity.User, error) {
-	return nil, nil
+	var user entity.User
+
+	err := r.db.QueryRow(`
+		SELECT id, name, email, password, phone, created_at, updated_at 
+		FROM users 
+		WHERE id = $1
+	`, id).Scan(
+		&user.ID,
+		&user.Name,
+		&user.Email,
+		&user.Password,
+		&user.Phone,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+
+	if err == sql.ErrNoRows {
+		return nil, apperrors.ErrUserNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
 }
 
 func (r *UserRepository) GetByEmail(email string) (*entity.User, error) {
@@ -164,9 +187,59 @@ func (r *UserRepository) Search(filters map[string]string) ([]*entity.User, erro
 }
 
 func (r *UserRepository) Update(user *entity.User) error {
+	stmt, err := r.db.Prepare(`
+		UPDATE users 
+		SET name = $1, email = $2, phone = $3, updated_at = $4
+		WHERE id = $5
+	`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	result, err := stmt.Exec(
+		user.Name,
+		user.Email,
+		user.Phone,
+		user.UpdatedAt,
+		user.ID,
+	)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return apperrors.ErrUserNotFound
+	}
+
 	return nil
 }
 
 func (r *UserRepository) Delete(id string) error {
+	stmt, err := r.db.Prepare(`DELETE FROM users WHERE id = $1`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	result, err := stmt.Exec(id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return apperrors.ErrUserNotFound
+	}
+
 	return nil
 }

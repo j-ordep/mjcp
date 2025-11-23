@@ -7,8 +7,8 @@ import (
 )
 
 type LoginUserInput struct {
-    Email    string `json:"email" validate:"required,email"`
-    Password string `json:"password" validate:"required"`
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required"`
 }
 
 type LoginUserOutput struct {
@@ -17,10 +17,20 @@ type LoginUserOutput struct {
 }
 
 type CreateUserInput struct {
-    Name     string `json:"name" validate:"required,min=3,max=100"`
-    Email    string `json:"email" validate:"required,email"`
-    Password string `json:"password" validate:"required,min=6"`
-    Phone    string `json:"phone" validate:"required"`
+	Name     string `json:"name" validate:"required,min=3,max=100"`
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required,min=6"`
+	Phone    string `json:"phone" validate:"required"`
+}
+
+type UpdateUserInput struct {
+	Name  string `json:"name" validate:"required,min=3,max=100"`
+	Email string `json:"email" validate:"required,email"`
+	Phone string `json:"phone" validate:"required"`
+}
+
+type UpdatePhoneInput struct {
+	Phone string `json:"phone" validate:"required"`
 }
 
 type UserOutput struct {

@@ -1,6 +1,8 @@
 package service
 
 import (
+	"time"
+
 	"github.com/j-ordep/mjcp/backend/internal/domain/apperrors"
 	"github.com/j-ordep/mjcp/backend/internal/domain/repository"
 	"github.com/j-ordep/mjcp/backend/internal/dto"
@@ -98,4 +100,66 @@ func (s *UserService) Search(filters map[string]string) ([]*dto.UserOutput, erro
 	}
 
 	return usersOutput, nil
+}
+
+func (s *UserService) Update(id string, input dto.UpdateUserInput) (*dto.UserOutput, error) {
+	// Buscar usuário existente
+	user, err := s.repo.GetByID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Atualizar campos
+	user.Name = input.Name
+	user.Email = input.Email
+	user.Phone = input.Phone
+	user.UpdatedAt = time.Now()
+
+	// Validar se email ou phone não estão duplicados (exceto o próprio usuário)
+	if err := s.validator.ValidateUserUpdate(user); err != nil {
+		return nil, err
+	}
+
+	// Atualizar no banco
+	err = s.repo.Update(user)
+	if err != nil {
+		return nil, err
+	}
+
+	return dto.FromUserDomain(user), nil
+}
+
+func (s *UserService) UpdatePhone(id string, input dto.UpdatePhoneInput) (*dto.UserOutput, error) {
+	// Buscar usuário existente
+	user, err := s.repo.GetByID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Atualizar apenas o telefone
+	user.UpdatePhone(input.Phone)
+
+	// Validar se phone não está duplicado (exceto o próprio usuário)
+	if err := s.validator.ValidatePhoneUpdate(user); err != nil {
+		return nil, err
+	}
+
+	// Atualizar no banco
+	err = s.repo.Update(user)
+	if err != nil {
+		return nil, err
+	}
+
+	return dto.FromUserDomain(user), nil
+}
+
+func (s *UserService) Delete(id string) error {
+	// Verificar se usuário existe
+	_, err := s.repo.GetByID(id)
+	if err != nil {
+		return err
+	}
+
+	// Deletar
+	return s.repo.Delete(id)
 }
