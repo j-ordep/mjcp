@@ -1,11 +1,16 @@
 import { MD3LightTheme, MD3DarkTheme } from "react-native-paper";
 
+/* 
+  ...MD3LightTheme copia todas as propriedades do tema padrão do Paper.
+  Dentro de colors: { ...MD3LightTheme.colors, ... }, 
+  copia todas as cores padrão e sobrescreve algumas (como primary, secondary, etc.) com suas próprias cores.
+*/
 export const lightTheme = {
   ...MD3LightTheme,
   colors: {
     ...MD3LightTheme.colors,
     primary: '#000000',           // preto para botões principais
-    secondary: '#ffae00',         // azul para destaques
+    secondary: '#ffae00',         // amarelo para destaques
     tertiary: '#10b981',          // verde (opcional)
     error: '#ef4444',             // vermelho para erros
     background: '#ffffff',        // cinza muito claro (gray-50)
@@ -29,21 +34,12 @@ export const lightTheme = {
   },
 };
 
-// export const lightTheme = {
-//   ...MD3LightTheme,
-//   colors: {
-//     ...MD3LightTheme.colors,
-//     primary: "#000",
-//     outline: "#000",
-//   },
-// };
-
-// export const darkTheme = {
-//   ...MD3DarkTheme,
-//   colors: {
-//     ...MD3DarkTheme.colors,
-//     primary: "#fff",
-//     outline: "#fff",
-//   },
-// };
+export const darkTheme = {
+  ...MD3DarkTheme,
+  colors: {
+    ...MD3DarkTheme.colors,
+    primary: "#fff",
+    outline: "#fff",
+  },
+};
 

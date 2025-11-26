@@ -1,10 +1,15 @@
-import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react-native";
+import { useState, useRef } from "react";
 import { Keyboard, TouchableWithoutFeedback, View, TouchableOpacity } from "react-native";
 import { TextInput, Button, Text } from "react-native-paper";
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [passwordVisible, setPasswordVisible] = useState(false);
+
+  // Referência para o campo de senha
+  const passwordRef = useRef<any>(null);
 
   const user = { email: "user1@gmail", password: "1234" };
 
@@ -16,7 +21,7 @@ export default function LoginScreen({ navigation }) {
   }
 
   function handleSignupClick() {
-    navigation.navigate("SignUp");
+    navigation.replace("SignUp");
   }
 
   return (
@@ -34,17 +39,28 @@ export default function LoginScreen({ navigation }) {
             value={email}
             onChangeText={setEmail}
             style={{ backgroundColor: 'transparent' }}
+            returnKeyType="next"
+            onSubmitEditing={() => passwordRef.current?.focus()}
           />
         </View>
 
         <View style={{ marginBottom: 32 }}>
           <TextInput
+            ref={passwordRef}
             label="Senha"
             mode="outlined"
             activeOutlineColor="black"
-            secureTextEntry
             value={password}
             onChangeText={setPassword}
+            secureTextEntry={!passwordVisible}
+            right={
+                <TextInput.Icon
+                  icon={() =>
+                    passwordVisible ? <EyeOff size={20}/> : <Eye size={20}/>
+                  }
+                  onPress={() => setPasswordVisible(!passwordVisible)}
+                />
+              }
             style={{ backgroundColor: 'transparent' }}
           />
         </View>

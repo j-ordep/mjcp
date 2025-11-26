@@ -1,15 +1,16 @@
-import { View, ScrollView } from "react-native";
-import { Text, Divider } from "react-native-paper";
-import Header from "../components/Header";
-import Button from "../components/Button";
+import { ScrollView, View } from "react-native";
+import { Divider, Text } from "react-native-paper";
+import CardButton from "../../components/button/CardButton";
+import Header from "../../components/Header";
 
 export default function EventDetailsScreen({ route, navigation }) {
   const { title, date, role } = route.params || {};
 
   return (
     <View className="flex-1 bg-white">
+
       <View className="px-4">
-        <Header 
+        <Header
           title="Detalhes do Evento"
           onNotificationPress={() => console.log('Notificações')}
         />
@@ -17,7 +18,7 @@ export default function EventDetailsScreen({ route, navigation }) {
 
       <ScrollView className="px-4">
         <Text className="text-3xl font-bold mb-4">{title}</Text>
-        
+
         <View className="mb-6">
           <Text className="text-gray-500 text-sm mb-1">Data e Hora</Text>
           <Text className="text-xl text-blue-600 font-semibold">{date}</Text>
@@ -44,14 +45,14 @@ export default function EventDetailsScreen({ route, navigation }) {
 
         <View className="flex-row gap-2 mt-8 mb-6">
           <View className="flex-1">
-            <Button variant="outline" onPress={() => navigation.goBack()}>
+            <CardButton variant="outline" onPress={() => navigation.goBack()}>
               Voltar
-            </Button>
+            </CardButton>
           </View>
           <View className="flex-1">
-            <Button variant="secondary" onPress={() => {}}>
+            <CardButton variant="secondary" onPress={() => { }}>
               Confirmar Presença
-            </Button>
+            </CardButton>
           </View>
         </View>
       </ScrollView>
