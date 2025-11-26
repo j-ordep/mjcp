@@ -1,13 +1,12 @@
 import "./global.css";
-import { StatusBar } from 'expo-status-bar';
 import React from "react";
 import { PaperProvider } from 'react-native-paper';
-import { Text, View } from 'react-native';
 import RootNavigation from './src/navigation/AppNavigator';
+import { theme } from './src/theme/theme';
 
 export default function App() {
   return (
-    <PaperProvider>
+    <PaperProvider theme={theme}>
       <RootNavigation/>
     </PaperProvider>
   );

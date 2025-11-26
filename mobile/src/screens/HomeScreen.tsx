@@ -1,38 +1,35 @@
-import { View } from "react-native";
-import { Avatar, IconButton, Text } from "react-native-paper";
+import { View, ScrollView } from "react-native";
+import EventCard from "../components/EventCard";
+import Header from "../components/Header";
 
 export default function HomeScreen() {
   return (
-    <View className="flex-1 bg-white pt-12 px-4">
+    <View className="flex-1 bg-white px-4">
+      
+      <Header 
+        title="Próximo evento"
+        onNotificationPress={() => console.log('Notificações')}
+        onAvatarPress={() => console.log('Perfil')}
+      />
 
-      {/* HEADER */}
-      <View className="flex-row items-center justify-between mb-6">
-        
-        {/* Menu */}
-        <IconButton
-          icon="menu"
-          size={28}
-          onPress={() => {}}
-        />
-
-        {/* Título */}
-        <Text variant="titleMedium" style={{ fontWeight: "600" }}>
-          Próximo evento
-        </Text>
-
-        {/* Ações à direita */}
-        <View className="flex-row items-center">
-          <IconButton
-            icon="bell-outline"
-            size={24}
-            onPress={() => {}}
-          />
-          <Avatar.Image 
-            size={32} 
-            source={{ uri: "" }}
-          />
-        </View>
-      </View>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 4 }}>
+        <EventCard title="Ensaio da Banda" date="25/11/2025 18:00" onPress={() => {}} />
+        <EventCard title="Reunião de Obreiros" date="26/11/2025 19:00" onPress={() => {}} />
+        <EventCard title="Reunião de Obreiros" date="26/11/2025 19:00" onPress={() => {}} />
+        <EventCard title="Reunião de Obreiros" date="26/11/2025 19:00" onPress={() => {}} />
+        <EventCard title="Reunião de Obreiros" date="26/11/2025 19:00" onPress={() => {}} />
+        <EventCard title="Reunião de Obreiros" date="26/11/2025 19:00" onPress={() => {}} />
+        <EventCard title="Reunião de Obreiros" date="26/11/2025 19:00" onPress={() => {}} />
+        <EventCard title="Reunião de Obreiros" date="26/11/2025 19:00" onPress={() => {}} />
+        <EventCard title="Reunião de Obreiros" date="26/11/2025 19:00" onPress={() => {}} />
+        <EventCard title="Reunião de Obreiros" date="26/11/2025 19:00" onPress={() => {}} />
+        <EventCard title="Reunião de Obreiros" date="26/11/2025 19:00" onPress={() => {}} />
+        <EventCard title="Reunião de Obreiros" date="26/11/2025 19:00" onPress={() => {}} />
+        <EventCard title="Reunião de Obreiros" date="26/11/2025 19:00" onPress={() => {}} />
+        <EventCard title="Reunião de Obreiros" date="26/11/2025 19:00" onPress={() => {}} />
+        <EventCard title="Reunião de Obreiros" date="26/11/2025 19:00" onPress={() => {}} />
+        <EventCard title="Reunião de Obreiros" date="26/11/2025 19:00" onPress={() => {}} />
+      </ScrollView>
 
     </View>
   );
