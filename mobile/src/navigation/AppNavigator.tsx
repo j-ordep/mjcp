@@ -1,20 +1,20 @@
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { Calendar, Home, User } from "lucide-react-native";
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
-import LoginScreen from "../screens/LoginScreen";
-import HomeScreen from "../screens/HomeScreen";
-import EventsScreen from "../screens/EventsScreen";
 import EventDetailsScreen from "../screens/EventDetailsScreen";
+import EventsScreen from "../screens/EventsScreen";
+import HomeScreen from "../screens/HomeScreen";
+import LoginScreen from "../screens/LoginScreen";
 import ProfileScreen from "../screens/ProfileScreen";
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 function MainTabs() {
   const insets = useSafeAreaInsets();
-  
+
   return (
     <Tab.Navigator
       screenOptions={{
@@ -33,33 +33,33 @@ function MainTabs() {
         },
       }}
     >
-      <Tab.Screen 
-        name="Home" 
+      <Tab.Screen
+        name="Home"
         component={HomeScreen}
         options={{
           tabBarLabel: 'Início',
-          tabBarIcon: ({ color }) => (
-            <MaterialCommunityIcons name="home" size={24} color={color} />
+          tabBarIcon: ({ color, size }) => (
+            <Home color={color} size={size ?? 24} />
           ),
         }}
       />
-      <Tab.Screen 
-        name="Events" 
+      <Tab.Screen
+        name="Events"
         component={EventsScreen}
         options={{
           tabBarLabel: 'Eventos',
-          tabBarIcon: ({ color }) => (
-            <MaterialCommunityIcons name="calendar" size={24} color={color} />
+          tabBarIcon: ({ color, size }) => (
+            <Calendar color={color} size={size ?? 24} />
           ),
         }}
       />
-      <Tab.Screen 
-        name="Profile" 
+      <Tab.Screen
+        name="Profile"
         component={ProfileScreen}
         options={{
           tabBarLabel: 'Perfil',
-          tabBarIcon: ({ color }) => (
-            <MaterialCommunityIcons name="account" size={24} color={color} />
+          tabBarIcon: ({ color, size }) => (
+            <User color={color} size={size ?? 24} />
           ),
         }}
       />
@@ -67,7 +67,7 @@ function MainTabs() {
   );
 }
 
-export default function RootNavigation() {
+export default function AppNavigator() {
   return (
     <SafeAreaProvider>
       <NavigationContainer>
