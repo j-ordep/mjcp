@@ -10,7 +10,7 @@ export default function LoginScreen({ navigation }) {
   function handleLogin() {
     if (!email || !password) return;
 
-    navigation.replace("Home");
+    navigation.replace("Main");
   }
 
   return (
