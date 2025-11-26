@@ -8,9 +8,16 @@ import EventsScreen from "../screens/EventsScreen";
 import HomeScreen from "../screens/HomeScreen";
 import LoginScreen from "../screens/LoginScreen";
 import ProfileScreen from "../screens/ProfileScreen";
+import SignUp from "../screens/SignUp";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
+
+export type RootStackParamList = {
+  Login: undefined;
+  Main: undefined;
+  EventDetails: { title: string; date: string; role?: string };
+};
 
 function MainTabs() {
   const insets = useSafeAreaInsets();
@@ -73,6 +80,7 @@ export default function AppNavigator() {
       <NavigationContainer>
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="SignUp" component={SignUp} />
           <Stack.Screen name="Main" component={MainTabs} />
           <Stack.Screen name="EventDetails" component={EventDetailsScreen} />
         </Stack.Navigator>

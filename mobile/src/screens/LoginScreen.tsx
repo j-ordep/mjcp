@@ -1,25 +1,28 @@
-import { useRef, useState } from "react";
-import { Keyboard, TouchableWithoutFeedback, View } from "react-native";
+import { useState } from "react";
+import { Keyboard, TouchableWithoutFeedback, View, TouchableOpacity } from "react-native";
 import { TextInput, Button, Text } from "react-native-paper";
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  const user = { email: "user1@gmail", password: "1234" };
 
   function handleLogin() {
-    if (!email || !password) return;
-
+    if (email !== user.email || password !== user.password) {
+      return;
+    }
     navigation.replace("Main");
+  }
+
+  function handleSignupClick() {
+    navigation.navigate("SignUp");
   }
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <View className="flex-1 justify-center p-8 bg-white">
-        <Text
-          variant="headlineMedium"
-          style={{ textAlign: "center", marginBottom: 32 }}
-        >
+        <Text variant="headlineMedium" style={{ textAlign: "center", marginBottom: 32 }}>
           Login
         </Text>
 
@@ -49,6 +52,12 @@ export default function LoginScreen({ navigation }) {
         <Button mode="contained" buttonColor="black" onPress={handleLogin}>
           Entrar
         </Button>
+
+        <TouchableOpacity onPress={handleSignupClick} style={{ marginTop: 24 }}>
+          <Text style={{ color: "#2563eb", textAlign: "center", textDecorationLine: "underline" }}>
+            Cadastre-se
+          </Text>
+        </TouchableOpacity>
       </View>
     </TouchableWithoutFeedback>
   );
