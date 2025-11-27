@@ -33,29 +33,29 @@ backend/
 - ✅ Endpoints de exemplo funcionais
 - ✅ Compilado e testado com sucesso
 
-### 2. Mobile - Flutter
+### 2. Mobile - React Native
 
 **Localização**: `mobile/`
 
 **Organização por Features**:
 ```
 mobile/
-├── core/             # Núcleo (constants, theme, utils)
-├── features/         # Features organizadas por módulo
-│   ├── volunteers/
-│   ├── schedules/
-│   └── ministries/
-└── shared/           # Componentes compartilhados
-    ├── models/
-    ├── widgets/
-    └── services/
+├── src/
+│   ├── components/      # Componentes reutilizáveis
+│   ├── screens/         # Telas organizadas por domínio
+│   ├── navigation/      # Navegação (React Navigation)
+│   └── theme/           # Tema e estilos globais
+├── assets/              # Imagens e recursos
+├── App.tsx              # Entry point
+├── global.css           # Estilos NativeWind
 ```
 
 **Características**:
-- ✅ Feature-first organization
-- ✅ Provider para state management
+- ✅ Organização por features
+- ✅ Context API para state management
+- ✅ Expo para build e execução
+- ✅ NativeWind para estilos
 - ✅ Estrutura escalável
-- ✅ Configurações de lint e análise
 
 ### 3. Web - Next.js 14
 
@@ -185,8 +185,11 @@ web/
 - `.env.example`: Variáveis de ambiente de exemplo
 
 ### Mobile
-- `pubspec.yaml`: Dependências Flutter
-- `analysis_options.yaml`: Configuração de lint
+- `package.json`: Dependências React Native/Expo
+- `babel.config.js`: Configuração Babel
+- `metro.config.js`: Configuração Metro
+- `tsconfig.json`: Configuração TypeScript
+- `tailwind.config.js`: Configuração NativeWind
 
 ### Web
 - `package.json`: Dependências Node.js
@@ -255,7 +258,7 @@ web/
 
 - [x] Estrutura de monorepo criada
 - [x] Backend com Clean Architecture
-- [x] Mobile com Flutter estruturado
+- [x] Mobile com React Native estruturado
 - [x] Web com Next.js 14
 - [x] Documentação completa
 - [x] Exemplos de código

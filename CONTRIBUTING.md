@@ -46,10 +46,10 @@ Abra um Pull Request no GitHub com uma descrição clara.
 - Escreva testes para novas funcionalidades
 - Mantenha a Clean Architecture
 
-### Mobile (Flutter)
-- Use `flutter format`
-- Siga o Dart style guide
-- Widgets devem ser const quando possível
+### Mobile (React Native)
+- Use `eslint` e `prettier`
+- Siga o style guide do projeto
+- Componentes em `PascalCase`, funções/variáveis em `camelCase`
 - Organize código por features
 
 ### Web (Next.js)
@@ -67,7 +67,7 @@ Execute os testes antes de fazer push:
 cd backend && go test ./...
 
 # Mobile
-cd mobile && flutter test
+cd mobile && npm test
 
 # Web
 cd web && npm test

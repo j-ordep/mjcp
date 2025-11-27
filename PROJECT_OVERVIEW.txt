@@ -344,10 +344,10 @@ BACKEND:
 
 MOBILE:
   ✅ Estrutura de pastas criada
-  ✅ Configurações (pubspec, analysis)
-  ✅ Main.dart com app básico
-  ✅ Models de exemplo
-  ✅ Constants definidos
+  ✅ Configurações (package.json, babel, metro, tsconfig)
+  ✅ App.tsx com app básico
+  ✅ Componentes e telas de exemplo
+  ✅ Estilos com NativeWind
 
 WEB:
   ✅ Next.js 14 configurado
