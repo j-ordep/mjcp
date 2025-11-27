@@ -7,6 +7,7 @@ import EventDetailsScreen from "../screens/app/EventDetailsScreen";
 import LoginScreen from "../screens/auth/LoginScreen";
 import SignUpScreen from "../screens/auth/SignUpScreen";
 import EventsScreen from "../screens/app/EventsScreen";
+import EditProfile from "../screens/app/EditProfileScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -15,6 +16,7 @@ export type RootStackParamList = {
   Main: undefined;
   EventsScreen: undefined;
   EventDetails: { title: string; date: string; role?: string };
+  EditProfile: undefined;
 };
 
 export default function AppNavigator() {
@@ -27,6 +29,7 @@ export default function AppNavigator() {
           <Stack.Screen name="Main" component={TabNavigator} />
           <Stack.Screen name="EventDetails" component={EventDetailsScreen} />
           <Stack.Screen name="EventsScreen" component={EventsScreen} />
+          <Stack.Screen name="EditProfile" component={EditProfile} />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>
