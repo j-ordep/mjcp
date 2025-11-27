@@ -49,7 +49,6 @@ export default function LoginScreen({ navigation }) {
             ref={passwordRef}
             label="Senha"
             mode="outlined"
-            activeOutlineColor="black"
             value={password}
             onChangeText={setPassword}
             secureTextEntry={!passwordVisible}

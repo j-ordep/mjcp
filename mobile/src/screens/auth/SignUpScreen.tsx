@@ -37,7 +37,7 @@ export default function SignUp({ navigation }) {
         <Text variant="headlineMedium" style={{ textAlign: "center", marginTop: 115, marginBottom: 32 }}>
           Cadastre-se
         </Text>
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 4 }}>
+        <ScrollView keyboardShouldPersistTaps="always" showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 4 }}>
           <View style={{ flexDirection: "row", gap: 12, marginBottom: 16 }}>
             <View style={{ flex: 1 }}>
               <TextInput
