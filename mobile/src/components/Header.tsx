@@ -42,7 +42,7 @@ export default function Header({
         <TouchableOpacity onPress={() => navigation.navigate("Profile")}>
           <Avatar.Image 
             size={32} 
-            source={{ uri: avatarUri || "https://i.pravatar.cc/150?img=3" }}
+            source={{ uri: avatarUri || "https://avatar.iran.liara.run/public/46" }}
             style={{ backgroundColor: '#e5e7eb' }}
           />
         </TouchableOpacity>

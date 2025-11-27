@@ -20,7 +20,7 @@ export default function CardButton({ children, onPress, variant = 'primary' }: B
   };
 
   return (
-    <TouchableOpacity onPress={onPress} className={`px-6 py-4 rounded-lg ${variants[variant]}`}>
+    <TouchableOpacity onPress={onPress} className={`px-6 py-3 rounded-lg ${variants[variant]}`}>
       <Text className={`text-center font-semibold ${textVariants[variant]}`}>
         {children}
       </Text>

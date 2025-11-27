@@ -1,6 +1,6 @@
 import { View } from "react-native";
 import { Card, Text, useTheme } from "react-native-paper";
-import CardButton from "./button/CardButton";
+import CardButton from "../button/CardButton";
 
 interface EventCardProps {
   title: string;
@@ -36,7 +36,7 @@ export default function EventCard({ title, date, role, department, onConfirm, on
             <Text style={{ fontSize: 16, fontWeight: "bold", marginBottom: 2 }}>{role}</Text>
           </View>
         </View>
-        
+
       </Card.Content>
       <View className="flex-row gap-2 px-4 pb-4">
         <View className="flex-1">
