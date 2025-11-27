@@ -1,6 +1,6 @@
 # MJCP - Sistema de Escalas para Igreja
 
-Plataforma completa para organizar escalas, ministérios e disponibilidade de voluntários na igreja. Arquitetura em monorepo com backend em Go, mobile em Flutter e web em Next.js.
+Plataforma completa para organizar escalas, ministérios e disponibilidade de voluntários na igreja. Arquitetura em monorepo com backend em Go, mobile em React Native e web em Next.js.
 
 ## 📋 Sobre o Projeto
 
@@ -19,7 +19,7 @@ Este projeto utiliza uma arquitetura de monorepo, contendo 3 aplicações princi
 ```
 mjcp/
 ├── backend/          # API REST em Go com Clean Architecture
-├── mobile/           # App mobile em Flutter
+├── mobile/           # App mobile em React Native (Expo)
 ├── web/              # Aplicação web em Next.js
 └── README.md         # Este arquivo
 ```
@@ -32,10 +32,12 @@ mjcp/
 
 [Ver documentação completa do backend →](./backend/README.md)
 
-### Mobile (Flutter)
-- **Tecnologia**: Flutter 3.0+
-- **State Management**: Provider
-- **Arquitetura**: Feature-first organization
+### Mobile (React Native)
+- **Tecnologia**: React Native + Expo
+- **State Management**: React Context/Provider
+- **Navegação**: React Navigation
+- **UI**: React Native Paper, NativeWind (Tailwind para RN)
+- **Arquitetura**: Organização por features
 
 [Ver documentação completa do mobile →](./mobile/README.md)
 
@@ -82,38 +84,14 @@ O backend segue os princípios de Clean Architecture, garantindo:
 3. **Independence**: Frameworks, UI, DB e serviços externos são detalhes
 4. **Testability**: Cada camada pode ser testada independentemente
 
+
 ## 🚀 Como Começar
 
-### Pré-requisitos
+Consulte os READMEs de cada módulo para instruções detalhadas de instalação, configuração e variáveis de ambiente:
 
-- **Backend**: Go 1.21+, PostgreSQL
-- **Mobile**: Flutter SDK 3.0+, Android Studio/Xcode
-- **Web**: Node.js 18+, npm
-
-### Instalação Rápida
-
-#### Backend
-```bash
-cd backend
-go mod download
-go run cmd/api/main.go
-```
-Servidor rodará em: http://localhost:8080
-
-#### Mobile
-```bash
-cd mobile
-flutter pub get
-flutter run
-```
-
-#### Web
-```bash
-cd web
-npm install
-npm run dev
-```
-Aplicação rodará em: http://localhost:3000
+- [Backend](./backend/README.md)
+- [Mobile](./mobile/README.md)
+- [Web](./web/README.md)
 
 ## 📚 Boas Práticas
 
@@ -137,28 +115,10 @@ Aplicação rodará em: http://localhost:3000
 - ✅ Implementar autenticação e autorização
 - ✅ HTTPS em produção
 
+
 ## 🧪 Testes
 
-### Backend
-```bash
-cd backend
-go test ./...
-go test ./... -coverprofile=coverage.out
-```
-
-### Mobile
-```bash
-cd mobile
-flutter test
-flutter test --coverage
-```
-
-### Web
-```bash
-cd web
-npm test
-npm run test:coverage
-```
+Consulte os READMEs de cada módulo para instruções de testes específicas.
 
 ## 📦 Estrutura de Dados
 
@@ -206,19 +166,20 @@ Volunteer ─┬─→ Availability
 - [ ] Analytics
 - [ ] Testes E2E
 
+
 ## 🛠️ Tecnologias
 
 ### Backend
 - Go 1.21+
 - Gin (Web Framework)
-- PostgreSQL (Database)
-- JWT (Authentication)
+- PostgreSQL
+- JWT
 
 ### Mobile
-- Flutter 3.0+
-- Provider (State Management)
-- HTTP (API Client)
-- Shared Preferences (Local Storage)
+- React Native + Expo
+- React Navigation
+- React Native Paper
+- NativeWind
 
 ### Web
 - Next.js 14
@@ -252,31 +213,13 @@ Volunteer ─┬─→ Availability
 
 ### Nomenclatura
 - **Backend (Go)**: `PascalCase` para tipos, `camelCase` para funções
-- **Mobile (Dart)**: `PascalCase` para classes, `camelCase` para variáveis
+- **Mobile (React Native/TS)**: `PascalCase` para componentes, `camelCase` para funções/variáveis
 - **Web (TS/JS)**: `PascalCase` para componentes, `camelCase` para funções
+
 
 ## 🔐 Variáveis de Ambiente
 
-### Backend
-```env
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=postgres
-DB_PASSWORD=password
-DB_NAME=mjcp
-JWT_SECRET=your-secret-key
-PORT=8080
-```
-
-### Mobile
-```
-API_URL=http://localhost:8080/api/v1
-```
-
-### Web
-```env
-NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1
-```
+As variáveis de ambiente estão documentadas nos READMEs de cada módulo.
 
 ## 📄 Licença
 
