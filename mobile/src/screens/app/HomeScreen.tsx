@@ -1,14 +1,14 @@
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { Ban, Calendar } from "lucide-react-native";
 import { useState } from "react";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { RootStackParamList } from "../../navigation/AppNavigator";
-import { Ban, Calendar } from "lucide-react-native";
 import EventCard from "../../components/card/EventCard";
+import MiniCard from "../../components/card/MiniCard";
 import Header from "../../components/Header";
 import NotificationsModal from "../../components/NotificationsModal";
-import MiniCard from "../../components/card/MiniCard";
+import { RootStackParamList } from "../../navigation/AppNavigator";
 
 export default function HomeScreen() {
   const [modalVisible, setModalVisible] = useState(false);
@@ -31,9 +31,25 @@ export default function HomeScreen() {
   }
 
   const events = [
-    { title: "Ensaio da Banda", date: "25/11/2025 18:00", departament: "louvor", role: "Cantor" },
-    { title: "Reunião de Obreiros", date: "26/11/2025 19:00", role: "Músico" },
-    { title: "Culto de Celebração", date: "27/11/2025 19:00", role: "Tecladista" },
+    {
+      title: "Ensaio da Banda",
+      date: "25/11/2025 18:00",
+      location: "Sala de ensaio",
+      departament: "louvor",
+      role: "Cantor"
+    },
+    {
+      title: "Reunião de Obreiros",
+      date: "26/11/2025 19:00",
+      location: "Auditório",
+      role: "Músico"
+    },
+    {
+      title: "Culto de Celebração",
+      date: "27/11/2025 19:00",
+      location: "Templo principal",
+      role: "Tecladista"
+    },
     { title: "Ensaio da Banda", date: "25/11/2025 18:00", role: "Cantor" },
     { title: "Reunião de Obreiros", date: "26/11/2025 19:00", role: "Músico" },
     { title: "Culto de Celebração", date: "27/11/2025 19:00", role: "Tecladista" },
@@ -68,6 +84,7 @@ export default function HomeScreen() {
             key={idx}
             title={event.title}
             date={event.date}
+            location={event.location}
             department={event.departament}
             role={event.role}
             onDetails={() => handleDetails(event)}
