@@ -1,12 +1,14 @@
-import { TouchableOpacity, Text } from "react-native";
+import { Text, TouchableOpacity } from "react-native";
 
 interface ButtonProps {
   children: string;
   onPress?: () => void;
   variant?: 'primary' | 'secondary' | 'outline';
+  rounded?: boolean;
+  extraRounded?: boolean;
 }
 
-export default function CardButton({ children, onPress, variant = 'primary' }: ButtonProps) {
+export default function CardButton({ children, onPress, variant = 'primary', rounded = false, extraRounded = false }: ButtonProps) {
   const variants = {
     primary: 'bg-black border-2 border-black',
     secondary: 'bg-[#ffae00] border-2 border-[#ffae00]',
@@ -19,8 +21,13 @@ export default function CardButton({ children, onPress, variant = 'primary' }: B
     outline: 'text-black',
   };
 
+  const radius = extraRounded ? 'rounded-2xl' : rounded ? 'rounded-xl' : 'rounded-lg';
+
   return (
-    <TouchableOpacity onPress={onPress} className={`px-6 py-3 rounded-lg ${variants[variant]}`}>
+    <TouchableOpacity
+      onPress={onPress}
+      className={`px-7 py-4 ${radius} ${variants[variant]}`}
+    >
       <Text className={`text-center font-semibold ${textVariants[variant]}`}>
         {children}
       </Text>
