@@ -9,7 +9,7 @@ export default function MiniCard({ title, icon, onPress, backgroundColor = "#fff
       onPress={onPress}
       style={{
         backgroundColor,
-        borderRadius: 12,
+        borderRadius: 18,
         paddingVertical: 10,
         flex: 1,
         height: 80,
@@ -17,7 +17,7 @@ export default function MiniCard({ title, icon, onPress, backgroundColor = "#fff
         alignItems: "center",
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.06,
+        shadowOpacity: 0.2,
         shadowRadius: 6,
         elevation: 1,
       }}
