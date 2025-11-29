@@ -5,6 +5,7 @@ import { Avatar, Divider, IconButton, Text } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import BottomSheetMenu from "../../components/utils/BottomSheetMenu";
 import ActivityCard from "../../components/card/ActivityCard";
+import ProfileHeader from "../../components/Header/ProfileHeader";
 
 export default function ProfileScreen({ navigation }) {
   const [showMenu, setShowMenu] = useState(false);
@@ -34,25 +35,15 @@ export default function ProfileScreen({ navigation }) {
   ];
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#f5f6fa" }} edges={['top']}>
-      {/* Header */}
-      <View style={{
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: "#f3f4f6",
-      }}>
-        <IconButton icon={() => <ChevronLeft size={24} />} onPress={() => navigation.goBack()} />
-        <Text style={{ fontWeight: "bold", fontSize: 16 }}>Perfil</Text>
-        <IconButton icon={() => <MoreVertical size={24} />} onPress={() => setShowMenu(true)} />
-      </View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff"}}>
+      <ProfileHeader
+        onBack={() => navigation.goBack()}
+        onMenu={() => setShowMenu(true)}
+      />
 
       <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
         {/* Perfil */}
-        <View style={{ alignItems: "center", marginTop: 32 }}>
+        <View style={{ alignItems: "center", marginTop: 8 }}>
           <Avatar.Image
             size={110}
             source={{ uri: "https://images.unsplash.com/photo-1531299983330-093763e1d963?auto=format&fit=facearea&w=256&h=256&facepad=2" }}
