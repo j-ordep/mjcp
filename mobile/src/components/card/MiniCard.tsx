@@ -12,17 +12,14 @@ export default function MiniCard({ title, icon, onPress, backgroundColor = "#fff
         borderRadius: 12,
         paddingVertical: 10,
         flex: 1,
-        minWidth: screenWidth * 0.38,
-        maxWidth: screenWidth * 0.45,
         height: 80,
         marginHorizontal: 4,
         alignItems: "center",
-
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 2,
+        shadowOpacity: 0.06,
+        shadowRadius: 6,
+        elevation: 1,
       }}
     >
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center" }}>

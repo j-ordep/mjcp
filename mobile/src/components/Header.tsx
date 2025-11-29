@@ -1,5 +1,6 @@
 import { TouchableOpacity, View } from "react-native";
 import { Avatar, IconButton, Text } from "react-native-paper";
+import { Bell } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 
@@ -27,15 +28,13 @@ export default function Header({
 
   return (
     <View className="flex-row items-center justify-between mb-3">
-      {/* Título */}
       <Text variant="headlineSmall" style={{ fontWeight: "800" }}>
         {title}
       </Text>
 
-      {/* Ações à direita */}
       <View className="flex-row items-center gap-2">
         <IconButton
-          icon="bell-outline"
+          icon={() => <Bell size={23} color="#222" />}
           size={24}
           onPress={onNotificationPress}
         />

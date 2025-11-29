@@ -63,12 +63,12 @@ export default function EventCard({
       </Card.Content>
       <View style={{ flexDirection: "row", gap: 12, paddingHorizontal: 16, paddingBottom: 16 }}>
         <View style={{ flex: 1 }}>
-          <CardButton variant="outline" onPress={onSwap} rounded extraRounded>
+          <CardButton variant="outline" onPress={onSwap}>
             Preciso trocar
           </CardButton>
         </View>
         <View style={{ flex: 1 }}>
-          <CardButton variant="primary" onPress={onConfirm} rounded extraRounded>
+          <CardButton variant="primary" onPress={onConfirm}>
             Confirmar
           </CardButton>
         </View>

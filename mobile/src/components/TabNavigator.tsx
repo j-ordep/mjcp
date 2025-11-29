@@ -1,9 +1,10 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { Calendar, Home, User } from "lucide-react-native";
+import { DoorOpen, Home, Music, User } from "lucide-react-native";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import HomeScreen from "../screens/app/HomeScreen";
-import EventsScreen from "../screens/app/EventsScreen";
+import MusicScreen from "../screens/app/MusicScreen";
 import ProfileScreen from "../screens/app/ProfileScreen";
+import RoomsScreen from "../screens/app/RoomsScreen";
 
 const Tab = createBottomTabNavigator();
 
@@ -39,12 +40,22 @@ export default function TabNavigator() {
         }}
       />
       <Tab.Screen
-        name="Events"
-        component={EventsScreen}
+        name="Rooms"
+        component={RoomsScreen}
         options={{
-          tabBarLabel: 'Eventos',
+          tabBarLabel: 'Salas',
           tabBarIcon: ({ color, size }) => (
-            <Calendar color={color} size={size ?? 24} />
+            <DoorOpen color={color} size={size ?? 24} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Music"
+        component={MusicScreen}
+        options={{
+          tabBarLabel: 'Músicas',
+          tabBarIcon: ({ color, size }) => (
+            <Music color={color} size={size ?? 24} />
           ),
         }}
       />
