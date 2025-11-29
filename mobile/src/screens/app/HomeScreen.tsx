@@ -1,6 +1,6 @@
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Ban, Calendar } from "lucide-react-native";
+import { Calendar, CalendarX } from "lucide-react-native";
 import { useState } from "react";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -26,8 +26,12 @@ export default function HomeScreen() {
     alert("Presença confirmada!");
   }
 
-  function handleCalendar() {
-    navigation.navigate("EventsScreen"); // Renomeie EventsScreen para CalendarScreen!
+  function handleBlockDatesScreen() {
+    navigation.navigate("BlockDatesScreen");
+  }
+
+  function handleEventDetails() {
+    navigation.navigate("EventsScreen");
   }
 
   const events = [
@@ -65,17 +69,18 @@ export default function HomeScreen() {
       />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 2 }}>
-        <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 16 }}>
+        <View style={{ flexDirection: "row", gap: 12, marginBottom: 16 }}>
           <MiniCard
             title="Bloquear data"
-            icon={<Calendar />}
-            onPress={handleCalendar}
+            icon={<CalendarX />}
+            onPress={handleBlockDatesScreen}
           />
           <MiniCard
-            title="Indisponível"
-            icon={<Ban size={32} color="#ffae00" />}
-            onPress={handleCalendar}
-            backgroundColor="#f3f4f6"
+            title="Ver Eventos"
+            textColor="#fff"
+            icon={<Calendar color="#fff" />}
+            onPress={handleEventDetails}
+            backgroundColor="#000000"
           />
         </View>
 
