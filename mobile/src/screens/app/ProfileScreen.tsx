@@ -3,6 +3,7 @@ import { useState } from "react";
 import { ScrollView, View } from "react-native";
 import { Avatar, Divider, IconButton, Text } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
+import BottomSheetMenu from "../../components/utils/BottomSheetMenu";
 import ActivityCard from "../../components/card/ActivityCard";
 
 export default function ProfileScreen({ navigation }) {
@@ -17,11 +18,18 @@ export default function ProfileScreen({ navigation }) {
       timestamp: "2d",
     },
     {
-      icon: "music",
-      title: "Você destacou Salmos 23:1",
-      subtitle: "NVI",
-      content: "O Senhor é o meu pastor; nada me faltará...",
-      timestamp: "5d",
+      icon: "calendar",
+      title: "Escala - Culto Dominical",
+      subtitle: "Louvor e Adoração",
+      content: "Ministério de Música • Domingo, 19h • Participantes: 8 membros",
+      timestamp: "7d",
+    },
+    {
+      icon: "calendar",
+      title: "Escala - Culto Dominical",
+      subtitle: "Louvor e Adoração",
+      content: "Ministério de Música • Domingo, 19h • Participantes: 8 membros",
+      timestamp: "10d",
     },
   ];
 
@@ -50,7 +58,7 @@ export default function ProfileScreen({ navigation }) {
             source={{ uri: "https://images.unsplash.com/photo-1531299983330-093763e1d963?auto=format&fit=facearea&w=256&h=256&facepad=2" }}
             style={{ marginBottom: 12 }}
           />
-          <Text style={{ fontSize: 22, fontWeight: "bold", marginTop: 8 }}>Maria Silva Santos</Text>
+          <Text style={{ fontSize: 22, fontWeight: "bold", marginTop: 8 }}>Nome da Silva</Text>
         </View>
 
         {/* Email e Telefone */}
@@ -68,8 +76,8 @@ export default function ProfileScreen({ navigation }) {
         </View>
 
         {/* Cards de Atividades Recentes */}
-        <View style={{ marginTop: 28 }}>
-          <Text style={{ fontWeight: "bold", fontSize: 16, marginBottom: 20, marginLeft: 20 }}>Atividades Recentes</Text>
+        <View style={{ marginTop: 15 }}>
+          <Text style={{ fontWeight: "bold", fontSize: 16, marginBottom: 10, marginLeft: 20 }}>Atividades Recentes</Text>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -81,6 +89,12 @@ export default function ProfileScreen({ navigation }) {
           </ScrollView>
         </View>
       </ScrollView>
+      <BottomSheetMenu
+        isOpen={showMenu}
+        onClose={() => setShowMenu(false)}
+        onEdit={() => navigation.navigate("EditProfile")}
+        onLogout={() => {/* lógica de logout */ }}
+      />
     </SafeAreaView>
   );
 }

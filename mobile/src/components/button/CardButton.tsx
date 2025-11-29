@@ -1,4 +1,5 @@
 import { Text, TouchableOpacity } from "react-native";
+import { lightTheme } from "../../theme/theme";
 
 interface ButtonProps {
   children: string;
@@ -21,6 +22,7 @@ const buttonStyles = {
 
 export default function CardButton({ children, onPress, variant = 'primary' }: ButtonProps) {
   const style = buttonStyles[variant];
+  const b = lightTheme[variant]
 
   return (
     <TouchableOpacity

@@ -1,15 +1,15 @@
+import { Clock, Users } from "lucide-react-native";
 import { View } from "react-native";
 import { Text } from "react-native-paper";
-import { Users, Clock } from "lucide-react-native";
 import CardButton from "../button/CardButton";
 
 export default function RoomCard({
   name,
   capacity,
   status,
-  occupiedBy,
-  occupiedDepartment,
-  occupiedTime,
+  occupiedBy = "",
+  occupiedDepartment = "",
+  occupiedTime = "",
   onReserve,
   onViewDetails,
 }) {
@@ -20,6 +20,7 @@ export default function RoomCard({
       borderWidth: 1,
       borderColor: "#ececec",
       padding: 18,
+      minHeight: 180,
       marginBottom: 16,
       shadowColor: "#000",
       shadowOpacity: 0.03,

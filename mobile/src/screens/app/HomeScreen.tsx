@@ -6,8 +6,8 @@ import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import EventCard from "../../components/card/EventCard";
 import MiniCard from "../../components/card/MiniCard";
-import Header from "../../components/Header";
-import NotificationsModal from "../../components/NotificationsModal";
+import Header from "../../components/Header/HeaderPrimary";
+import NotificationsModal from "../../components/utils/NotificationsModal";
 import { RootStackParamList } from "../../navigation/AppNavigator";
 
 export default function HomeScreen() {
@@ -39,7 +39,7 @@ export default function HomeScreen() {
       title: "Ensaio da Banda",
       date: "25/11/2025 18:00",
       location: "Sala de ensaio",
-      departament: "louvor",
+      department: "louvor",
       role: "Cantor"
     },
     {
@@ -90,7 +90,7 @@ export default function HomeScreen() {
             title={event.title}
             date={event.date}
             location={event.location}
-            department={event.departament}
+            department={event.department}
             role={event.role}
             onDetails={() => handleDetails(event)}
             onSwap={handleSwap}

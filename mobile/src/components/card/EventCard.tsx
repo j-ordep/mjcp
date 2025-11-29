@@ -3,16 +3,18 @@ import { View } from "react-native";
 import { Card, Text } from "react-native-paper";
 import CardButton from "../button/CardButton";
 
-export default function EventCard({
-  title,
-  date,
-  location,
-  role,
-  department,
-  onConfirm,
-  onSwap,
-  onDetails,
-}) {
+interface EventCardProps {
+  title: string;
+  date: string;
+  location?: string
+  role: string;
+  department?: string;
+  onConfirm?: () => void;
+  onSwap?: () => void;
+  onDetails?: () => void;
+}
+
+export default function EventCard( props: EventCardProps ) {
   return (
     <Card
       style={{
@@ -24,26 +26,26 @@ export default function EventCard({
         backgroundColor: "#fff",
         elevation: 0,
       }}
-      onPress={onDetails}
+      onPress={props.onDetails}
     >
       <Card.Content style={{ paddingVertical: 18 }}>
         <Text style={{ fontWeight: "bold", fontSize: 20, marginBottom: 6 }}>
-          {title}
+          {props.title}
         </Text>
         <Text style={{ color: "#222", fontWeight: "500", marginBottom: 6 }}>
-          {date}
+          {props.date}
         </Text>
-        {location && (
+        {props.location && (
           <View
             style={{
               flexDirection: "row",
               alignItems: "center",
-              marginTop: 10, // espaçamento acima
-              marginBottom: 14, // espaçamento abaixo
+              marginTop: 10,
+              marginBottom: 14,
             }}
           >
             <MapPin size={18} color="#888" style={{ marginRight: 4 }} />
-            <Text style={{ color: "#888", fontSize: 15 }}>{location}</Text>
+            <Text style={{ color: "#888", fontSize: 15 }}>{props.location}</Text>
           </View>
         )}
         <View style={{ flexDirection: "row", gap: 32, marginTop: 4 }}>
@@ -51,24 +53,24 @@ export default function EventCard({
             <Text style={{ color: "#888", fontSize: 13, marginBottom: 2 }}>
               Departamento
             </Text>
-            <Text style={{ fontSize: 16, fontWeight: "bold" }}>{department}</Text>
+            <Text style={{ fontSize: 16, fontWeight: "bold" }}>{props.department}</Text>
           </View>
           <View style={{ flex: 1 }}>
             <Text style={{ color: "#888", fontSize: 13, marginBottom: 2 }}>
               Função
             </Text>
-            <Text style={{ fontSize: 16, fontWeight: "bold" }}>{role}</Text>
+            <Text style={{ fontSize: 16, fontWeight: "bold" }}>{props.role}</Text>
           </View>
         </View>
       </Card.Content>
       <View style={{ flexDirection: "row", gap: 12, paddingHorizontal: 16, paddingBottom: 16 }}>
         <View style={{ flex: 1 }}>
-          <CardButton variant="outline" onPress={onSwap}>
+          <CardButton variant="outline" onPress={props.onSwap}>
             Preciso trocar
           </CardButton>
         </View>
         <View style={{ flex: 1 }}>
-          <CardButton variant="primary" onPress={onConfirm}>
+          <CardButton variant="primary" onPress={props.onConfirm}>
             Confirmar
           </CardButton>
         </View>
