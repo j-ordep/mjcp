@@ -45,7 +45,7 @@ export default function EventDetailsScreen({ navigation }) {
       {/* Header */}
       <HeaderSecondary navigation={navigation} title={"Detalhes do Evento"} />
 
-      <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 120 }}>
+      <ScrollView contentContainerStyle={{ padding: 20 }}>
         {/* Event Info Card */}
         <EventInfoCard {...event} />
 
@@ -70,16 +70,12 @@ export default function EventDetailsScreen({ navigation }) {
           </View>
         </View>
 
-        {/* Fixed Action Buttons */}
+        {/* Buttons */}
         <View style={{
-          position: "absolute",
           left: 0,
           right: 0,
           bottom: 0,
           backgroundColor: "#fff",
-          borderTopWidth: 1,
-          borderTopColor: "#f3f4f6",
-          padding: 20,
           flexDirection: "row",
           gap: 12,
         }}>
