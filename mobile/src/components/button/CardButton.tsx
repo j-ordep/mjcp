@@ -3,32 +3,45 @@ import { Text, TouchableOpacity } from "react-native";
 interface ButtonProps {
   children: string;
   onPress?: () => void;
-  variant?: 'primary' | 'secondary' | 'outline';
-  rounded?: boolean;
-  extraRounded?: boolean;
+  variant?: 'primary' | 'outline';
 }
 
-export default function CardButton({ children, onPress, variant = 'primary', rounded = false, extraRounded = false }: ButtonProps) {
-  const variants = {
-    primary: 'bg-black border-2 border-black',
-    secondary: 'bg-[#ffae00] border-2 border-[#ffae00]',
-    outline: 'bg-transparent border-2 border-gray-300',
-  };
+const buttonStyles = {
+  primary: {
+    backgroundColor: "#000",
+    borderColor: "#000",
+    color: "#fff",
+  },
+  outline: {
+    backgroundColor: "#fff",
+    borderColor: "#d1d5db",
+    color: "#000",
+  },
+};
 
-  const textVariants = {
-    primary: 'text-white',
-    secondary: 'text-white',
-    outline: 'text-black',
-  };
-
-  const radius = extraRounded ? 'rounded-2xl' : rounded ? 'rounded-xl' : 'rounded-lg';
+export default function CardButton({ children, onPress, variant = 'primary' }: ButtonProps) {
+  const style = buttonStyles[variant];
 
   return (
     <TouchableOpacity
       onPress={onPress}
-      className={`px-7 py-4 ${radius} ${variants[variant]}`}
+      style={{
+        flex: 1,
+        backgroundColor: style.backgroundColor,
+        borderRadius: 18,
+        borderWidth: 2,
+        borderColor: style.borderColor,
+        paddingVertical: 16,
+        justifyContent: "center",
+        alignItems: "center",
+      }}
     >
-      <Text className={`text-center font-semibold ${textVariants[variant]}`}>
+      <Text style={{
+        textAlign: "center",
+        fontWeight: "600",
+        fontSize: 16,
+        color: style.color,
+      }}>
         {children}
       </Text>
     </TouchableOpacity>
