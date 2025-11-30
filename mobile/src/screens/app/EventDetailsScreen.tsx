@@ -2,7 +2,7 @@ import { Users } from "lucide-react-native";
 import { ScrollView, View } from "react-native";
 import { Text } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
-import CardButton from "../../components/button/CardButton";
+import DefaultButton from "../../components/button/DefaultButton";
 import EventInfoCard from "../../components/card/EventInfoCard";
 import MemberCard from "../../components/card/MemberCard";
 import TeamStatusCard from "../../components/card/TeamStatusCard";
@@ -42,11 +42,9 @@ export default function EventDetailsScreen({ navigation }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
-      {/* Header */}
-      <HeaderSecondary navigation={navigation} title={"Detalhes do Evento"} />
+      <HeaderSecondary title="Detalhes do Evento" onBack={() => navigation.goBack()} />
 
       <ScrollView contentContainerStyle={{ padding: 20 }}>
-        {/* Event Info Card */}
         <EventInfoCard {...event} />
 
         {/* Team Members Section */}
@@ -59,7 +57,6 @@ export default function EventDetailsScreen({ navigation }) {
             </View>
           </View>
 
-          {/* Confirmation Status Summary */}
           <TeamStatusCard confirmed={confirmedCount} pending={totalCount - confirmedCount} />
 
           {/* Members List */}
@@ -80,14 +77,14 @@ export default function EventDetailsScreen({ navigation }) {
           gap: 12,
         }}>
           <View style={{ flex: 1 }}>
-            <CardButton variant="outline" onPress={handleRequestChange}>
+            <DefaultButton variant="outline" onPress={handleRequestChange}>
               Preciso trocar
-            </CardButton>
+            </DefaultButton>
           </View>
           <View style={{ flex: 1 }}>
-            <CardButton variant="primary" onPress={handleConfirm}>
+            <DefaultButton variant="primary" onPress={handleConfirm}>
               Confirmar presença
-            </CardButton>
+            </DefaultButton>
           </View>
         </View>
       </ScrollView>

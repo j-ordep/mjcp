@@ -1,7 +1,7 @@
 import { Calendar as CalendarIcon } from "lucide-react-native";
 import { useState } from "react";
 import { ScrollView, TouchableOpacity, View } from "react-native";
-import { Text } from "react-native-paper";
+import { Text } from "react-native-paper"
 import { SafeAreaView } from "react-native-safe-area-context";
 import RoomCard from "../../components/card/RoomCard";
 import HeaderSecondary from "../../components/Header/HeaderSecondary";
@@ -11,13 +11,23 @@ export default function EventsScreen({ navigation }) {
   const [selectedTime, setSelectedTime] = useState("19:00");
 
   const timeSlots = [
+    "07:00",
     "08:00",
+    "09:00",
     "10:00",
+    "11:00",
+    "12:00",
+    "13:00",
     "14:00",
+    "15:00",
     "16:00",
+    "17:00",
     "18:00",
     "19:00",
     "20:00",
+    "21:00",
+    "22:00",
+    "23:00",
   ];
 
   const rooms = [
@@ -38,27 +48,15 @@ export default function EventsScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }} edges={['top', 'left', 'right']}>
-
-      <HeaderSecondary navigation={navigation} title={"Salas"} />
+    <SafeAreaView className="flex-1 bg-white" edges={['top', 'left', 'right']}>
+      <HeaderSecondary title={"Salas"} onBack={() => navigation.goBack()} />
 
       {/* Rooms List */}
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 32 }}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 32 }} showsHorizontalScrollIndicator={false}>
         {/* Date Selector */}
-        <View style={{ marginBottom: 16 }}>
-          <Text style={{ color: "#888", marginBottom: 6, fontSize: 14 }}>Data</Text>
-          <TouchableOpacity
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              backgroundColor: "#f3f4f6",
-              borderRadius: 14,
-              borderWidth: 1,
-              borderColor: "#e5e7eb",
-              paddingVertical: 12,
-              paddingHorizontal: 16,
-            }}
-          >
+        <View className="mb-4">
+           <Text style={{ color: "#888", marginBottom: 6, fontSize: 14 }}>Data</Text>
+          <TouchableOpacity className="flex-row items-center bg-gray-100 rounded-xl border border-gray-200 py-3 px-4">
             <CalendarIcon size={20} color="#666" style={{ marginRight: 8 }} />
             <Text style={{ fontSize: 15 }}>{selectedDate}</Text>
           </TouchableOpacity>
@@ -94,7 +92,7 @@ export default function EventsScreen({ navigation }) {
           </ScrollView>
         </View>
 
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 12, marginBottom: 12 }}>
+        <View className="flex-row items-center justify-between mt-3 mb-2">
           <Text style={{ color: "#888", fontSize: 14 }}>
             {rooms.filter((r) => r.status === "available").length} salas disponíveis
           </Text>

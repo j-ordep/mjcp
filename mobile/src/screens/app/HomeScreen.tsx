@@ -6,7 +6,7 @@ import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import EventCard from "../../components/card/EventCard";
 import MiniCard from "../../components/card/MiniCard";
-import Header from "../../components/Header/HeaderPrimary";
+import HeaderPrimary from "../../components/Header/HeaderPrimary";
 import NotificationsModal from "../../components/utils/NotificationsModal";
 import { RootStackParamList } from "../../navigation/AppNavigator";
 
@@ -60,16 +60,16 @@ export default function HomeScreen() {
   ];
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff", paddingHorizontal: 16 }}
-      edges={['top', 'left', 'right']}
-    >
-      <Header
+    <SafeAreaView className="flex-1 bg-white px-4" edges={['top', 'left', 'right']}>
+      <HeaderPrimary
         title="Próximos eventos"
         onNotificationPress={() => setModalVisible(true)}
+        onAvatarPress={() => navigation.navigate("Profile")}
+        avatarUri=""
       />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 2 }}>
-        <View style={{ flexDirection: "row", gap: 12, marginBottom: 16 }}>
+        <View className="flex-row gap-3 mb-4">
           <MiniCard
             title="Bloquear data"
             icon={<CalendarX />}
@@ -78,9 +78,9 @@ export default function HomeScreen() {
           <MiniCard
             title="Ver Eventos"
             textColor="#fff"
+            backgroundColor="#000000"
             icon={<Calendar color="#fff" />}
             onPress={handleEventDetails}
-            backgroundColor="#000000"
           />
         </View>
 

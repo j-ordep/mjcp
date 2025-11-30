@@ -1,7 +1,7 @@
 import { MapPin } from "lucide-react-native";
 import { View } from "react-native";
 import { Card, Text } from "react-native-paper";
-import CardButton from "../button/CardButton";
+import DefaultButton from "../button/DefaultButton";
 
 interface EventCardProps {
   title: string;
@@ -14,17 +14,14 @@ interface EventCardProps {
   onDetails?: () => void;
 }
 
-export default function EventCard( props: EventCardProps ) {
+export default function EventCard(props: EventCardProps) {
   return (
     <Card
       style={{
         marginBottom: 16,
-        borderRadius: 18,
-        borderWidth: 1,
-        borderColor: "#ececec",
-        minHeight: 230,
+        borderRadius: 20,
+        paddingVertical: 8,
         backgroundColor: "#fff",
-        elevation: 0,
       }}
       onPress={props.onDetails}
     >
@@ -36,26 +33,19 @@ export default function EventCard( props: EventCardProps ) {
           {props.date}
         </Text>
         {props.location && (
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginTop: 10,
-              marginBottom: 14,
-            }}
-          >
+          <View className="flex-row items-center mt-2 mb-3">
             <MapPin size={18} color="#888" style={{ marginRight: 4 }} />
             <Text style={{ color: "#888", fontSize: 15 }}>{props.location}</Text>
           </View>
         )}
-        <View style={{ flexDirection: "row", gap: 32, marginTop: 4 }}>
-          <View style={{ flex: 1 }}>
+        <View className="flex-row gap-8 mt-1">
+          <View className="flex-1">
             <Text style={{ color: "#888", fontSize: 13, marginBottom: 2 }}>
               Departamento
             </Text>
             <Text style={{ fontSize: 16, fontWeight: "bold" }}>{props.department}</Text>
           </View>
-          <View style={{ flex: 1 }}>
+          <View className="flex-1">
             <Text style={{ color: "#888", fontSize: 13, marginBottom: 2 }}>
               Função
             </Text>
@@ -63,16 +53,17 @@ export default function EventCard( props: EventCardProps ) {
           </View>
         </View>
       </Card.Content>
-      <View style={{ flexDirection: "row", gap: 12, paddingHorizontal: 16, paddingBottom: 16 }}>
-        <View style={{ flex: 1 }}>
-          <CardButton variant="outline" onPress={props.onSwap}>
+      <View className="flex-row gap-3 px-4 pb-4">
+        <View className="flex-1">
+          <DefaultButton variant="outline" onPress={props.onSwap}>
             Preciso trocar
-          </CardButton>
+          </DefaultButton>
         </View>
-        <View style={{ flex: 1 }}>
-          <CardButton variant="primary" onPress={props.onConfirm}>
+
+        <View className="flex-1">
+          <DefaultButton variant="primary" onPress={props.onConfirm}>
             Confirmar
-          </CardButton>
+          </DefaultButton>
         </View>
       </View>
     </Card>

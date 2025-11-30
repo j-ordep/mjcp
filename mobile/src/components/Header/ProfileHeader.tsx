@@ -7,17 +7,15 @@ interface ProfileHeaderProps {
   onMenu: () => void;
 }
 
-export default function ProfileHeader({ onBack, onMenu }: ProfileHeaderProps) {
+export default function ProfileHeader(props: ProfileHeaderProps) {
   return (
-    <View style={{
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      paddingHorizontal: 16,
-    }}>
-      <IconButton icon={() => <ChevronLeft size={24} />} onPress={onBack} />
-      <Text style={{ fontWeight: "bold", fontSize: 16 }}>Perfil</Text>
-      <IconButton icon={() => <MoreVertical size={24} />} onPress={onMenu} />
+    <View className="flex-row items-center justify-between px-1.5 pt-1.5">
+      <IconButton
+        icon={() => <ChevronLeft size={24} />} 
+        onPress={props.onBack} />
+      <Text style={{ fontWeight: "bold", fontSize: 18 }}>Perfil</Text>
+      <IconButton icon={() => <MoreVertical size={24} />}
+        onPress={props.onMenu} />
     </View>
   );
 }

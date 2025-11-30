@@ -5,27 +5,15 @@ const screenWidth = Dimensions.get("window").width;
 
 export default function MiniCard({ title, icon, onPress, backgroundColor = "#fff", textColor = "#000000" }) {
   return (
-    <TouchableOpacity
+     <TouchableOpacity
       onPress={onPress}
-      style={{
-        backgroundColor,
-        borderRadius: 18,
-        paddingVertical: 10,
-        flex: 1,
-        height: 80,
-        marginHorizontal: 4,
-        alignItems: "center",
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 6,
-        elevation: 1,
-      }}
-    >
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center" }}>
+      className="flex-1 min-h-[76px] mx-1.5 mt-1 items-center rounded-2xl py-2 shadow"
+      style={{ backgroundColor }}>
+      
+      <View className="flex-row items-center justify-center pt-1">
         {icon}
       </View>
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+      <View className="flex-1 items-center justify-center">
         <Text style={{ fontWeight: "bold", fontSize: 13, textAlign: "center", color: textColor }}>
           {title}
         </Text>

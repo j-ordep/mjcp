@@ -1,7 +1,7 @@
 import { ChevronLeft, MoreVertical } from "lucide-react-native";
 import { useState } from "react";
 import { ScrollView, View } from "react-native";
-import { Avatar, Divider, IconButton, Text } from "react-native-paper";
+import { Avatar, Divider, Text } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import BottomSheetMenu from "../../components/utils/BottomSheetMenu";
 import ActivityCard from "../../components/card/ActivityCard";
@@ -35,15 +35,15 @@ export default function ProfileScreen({ navigation }) {
   ];
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff"}}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff"}} edges={['top', 'left', 'right']}>
       <ProfileHeader
         onBack={() => navigation.goBack()}
         onMenu={() => setShowMenu(true)}
       />
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 2 }}>
         {/* Perfil */}
-        <View style={{ alignItems: "center", marginTop: 8 }}>
+        <View style={{ alignItems: "center", marginTop: 12 }}>
           <Avatar.Image
             size={110}
             source={{ uri: "https://images.unsplash.com/photo-1531299983330-093763e1d963?auto=format&fit=facearea&w=256&h=256&facepad=2" }}
@@ -53,7 +53,7 @@ export default function ProfileScreen({ navigation }) {
         </View>
 
         {/* Email e Telefone */}
-        <View style={{ marginTop: 24, marginHorizontal: 24 }}>
+        <View style={{ marginTop: 30, marginHorizontal: 24 }}>
           <View style={{ paddingVertical: 12 }}>
             <Text style={{ color: "#888", marginBottom: 2 }}>Email</Text>
             <Text style={{ fontSize: 15, marginBottom: 0 }}>maria.santos@email.com</Text>
@@ -67,7 +67,7 @@ export default function ProfileScreen({ navigation }) {
         </View>
 
         {/* Cards de Atividades Recentes */}
-        <View style={{ marginTop: 15 }}>
+        <View style={{ marginTop: 30 }}>
           <Text style={{ fontWeight: "bold", fontSize: 16, marginBottom: 10, marginLeft: 20 }}>Atividades Recentes</Text>
           <ScrollView
             horizontal

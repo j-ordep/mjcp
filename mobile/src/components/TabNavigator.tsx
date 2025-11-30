@@ -20,9 +20,7 @@ export default function TabNavigator() {
         tabBarStyle: {
           borderTopWidth: 0,
           borderTopColor: '#e5e7eb',
-          height: 60 + insets.bottom,
-          paddingBottom: insets.bottom > 0 ? insets.bottom : 10,
-          paddingTop: 10,
+          height: 45 + (insets.bottom > 0 ? insets.bottom : 24),          
         },
         tabBarLabelStyle: {
           fontSize: 12,

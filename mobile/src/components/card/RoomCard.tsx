@@ -1,7 +1,7 @@
 import { Clock, Users } from "lucide-react-native";
 import { View } from "react-native";
 import { Text } from "react-native-paper";
-import CardButton from "../button/CardButton";
+import DefaultButton from "../button/DefaultButton";
 
 export default function RoomCard({
   name,
@@ -14,27 +14,10 @@ export default function RoomCard({
   onViewDetails,
 }) {
   return (
-    <View style={{
-      backgroundColor: "#fff",
-      borderRadius: 18,
-      borderWidth: 1,
-      borderColor: "#ececec",
-      padding: 18,
-      minHeight: 180,
-      marginBottom: 16,
-      shadowColor: "#000",
-      shadowOpacity: 0.03,
-      shadowRadius: 2,
-      elevation: 1,
-    }}>
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+    <View className="bg-white rounded-2xl border border-[#ececec] p-4 min-h-[80px] mb-4 shadow-sm">
+      <View className="flex-row items-center justify-between mb-1.5">
         <Text style={{ fontWeight: "bold", fontSize: 16 }}>{name}</Text>
-        <View style={{
-          backgroundColor: status === "available" ? "#eafcf3" : "#f6f6f6",
-          borderRadius: 10,
-          paddingHorizontal: 12,
-          paddingVertical: 4,
-        }}>
+        <View className={`rounded-xl px-3 py-1 ${status === "available" ? "bg-green-50" : "bg-gray-100"}`}>
           <Text style={{
             color: status === "available" ? "#22c55e" : "#888",
             fontWeight: "bold",
@@ -44,36 +27,31 @@ export default function RoomCard({
           </Text>
         </View>
       </View>
-      <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}>
+      <View className="flex-row items-center mb-2.5">
         <Users size={16} color="#888" style={{ marginRight: 6 }} />
         <Text style={{ color: "#888", fontSize: 13 }}>Até {capacity} pessoas</Text>
       </View>
       {status === "occupied" && (
-        <View style={{
-          backgroundColor: "#f6f6f6",
-          borderRadius: 12,
-          padding: 12,
-          marginBottom: 10,
-        }}>
+        <View className="bg-gray-100 rounded-xl p-3 mb-2.5">
           <Text style={{ fontWeight: "bold", fontSize: 15 }}>{occupiedBy}</Text>
           <Text style={{ color: "#888", fontSize: 13 }}>{occupiedDepartment}</Text>
-          <View style={{ flexDirection: "row", alignItems: "center", marginTop: 4 }}>
+          <View className="flex-row items-center mt-1">
             <Clock size={15} color="#888" style={{ marginRight: 4 }} />
             <Text style={{ color: "#888", fontSize: 13 }}>{occupiedTime}</Text>
           </View>
         </View>
       )}
-      <View style={{ flexDirection: "row", gap: 12 }}>
-        <View style={{ flex: 1 }}>
-          <CardButton variant="outline" onPress={onViewDetails}>
+      <View className="flex-row gap-3">
+        <View className="flex-1">
+          <DefaultButton variant="outline" onPress={onViewDetails}>
             Ver detalhes
-          </CardButton>
+          </DefaultButton>
         </View>
         {status === "available" && (
-          <View style={{ flex: 1 }}>
-            <CardButton variant="primary" onPress={onReserve}>
+          <View className="flex-1">
+            <DefaultButton variant="primary" onPress={onReserve}>
               Reservar
-            </CardButton>
+            </DefaultButton>
           </View>
         )}
       </View>

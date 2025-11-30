@@ -1,5 +1,6 @@
-import { Modal, Portal, Text, Button, Divider } from "react-native-paper";
-import { View, ScrollView } from "react-native";
+import { ScrollView, View } from "react-native";
+import { Divider, Modal, Portal, Text } from "react-native-paper";
+import DefaultButton from "../button/DefaultButton";
 
 interface NotificationsModalProps {
   visible: boolean;
@@ -48,16 +49,16 @@ export default function NotificationsModal({ visible, onDismiss }: Notifications
         contentContainerStyle={{
           margin: 32,
           backgroundColor: "#fff",
-          borderRadius: 16,
+          borderRadius: 30,
           padding: 24,
           maxHeight: 500,
         }}
       >
-        <Text variant="titleMedium" style={{ marginBottom: 16 }}>Notificações</Text>
+        <Text variant="titleMedium" style={{ textAlign: "center", paddingBottom: 10 }}>Notificações</Text>
         {notifications.length === 0 ? (
           <Text>Nenhuma notificação no momento.</Text>
         ) : (
-          <ScrollView style={{ maxHeight: 350 }}>
+          <ScrollView style={{ maxHeight: 350 }} showsVerticalScrollIndicator={false}>
             {notifications.map((n, idx) => (
               <View
                 key={n.id}
@@ -82,7 +83,10 @@ export default function NotificationsModal({ visible, onDismiss }: Notifications
             ))}
           </ScrollView>
         )}
-        <Button style={{ marginTop: 24 }} mode="contained" onPress={onDismiss}>Fechar</Button>
+        <View className="mt-2">
+          <DefaultButton variant="primary" onPress={onDismiss}>Fechar</DefaultButton>
+        </View>
+        {/* <Button style={{ marginTop: 24 }} mode="contained" onPress={onDismiss}>Fechar</Button> */}
       </Modal>
     </Portal>
   );
