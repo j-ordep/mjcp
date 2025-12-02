@@ -20,7 +20,7 @@ export default function BottomSheetMenu({
     <ModalBottomSheet isOpen={isOpen} onClose={onClose} height={320} backdropOpacity={0.3}>
       <TouchableOpacity
         onPress={() => { onEdit(); onClose(); }}
-        className="flex-row items-center py-3"
+        className="flex-row items-center py-4"
       >
         <Edit3 size={20} color="#222" style={{ marginRight: 16 }} />
         <Text style={{ fontSize: 16 }}>Editar Perfil</Text>
@@ -28,7 +28,7 @@ export default function BottomSheetMenu({
 
       <TouchableOpacity
         onPress={() => { onClose(); alert("Compartilhar perfil") }}
-        className="flex-row items-center py-3"
+        className="flex-row items-center py-4"
       >
         <Share2 size={20} color="#222" style={{ marginRight: 16 }} />
         <Text style={{ fontSize: 16 }}>Compartilhar perfil</Text>
@@ -36,7 +36,7 @@ export default function BottomSheetMenu({
 
       <TouchableOpacity
         onPress={() => { onClose(); alert("Configurações de Notificação") }}
-        className="flex-row items-center py-3"
+        className="flex-row items-center py-4"
       >
         <Bell size={20} color="#222" style={{ marginRight: 16 }} />
         <Text style={{ fontSize: 16 }}>Configurações de Notificação</Text>
