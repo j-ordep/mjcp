@@ -1,4 +1,3 @@
-import { ChevronLeft, MoreVertical } from "lucide-react-native";
 import { useState } from "react";
 import { ScrollView, View } from "react-native";
 import { Avatar, Divider, Text } from "react-native-paper";
@@ -35,15 +34,11 @@ export default function ProfileScreen({ navigation }) {
   ];
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff"}} edges={['top', 'left', 'right']}>
-      <ProfileHeader
-        onBack={() => navigation.goBack()}
-        onMenu={() => setShowMenu(true)}
-      />
-
+    <SafeAreaView className="flex-1 bg-white" edges={['top', 'left', 'right']}>
+      <ProfileHeader onBack={() => navigation.goBack()} onMenu={() => setShowMenu(true)} />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 2 }}>
         {/* Perfil */}
-        <View style={{ alignItems: "center", marginTop: 12 }}>
+        <View className="items-center mt-3">
           <Avatar.Image
             size={110}
             source={{ uri: "https://images.unsplash.com/photo-1531299983330-093763e1d963?auto=format&fit=facearea&w=256&h=256&facepad=2" }}
@@ -53,13 +48,13 @@ export default function ProfileScreen({ navigation }) {
         </View>
 
         {/* Email e Telefone */}
-        <View style={{ marginTop: 30, marginHorizontal: 24 }}>
-          <View style={{ paddingVertical: 12 }}>
+        <View className="mt-8 px-6">
+          <View className="py-3">
             <Text style={{ color: "#888", marginBottom: 2 }}>Email</Text>
             <Text style={{ fontSize: 15, marginBottom: 0 }}>maria.santos@email.com</Text>
             <Divider style={{ marginTop: 10, marginBottom: 0 }} />
           </View>
-          <View style={{ paddingVertical: 12 }}>
+          <View className="py-3">
             <Text style={{ color: "#888", marginBottom: 2 }}>Telefone</Text>
             <Text style={{ fontSize: 15, marginBottom: 0 }}>(11) 98765-4321</Text>
             <Divider style={{ marginTop: 10, marginBottom: 0 }} />
@@ -67,7 +62,7 @@ export default function ProfileScreen({ navigation }) {
         </View>
 
         {/* Cards de Atividades Recentes */}
-        <View style={{ marginTop: 30 }}>
+        <View className="mt-8">
           <Text style={{ fontWeight: "bold", fontSize: 16, marginBottom: 10, marginLeft: 20 }}>Atividades Recentes</Text>
           <ScrollView
             horizontal
