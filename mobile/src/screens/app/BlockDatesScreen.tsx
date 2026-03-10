@@ -1,3 +1,4 @@
+import { useNavigation } from "@react-navigation/native";
 import { useState } from "react";
 import { View } from "react-native";
 import { Calendar } from "react-native-calendars";
@@ -7,19 +8,27 @@ import HeaderSecondary from "../../components/Header/HeaderSecondary";
 import DefaultButton from "../../components/button/DefaultButton";
 
 export default function BlockDatesScreen() {
+  const navigation = useNavigation();
   const [selectedDates, setSelectedDates] = useState<Record<string, true>>({});
 
   const selectedCount = Object.keys(selectedDates).length;
   const canBlock = selectedCount > 0;
 
-  const markedDates = Object.keys(selectedDates).reduce<Record<string, any>>((acc, key) => {
-    acc[key] = { selected: true, selectedColor: "#111111", selectedTextColor: "#ffffff" };
-    return acc;
-  }, {});
+  const markedDates = Object.keys(selectedDates).reduce<Record<string, any>>(
+    (acc, key) => {
+      acc[key] = {
+        selected: true,
+        selectedColor: "#111111",
+        selectedTextColor: "#ffffff",
+      };
+      return acc;
+    },
+    {},
+  );
 
   function onDayPress(day: { dateString: string }) {
     const dateStr = day.dateString;
-    setSelectedDates(prev => {
+    setSelectedDates((prev) => {
       const next = { ...prev };
       if (next[dateStr]) {
         delete next[dateStr];
@@ -30,22 +39,23 @@ export default function BlockDatesScreen() {
     });
   }
 
-  function onBack() {
-    // integrate with navigation if available
-  }
-
   function blockAction() {
     // TODO: integrate with backend
-    // For now, just close
+    navigation.goBack();
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }} >
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
       <View className="flex-1 bg-white">
-        <HeaderSecondary title="Bloquear Datas" onBack={onBack} />
+        <HeaderSecondary
+          title="Bloquear Datas"
+          onBack={() => navigation.goBack()}
+        />
 
         <View className="px-5 mt-10">
-          <Text style={{ color: "#6b7280", marginBottom: 10, textAlign: "center" }}>
+          <Text
+            style={{ color: "#6b7280", marginBottom: 10, textAlign: "center" }}
+          >
             Selecione os dias em que você estará indisponível
           </Text>
 
@@ -66,7 +76,9 @@ export default function BlockDatesScreen() {
 
             <View className="mt-4">
               <Text style={{ color: "#6b7280" }}>
-                {selectedCount > 0 ? `${selectedCount} data(s) selecionada(s)` : "Nenhum dia selecionado"}
+                {selectedCount > 0
+                  ? `${selectedCount} data(s) selecionada(s)`
+                  : "Nenhum dia selecionado"}
               </Text>
             </View>
           </View>
@@ -76,10 +88,18 @@ export default function BlockDatesScreen() {
         <View className="px-5 pb-6 pt-4 bg-white">
           <View className="flex-row gap-4">
             <View className="flex-1">
-              <DefaultButton variant="outline">Cancelar</DefaultButton>
+              <DefaultButton
+                variant="outline"
+                onPress={() => navigation.goBack()}
+              >
+                Cancelar
+              </DefaultButton>
             </View>
             <View className="flex-1">
-              <DefaultButton variant="primary" onPress={canBlock ? blockAction : undefined}>
+              <DefaultButton
+                variant="primary"
+                onPress={canBlock ? blockAction : undefined}
+              >
                 {canBlock ? `Bloquear (${selectedCount})` : "Bloquear"}
               </DefaultButton>
             </View>
