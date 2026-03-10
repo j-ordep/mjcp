@@ -50,7 +50,7 @@
 - [x] Layout da tela com lista de todos os eventos
 - [x] Filtros (Todos, Próximos, Passados)
 - [x] Busca/pesquisa de eventos
-- [ ] Paginação ou infinite scroll
+- [x] Paginação / infinite scroll com FlatList
 - [x] Navegação para EventDetails ao clicar
 
 ### EventDetailsScreen
