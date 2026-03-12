@@ -1,13 +1,16 @@
 import { Calendar as CalendarIcon } from "lucide-react-native";
 import { useState } from "react";
 import { ScrollView, TouchableOpacity, View } from "react-native";
-import { Text } from "react-native-paper"
+import { Text } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import RoomCard from "../../components/card/RoomCard";
 import HeaderSecondary from "../../components/Header/HeaderSecondary";
+import CalendarModal from "../../components/utils/CalendarModal";
 
 export default function EventsScreen({ navigation }) {
   const [selectedDate, setSelectedDate] = useState("27/11/2025");
+  const [selectedDateISO, setSelectedDateISO] = useState("2025-11-27");
+  const [calendarVisible, setCalendarVisible] = useState(false);
   const [selectedTime, setSelectedTime] = useState("19:00");
 
   const timeSlots = [
@@ -32,9 +35,25 @@ export default function EventsScreen({ navigation }) {
 
   const rooms = [
     { id: 1, name: "Sala de Ensaio 1", capacity: 15, status: "available" },
-    { id: 2, name: "Sala de Ensaio 2", capacity: 20, status: "occupied", occupiedBy: "Banda de Louvor", occupiedDepartment: "Ministério de Música", occupiedTime: "19:00 - 21:00" },
+    {
+      id: 2,
+      name: "Sala de Ensaio 2",
+      capacity: 20,
+      status: "occupied",
+      occupiedBy: "Banda de Louvor",
+      occupiedDepartment: "Ministério de Música",
+      occupiedTime: "19:00 - 21:00",
+    },
     { id: 3, name: "Auditório Principal", capacity: 100, status: "available" },
-    { id: 4, name: "Sala de Reunião", capacity: 12, status: "occupied", occupiedBy: "Reunião de Líderes", occupiedDepartment: "Liderança", occupiedTime: "19:00 - 20:30" },
+    {
+      id: 4,
+      name: "Sala de Reunião",
+      capacity: 12,
+      status: "occupied",
+      occupiedBy: "Reunião de Líderes",
+      occupiedDepartment: "Liderança",
+      occupiedTime: "19:00 - 20:30",
+    },
     { id: 5, name: "Sala de Oração", capacity: 8, status: "available" },
     { id: 6, name: "Estúdio de Gravação", capacity: 6, status: "available" },
   ];
@@ -48,15 +67,27 @@ export default function EventsScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={['top', 'left', 'right']}>
+    <SafeAreaView className="flex-1 bg-white" edges={["top", "left", "right"]}>
       <HeaderSecondary title={"Salas"} onBack={() => navigation.goBack()} />
 
       {/* Rooms List */}
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 32 }} showsHorizontalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={{
+          paddingHorizontal: 20,
+          paddingTop: 20,
+          paddingBottom: 32,
+        }}
+        showsHorizontalScrollIndicator={false}
+      >
         {/* Date Selector */}
         <View className="mb-4">
-           <Text style={{ color: "#888", marginBottom: 6, fontSize: 14 }}>Data</Text>
-          <TouchableOpacity className="flex-row items-center bg-gray-100 rounded-xl border border-gray-200 py-3 px-4">
+          <Text style={{ color: "#888", marginBottom: 6, fontSize: 14 }}>
+            Data
+          </Text>
+          <TouchableOpacity
+            className="flex-row items-center bg-gray-100 rounded-xl border border-gray-200 py-3 px-4"
+            onPress={() => setCalendarVisible(true)}
+          >
             <CalendarIcon size={20} color="#666" style={{ marginRight: 8 }} />
             <Text style={{ fontSize: 15 }}>{selectedDate}</Text>
           </TouchableOpacity>
@@ -64,8 +95,14 @@ export default function EventsScreen({ navigation }) {
 
         {/* Time Slots */}
         <View style={{ marginBottom: 8 }}>
-          <Text style={{ color: "#888", marginBottom: 6, fontSize: 14 }}>Horário</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+          <Text style={{ color: "#888", marginBottom: 6, fontSize: 14 }}>
+            Horário
+          </Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ gap: 8 }}
+          >
             {timeSlots.map((time) => (
               <TouchableOpacity
                 key={time}
@@ -80,11 +117,13 @@ export default function EventsScreen({ navigation }) {
                   marginRight: 4,
                 }}
               >
-                <Text style={{
-                  color: selectedTime === time ? "#fff" : "#222",
-                  fontWeight: selectedTime === time ? "bold" : "normal",
-                  fontSize: 15,
-                }}>
+                <Text
+                  style={{
+                    color: selectedTime === time ? "#fff" : "#222",
+                    fontWeight: selectedTime === time ? "bold" : "normal",
+                    fontSize: 15,
+                  }}
+                >
                   {time}
                 </Text>
               </TouchableOpacity>
@@ -94,7 +133,8 @@ export default function EventsScreen({ navigation }) {
 
         <View className="flex-row items-center justify-between mt-3 mb-2">
           <Text style={{ color: "#888", fontSize: 14 }}>
-            {rooms.filter((r) => r.status === "available").length} salas disponíveis
+            {rooms.filter((r) => r.status === "available").length} salas
+            disponíveis
           </Text>
         </View>
 
@@ -107,6 +147,20 @@ export default function EventsScreen({ navigation }) {
           />
         ))}
       </ScrollView>
+
+      <CalendarModal
+        visible={calendarVisible}
+        mode="single"
+        initialDate={selectedDateISO}
+        onClose={() => setCalendarVisible(false)}
+        onConfirm={(payload) => {
+          if (payload.date) {
+            const [y, m, d] = payload.date.split("-");
+            setSelectedDate(`${d}/${m}/${y}`);
+            setSelectedDateISO(payload.date);
+          }
+        }}
+      />
     </SafeAreaView>
   );
 }
