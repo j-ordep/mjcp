@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Modal, View } from "react-native";
+import { Modal, TouchableOpacity, View } from "react-native";
 import { Calendar } from "react-native-calendars";
 import { Text } from "react-native-paper";
 
@@ -125,9 +125,9 @@ export default function CalendarModal({
             <Text style={{ fontWeight: "bold", fontSize: 16, flex: 1 }}>
               Selecionar data
             </Text>
-            <Text onPress={onClose} style={{ fontSize: 14 }}>
-              Fechar
-            </Text>
+            <TouchableOpacity onPress={onClose}>
+              <Text style={{ fontSize: 14 }}>Fechar</Text>
+            </TouchableOpacity>
           </View>
           <Calendar
             markingType={mode === "range" ? "period" : undefined}
@@ -144,17 +144,19 @@ export default function CalendarModal({
           <View className="flex-row gap-4 mt-5">
             <View className="flex-1">
               {/* Outline */}
-              <View className="rounded-2xl border-2 py-3.5 justify-center items-center w-full bg-white border-gray-300">
-                <Text
-                  onPress={onClose}
-                  style={{ fontWeight: "600", fontSize: 16 }}
-                >
+              <TouchableOpacity
+                onPress={onClose}
+                className="rounded-2xl border-2 py-3.5 justify-center items-center w-full bg-white border-gray-300"
+              >
+                <Text style={{ fontWeight: "600", fontSize: 16 }}>
                   Cancelar
                 </Text>
-              </View>
+              </TouchableOpacity>
             </View>
             <View className="flex-1 opacity-100">
-              <View
+              <TouchableOpacity
+                onPress={canConfirm ? handleConfirm : undefined}
+                disabled={!canConfirm}
                 className={`rounded-2xl border-2 py-3.5 justify-center items-center w-full ${
                   canConfirm
                     ? "bg-black border-black"
@@ -162,7 +164,6 @@ export default function CalendarModal({
                 }`}
               >
                 <Text
-                  onPress={canConfirm ? handleConfirm : undefined}
                   style={{
                     fontWeight: "600",
                     fontSize: 16,
@@ -171,7 +172,7 @@ export default function CalendarModal({
                 >
                   Confirmar
                 </Text>
-              </View>
+              </TouchableOpacity>
             </View>
           </View>
         </View>
