@@ -39,7 +39,8 @@ mobile/
 │   │   └── AppNavigator.tsx   # Stack Navigator principal
 │   ├── screens/
 │   │   ├── app/               # Telas autenticadas
-│   │   │   ├── HomeScreen.tsx
+│   │   │   ├── HomeScreen.tsx        # Dashboard hub
+│   │   │   ├── MySchedulesScreen.tsx  # Lista completa de escalas
 │   │   │   ├── EventsScreen.tsx
 │   │   │   ├── EventDetailsScreen.tsx
 │   │   │   ├── ProfileScreen.tsx
@@ -51,7 +52,7 @@ mobile/
 │   │       ├── LoginScreen.tsx
 │   │       └── SignUpScreen.tsx
 │   ├── components/
-│   │   ├── TabNavigator.tsx   # Bottom tabs (Home, Rooms, Music, Profile)
+│   │   ├── TabNavigator.tsx   # Bottom tabs (Home, Escalas, Rooms, Music, Profile)
 │   │   ├── ProfileAvatar.tsx  # Avatar + nome reutilizável
 │   │   ├── button/
 │   │   │   └── DefaultButton.tsx   # Botão primary/outline
@@ -61,6 +62,8 @@ mobile/
 │   │   │   ├── EventInfoCard.tsx   # Card detalhado de evento
 │   │   │   ├── MemberCard.tsx      # Card de membro da equipe
 │   │   │   ├── MiniCard.tsx        # Card quadrado com ícone
+│   │   │   ├── ScheduleSummaryCard.tsx # Card compacto para resumo
+│   │   │   ├── YoutubeCarousel.tsx  # Carrossel de vídeos do YouTube
 │   │   │   ├── RoomCard.tsx        # Card de sala (status, reserva)
 │   │   │   └── TeamStatusCard.tsx  # Card de confirmados/pendentes
 │   │   ├── Header/
@@ -85,9 +88,10 @@ mobile/
 
 ### Stack Principal (AppNavigator)
 
-- `Main` → TabNavigator (4 abas)
+- `Main` → TabNavigator (5 abas)
 - `EventDetails` → Detalhes de um evento
-- `EventsScreen` → Todos os eventos
+- `EventsScreen` → Todos os eventos da igreja
+- `MySchedulesScreen` → Escalas do usuário
 - `BlockDatesScreen` → Bloquear datas
 - `Profile` → Perfil do usuário
 - `EditProfile` → Editar perfil
@@ -96,12 +100,13 @@ mobile/
 
 ### Tab Navigator
 
-| Aba     | Tela          | Ícone    |
-| ------- | ------------- | -------- |
-| Home    | HomeScreen    | Home     |
-| Salas   | RoomsScreen   | DoorOpen |
-| Músicas | MusicScreen   | Music    |
-| Perfil  | ProfileScreen | User     |
+| Aba     | Tela               | Ícone    |
+| ------- | ------------------ | -------- |
+| Início  | HomeScreen         | Home     |
+| Escalas | MySchedulesScreen  | Calendar |
+| Salas   | RoomsScreen        | DoorOpen |
+| Músicas | MusicScreen        | Music    |
+| Perfil  | ProfileScreen      | User     |
 
 ---
 

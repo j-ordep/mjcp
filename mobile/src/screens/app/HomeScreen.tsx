@@ -1,11 +1,17 @@
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Calendar, CalendarX } from "lucide-react-native";
+import {
+  Calendar,
+  CalendarX,
+  Church,
+  RefreshCw,
+} from "lucide-react-native";
 import { useState } from "react";
-import { ScrollView, View } from "react-native";
+import { ScrollView, TouchableOpacity, View } from "react-native";
+import { Text } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
-import EventCard from "../../components/card/EventCard";
 import MiniCard from "../../components/card/MiniCard";
+import ScheduleSummaryCard from "../../components/card/ScheduleSummaryCard";
 import YoutubeCarousel from "../../components/card/YoutubeCarousel";
 import HeaderPrimary from "../../components/Header/HeaderPrimary";
 import NotificationsModal from "../../components/utils/NotificationsModal";
@@ -16,52 +22,26 @@ export default function HomeScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
-  function handleDetails(event) {
-    navigation.navigate("EventDetails", event);
-  }
-
-  function handleSwap() {
-    alert("Solicitação de troca enviada!");
-  }
-
-  function handleConfirm() {
-    alert("Presença confirmada!");
-  }
-
-  function handleBlockDatesScreen() {
-    navigation.navigate("BlockDatesScreen");
-  }
-
-  function handleEventDetails() {
-    navigation.navigate("EventsScreen");
-  }
-
-  const events = [
+  // Mock: próxima escala do usuário (apenas 1)
+  const nextSchedules = [
     {
       title: "Ensaio da Banda",
-      date: "25/11/2025 18:00",
-      location: "Sala de ensaio",
-      department: "louvor",
+      date: "25/11/2025  •  18:00",
       role: "Cantor",
     },
+  ];
+
+  // Mock: próximos 2 eventos da igreja
+  const nextEvents = [
     {
-      title: "Reunião de Obreiros",
-      date: "26/11/2025 19:00",
-      location: "Auditório",
-      role: "Músico",
+      title: "Culto de Domingo",
+      date: "01/12/2025  •  10:00",
+      location: "Templo Principal",
     },
     {
-      title: "Culto de Celebração",
-      date: "27/11/2025 19:00",
-      location: "Templo principal",
-      role: "Tecladista",
-    },
-    { title: "Ensaio da Banda", date: "25/11/2025 18:00", role: "Cantor" },
-    { title: "Reunião de Obreiros", date: "26/11/2025 19:00", role: "Músico" },
-    {
-      title: "Culto de Celebração",
-      date: "27/11/2025 19:00",
-      role: "Tecladista",
+      title: "Reunião de Líderes",
+      date: "03/12/2025  •  19:30",
+      location: "Sala de Reuniões",
     },
   ];
 
@@ -71,7 +51,8 @@ export default function HomeScreen() {
       edges={["top", "left", "right"]}
     >
       <HeaderPrimary
-        title="Próximos eventos"
+        subtitle="Bem-vindo de volta"
+        title="Dashboard"
         onNotificationPress={() => setModalVisible(true)}
         onAvatarPress={() => navigation.navigate("Profile")}
         avatarUri=""
@@ -79,39 +60,95 @@ export default function HomeScreen() {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ padding: 2 }}
+        contentContainerStyle={{ paddingBottom: 24, paddingTop: 2 }}
       >
-        <View className="flex-row gap-3 mb-4">
+        {/* 4 MiniCards — grid 2x2 */}
+        <View className="flex-row gap-3 mb-2">
           <MiniCard
-            title="Bloquear data"
-            icon={<CalendarX />}
-            onPress={handleBlockDatesScreen}
-          />
-          <MiniCard
-            title="Ver Eventos"
+            title="Minhas Escalas"
             textColor="#fff"
             backgroundColor="#000000"
-            icon={<Calendar color="#fff" />}
-            onPress={handleEventDetails}
+            icon={<Calendar color="#fff" size={22} />}
+            onPress={() => navigation.navigate("MySchedulesScreen")}
+          />
+          <MiniCard
+            title="Eventos da Igreja"
+            icon={<Calendar size={22} />}
+            onPress={() => navigation.navigate("EventsScreen")}
+          />
+        </View>
+        <View className="flex-row gap-3 mb-5">
+          <MiniCard
+            title="Bloquear Datas"
+            icon={<CalendarX size={22} />}
+            onPress={() => navigation.navigate("BlockDatesScreen")}
+          />
+          <MiniCard
+            title="Solicitar Troca"
+            icon={<RefreshCw size={22} />}
+            onPress={() => alert("Funcionalidade em breve!")}
           />
         </View>
 
-        <YoutubeCarousel />
-
-        {events.map((event, idx) => (
-          <EventCard
-            key={idx}
-            title={event.title}
-            date={event.date}
-            location={event.location}
-            department={event.department}
-            role={event.role}
-            onDetails={() => handleDetails(event)}
-            onSwap={handleSwap}
-            onConfirm={handleConfirm}
+        {/* Próxima Escala */}
+        <View className="flex-row items-center justify-between mb-2 mt-1">
+          <Text style={{ fontWeight: "bold", fontSize: 16, color: "#111827" }}>
+            Próxima Escala
+          </Text>
+          <TouchableOpacity
+            onPress={() => navigation.navigate("MySchedulesScreen")}
+          >
+            <Text style={{ fontSize: 13, color: "#888" }}>Ver todas →</Text>
+          </TouchableOpacity>
+        </View>
+        {nextSchedules.map((s, idx) => (
+          <ScheduleSummaryCard
+            key={`schedule-${idx}`}
+            title={s.title}
+            date={s.date}
+            role={s.role}
+            onPress={() =>
+              navigation.navigate("EventDetails", {
+                title: s.title,
+                date: s.date,
+                role: s.role,
+              })
+            }
           />
         ))}
+
+        {/* Próximos Eventos */}
+        <View className="flex-row items-center justify-between mb-2 mt-3">
+          <Text style={{ fontWeight: "bold", fontSize: 16, color: "#111827" }}>
+            Próximos Eventos
+          </Text>
+          <TouchableOpacity
+            onPress={() => navigation.navigate("EventsScreen")}
+          >
+            <Text style={{ fontSize: 13, color: "#888" }}>Ver todos →</Text>
+          </TouchableOpacity>
+        </View>
+        {nextEvents.map((e, idx) => (
+          <ScheduleSummaryCard
+            key={`event-${idx}`}
+            title={e.title}
+            date={e.date}
+            location={e.location}
+            onPress={() =>
+              navigation.navigate("EventDetails", {
+                title: e.title,
+                date: e.date,
+              })
+            }
+          />
+        ))}
+
+        {/* YouTube Carousel */}
+        <View className="mt-3">
+          <YoutubeCarousel />
+        </View>
       </ScrollView>
+
       <NotificationsModal
         visible={modalVisible}
         onDismiss={() => setModalVisible(false)}

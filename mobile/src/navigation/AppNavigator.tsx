@@ -6,6 +6,7 @@ import EventDetailsScreen from "../screens/app/EventDetailsScreen";
 import EventsScreen from "../screens/app/EventsScreen";
 import EditProfile from "../screens/app/EditProfileScreen";
 import BlockDatesScreen from "../screens/app/BlockDatesScreen";
+import MySchedulesScreen from "../screens/app/MySchedulesScreen";
 import ProfileScreen from "../screens/app/ProfileScreen";
 
 const Stack = createNativeStackNavigator();
@@ -14,10 +15,11 @@ export type RootStackParamList = {
   Login: undefined;
   Main: undefined;
   EventsScreen: undefined;
-  EventDetails: undefined; //{ title: string; date: string; role?: string };
+  EventDetails: { title?: string; date?: string; role?: string } | undefined;
   Profile: undefined;
   EditProfile: undefined;
   BlockDatesScreen: undefined;
+  MySchedulesScreen: undefined;
 };
 
 export default function AppNavigator() {
@@ -30,6 +32,7 @@ export default function AppNavigator() {
           <Stack.Screen name="EventDetails" component={EventDetailsScreen} />
           <Stack.Screen name="EventsScreen" component={EventsScreen} />
           <Stack.Screen name="BlockDatesScreen" component={BlockDatesScreen} />
+          <Stack.Screen name="MySchedulesScreen" component={MySchedulesScreen} />
           <Stack.Screen name="Profile" component={ProfileScreen} />
           <Stack.Screen name="EditProfile" component={EditProfile} />
         </Stack.Navigator>
