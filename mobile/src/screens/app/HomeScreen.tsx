@@ -6,13 +6,15 @@ import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import EventCard from "../../components/card/EventCard";
 import MiniCard from "../../components/card/MiniCard";
+import YoutubeCarousel from "../../components/card/YoutubeCarousel";
 import HeaderPrimary from "../../components/Header/HeaderPrimary";
 import NotificationsModal from "../../components/utils/NotificationsModal";
 import { RootStackParamList } from "../../navigation/AppNavigator";
 
 export default function HomeScreen() {
   const [modalVisible, setModalVisible] = useState(false);
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   function handleDetails(event) {
     navigation.navigate("EventDetails", event);
@@ -40,27 +42,34 @@ export default function HomeScreen() {
       date: "25/11/2025 18:00",
       location: "Sala de ensaio",
       department: "louvor",
-      role: "Cantor"
+      role: "Cantor",
     },
     {
       title: "Reunião de Obreiros",
       date: "26/11/2025 19:00",
       location: "Auditório",
-      role: "Músico"
+      role: "Músico",
     },
     {
       title: "Culto de Celebração",
       date: "27/11/2025 19:00",
       location: "Templo principal",
-      role: "Tecladista"
+      role: "Tecladista",
     },
     { title: "Ensaio da Banda", date: "25/11/2025 18:00", role: "Cantor" },
     { title: "Reunião de Obreiros", date: "26/11/2025 19:00", role: "Músico" },
-    { title: "Culto de Celebração", date: "27/11/2025 19:00", role: "Tecladista" },
+    {
+      title: "Culto de Celebração",
+      date: "27/11/2025 19:00",
+      role: "Tecladista",
+    },
   ];
 
   return (
-    <SafeAreaView className="flex-1 bg-white px-4" edges={['top', 'left', 'right']}>
+    <SafeAreaView
+      className="flex-1 bg-white px-4"
+      edges={["top", "left", "right"]}
+    >
       <HeaderPrimary
         title="Próximos eventos"
         onNotificationPress={() => setModalVisible(true)}
@@ -68,7 +77,10 @@ export default function HomeScreen() {
         avatarUri=""
       />
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 2 }}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ padding: 2 }}
+      >
         <View className="flex-row gap-3 mb-4">
           <MiniCard
             title="Bloquear data"
@@ -84,6 +96,8 @@ export default function HomeScreen() {
           />
         </View>
 
+        <YoutubeCarousel />
+
         {events.map((event, idx) => (
           <EventCard
             key={idx}
@@ -98,7 +112,10 @@ export default function HomeScreen() {
           />
         ))}
       </ScrollView>
-      <NotificationsModal visible={modalVisible} onDismiss={() => setModalVisible(false)} />
+      <NotificationsModal
+        visible={modalVisible}
+        onDismiss={() => setModalVisible(false)}
+      />
     </SafeAreaView>
   );
 }
