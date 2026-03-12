@@ -41,7 +41,7 @@ export default function ProfileScreen({ navigation }) {
         <View className="items-center mt-3">
           <Avatar.Image
             size={110}
-            source={{ uri: "https://images.unsplash.com/photo-1531299983330-093763e1d963?auto=format&fit=facearea&w=256&h=256&facepad=2" }}
+            source={{ uri: "" }}
             style={{ marginBottom: 12 }}
           />
           <Text style={{ fontSize: 22, fontWeight: "bold", marginTop: 8 }}>Nome da Silva</Text>
@@ -51,7 +51,7 @@ export default function ProfileScreen({ navigation }) {
         <View className="mt-8 px-6">
           <View className="py-3">
             <Text style={{ color: "#888", marginBottom: 2 }}>Email</Text>
-            <Text style={{ fontSize: 15, marginBottom: 0 }}>maria.santos@email.com</Text>
+            <Text style={{ fontSize: 15, marginBottom: 0 }}>email@gmail.com</Text>
             <Divider style={{ marginTop: 10, marginBottom: 0 }} />
           </View>
           <View className="py-3">
