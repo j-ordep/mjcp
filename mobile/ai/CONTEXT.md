@@ -121,6 +121,47 @@ mobile/
 
 ---
 
+## Regras de Negócio — Eventos
+
+Existem **2 tipos de evento** no sistema, e a visualização muda conforme o papel do usuário naquele evento:
+
+### 1. Evento público (igreja/congregação)
+Eventos gerais da igreja (cultos, conferências, encontros). Todo membro pode ver.
+
+**Visualização padrão** — quando o usuário **NÃO está escalado**:
+- Título
+- Descrição
+- Data e horário
+- Local
+
+É um card simples, apenas informativo. Sem ações de confirmar/trocar.
+
+### 2. Evento com escala (voluntários/ministério)
+O mesmo evento pode ter uma **escala de voluntários** vinculada (banda, louvor, mídia, recepção, etc). Quando o usuário **ESTÁ escalado** para aquele evento, a visualização é expandida:
+
+**Visualização detalhada** — quando o usuário **está escalado**:
+- Título
+- Descrição
+- Data e horário
+- Local
+- **Departamento** (ex: Ministério de Música)
+- **Função do usuário** (ex: Tecladista, Backing Vocal)
+- **Botões de ação**: "Confirmar presença" e "Preciso trocar"
+- Ao abrir detalhes: **lista completa da equipe escalada** (nome, função, foto, status confirmado/pendente)
+- **Contagem de confirmados/pendentes** (TeamStatusCard)
+- Informações de ensaio vinculadas
+
+### Resumo visual
+
+| Situação | Card na lista | Tela de detalhes |
+|---|---|---|
+| Não escalado | Card simples (título, data, local, descrição) | Informações gerais do evento |
+| Escalado | Card completo com departamento, função e botões | Equipe escalada, status, ações de confirmar/trocar |
+
+> **Nota**: Um mesmo evento pode aparecer como "simples" para um usuário e "completo" para outro, dependendo se está na escala ou não. A diferenciação acontece no frontend com base nos dados retornados pela API (se o evento contém dados de escala para o usuário logado).
+
+---
+
 ## Estado Atual do Desenvolvimento
 
 O app está na fase de **protótipo/UI**. Todas as telas usam dados mockados (hardcoded) e nenhuma ação real é executada — os handlers apenas exibem `Alert.alert()`.
@@ -139,7 +180,7 @@ O app está na fase de **protótipo/UI**. Todas as telas usam dados mockados (ha
 
 ### O que NÃO funciona / não existe
 
-- Nenhuma integração com backend/API
+- Nenhuma integração com backend/API (supabase)
 - Nenhuma autenticação real
 - Nenhuma persistência de dados
 - Telas `EventsScreen` e `MusicScreen` são stubs vazios

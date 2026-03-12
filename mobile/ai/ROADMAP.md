@@ -9,7 +9,7 @@
 
 ### Backend & API
 
-- [ ] Definir backend (Supabase / Firebase / API REST custom)
+- [ ] Backend (Supabase)
 - [ ] Configurar client HTTP (axios / fetch wrapper)
 - [ ] Definir modelos/tipos TypeScript para entidades (User, Event, Room, Notification)
 - [ ] Implementar tratamento de erros global (interceptors, retry, timeout)
@@ -52,10 +52,15 @@
 - [x] Busca/pesquisa de eventos
 - [x] Paginação / infinite scroll com FlatList
 - [x] Navegação para EventDetails ao clicar
+- [ ] Card simples para eventos onde usuário NÃO está escalado (título, descrição, data, local)
+- [ ] Card completo para eventos onde usuário ESTÁ escalado (departamento, função, botões de ação)
+- [ ] Diferenciar visualização com base nos dados da API
 
 ### EventDetailsScreen
 
 - [ ] Buscar detalhes do evento via API
+- [ ] Visualização simples para eventos sem escala (apenas info geral)
+- [ ] Visualização completa para eventos com escala (equipe, status, ações)
 - [ ] Lista real de membros escalados
 - [ ] Ação "Confirmar presença" funcional
 - [ ] Ação "Preciso trocar" funcional (enviar solicitação)
@@ -143,6 +148,15 @@
 - [ ] Configurações do app (idioma, tema, notificações)
 - [ ] Onboarding/tutorial primeiro acesso
 - [ ] Suporte offline (cache local)
+
+### Integração YouTube
+
+- [ ] Exibir vídeos do canal da igreja (YouTube Data API v3)
+- [ ] Vincular vídeos a eventos (transmissões ao vivo e gravações)
+- [ ] Player inline ou abrir no app do YouTube
+- [ ] Seção/aba de vídeos (feed recente do canal)
+- [ ] Filtro por evento / categoria
+- [ ] Notificação quando uma live começa
 
 ### DevOps & Qualidade
 
