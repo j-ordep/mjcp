@@ -11,7 +11,11 @@ interface CalendarModalProps {
   initialDate?: string; // YYYY-MM-DD
   initialRange?: { startDate?: string; endDate?: string };
   onClose: () => void;
-  onConfirm: (payload: { date?: string; startDate?: string; endDate?: string }) => void;
+  onConfirm: (payload: {
+    date?: string;
+    startDate?: string;
+    endDate?: string;
+  }) => void;
 }
 
 export default function CalendarModal({
@@ -22,13 +26,21 @@ export default function CalendarModal({
   onClose,
   onConfirm,
 }: CalendarModalProps) {
-  const [selectedDate, setSelectedDate] = useState<string | undefined>(initialDate);
-  const [range, setRange] = useState<{ startDate?: string; endDate?: string }>(initialRange || {});
+  const [selectedDate, setSelectedDate] = useState<string | undefined>(
+    initialDate,
+  );
+  const [range, setRange] = useState<{ startDate?: string; endDate?: string }>(
+    initialRange || {},
+  );
 
   const markedDates = useMemo(() => {
     if (mode === "single" && selectedDate) {
       return {
-        [selectedDate]: { selected: true, selectedColor: "#111111", selectedTextColor: "#ffffff" },
+        [selectedDate]: {
+          selected: true,
+          selectedColor: "#111111",
+          selectedTextColor: "#ffffff",
+        },
       };
     }
     if (mode === "range" && range.startDate && range.endDate) {
@@ -56,10 +68,17 @@ export default function CalendarModal({
     return {};
   }, [mode, selectedDate, range]);
 
-  const canConfirm = mode === "single" ? !!selectedDate : !!(range.startDate && range.endDate);
+  const canConfirm =
+    mode === "single" ? !!selectedDate : !!(range.startDate && range.endDate);
 
   // react-native-calendars onDayPress provides this shape
-  type DayPressArg = { dateString: string; day: number; month: number; year: number; timestamp: number };
+  type DayPressArg = {
+    dateString: string;
+    day: number;
+    month: number;
+    year: number;
+    timestamp: number;
+  };
 
   function onDayPress(day: DayPressArg) {
     const dateStr = day.dateString; // YYYY-MM-DD
@@ -94,12 +113,21 @@ export default function CalendarModal({
   }
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View className="flex-1 justify-end bg-black/40">
-        <View className="bg-white rounded-t-3xl p-5">
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <View className="flex-1 justify-center bg-black/70 px-5">
+        <View className="bg-white rounded-3xl p-5">
           <View className="flex-row items-center mb-3">
-            <Text style={{ fontWeight: "bold", fontSize: 16, flex: 1 }}>Selecionar data</Text>
-            <Text onPress={onClose} style={{ fontSize: 14 }}>Fechar</Text>
+            <Text style={{ fontWeight: "bold", fontSize: 16, flex: 1 }}>
+              Selecionar data
+            </Text>
+            <Text onPress={onClose} style={{ fontSize: 14 }}>
+              Fechar
+            </Text>
           </View>
           <Calendar
             markingType={mode === "range" ? "period" : undefined}
@@ -117,17 +145,29 @@ export default function CalendarModal({
             <View className="flex-1">
               {/* Outline */}
               <View className="rounded-2xl border-2 py-3.5 justify-center items-center w-full bg-white border-gray-300">
-                <Text onPress={onClose} style={{ fontWeight: "600", fontSize: 16 }}>Cancelar</Text>
+                <Text
+                  onPress={onClose}
+                  style={{ fontWeight: "600", fontSize: 16 }}
+                >
+                  Cancelar
+                </Text>
               </View>
             </View>
             <View className="flex-1 opacity-100">
               <View
-                className={`rounded-2xl border-2 py-3.5 justify-center items-center w-full ${canConfirm ? "bg-black border-black" : "bg-gray-200 border-gray-300"
-                  }`}
+                className={`rounded-2xl border-2 py-3.5 justify-center items-center w-full ${
+                  canConfirm
+                    ? "bg-black border-black"
+                    : "bg-gray-200 border-gray-300"
+                }`}
               >
                 <Text
                   onPress={canConfirm ? handleConfirm : undefined}
-                  style={{ fontWeight: "600", fontSize: 16, color: canConfirm ? "#ffffff" : "#9ca3af" }}
+                  style={{
+                    fontWeight: "600",
+                    fontSize: 16,
+                    color: canConfirm ? "#ffffff" : "#9ca3af",
+                  }}
                 >
                   Confirmar
                 </Text>
