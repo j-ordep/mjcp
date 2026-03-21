@@ -1,6 +1,6 @@
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Search } from "lucide-react-native";
+import { Plus, Search } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -13,93 +13,15 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import EventCard from "../../components/card/EventCard";
 import HeaderSecondary from "../../components/Header/HeaderSecondary";
 import { RootStackParamList } from "../../navigation/AppNavigator";
+import { UpcomingSchedule } from "../../services/scheduleService";
+import { useAuthStore } from "../../stores/useAuthStore";
+import { useMinistryStore } from "../../stores/useMinistryStore";
+import { useScheduleStore } from "../../stores/useScheduleStore";
+import { formatDateTime } from "../../utils/formatDate";
 
 type Filter = "current" | "past";
 
-interface Schedule {
-  id: number;
-  title: string;
-  date: string;
-  location: string;
-  department: string;
-  role: string;
-  isPast: boolean;
-}
-
-// Mock: escalas do usuário
-const allMockSchedules: Schedule[] = Array.from({ length: 40 }, (_, i) => {
-  const templates = [
-    {
-      title: "Ensaio da Banda",
-      location: "Sala de Ensaio 1",
-      department: "Louvor",
-      role: "Cantor",
-    },
-    {
-      title: "Culto de Celebração",
-      location: "Templo Principal",
-      department: "Ministério de Música",
-      role: "Tecladista",
-    },
-    {
-      title: "Culto de Jovens",
-      location: "Templo Principal",
-      department: "Ministério Jovem",
-      role: "Backing Vocal",
-    },
-    {
-      title: "Ensaio Geral",
-      location: "Sala de Ensaio 2",
-      department: "Louvor",
-      role: "Guitarrista",
-    },
-    {
-      title: "Culto Domingo",
-      location: "Templo Principal",
-      department: "Ministério de Música",
-      role: "Baixista",
-    },
-  ];
-  const t = templates[i % templates.length];
-  
-  // Create a mix of past and future dates for testing
-  const isPast = i % 3 === 0; // 1 in 3 events are in the past
-  const month = isPast ? 10 : 12; // Outubro para passados, Dezembro para futuros
-  const day = (i % 28) + 1;
-  const year = 2025;
-  
-  return {
-    id: i + 1,
-    title: t.title,
-    date: `${String(day).padStart(2, "0")}/${String(month).padStart(2, "0")}/${year} 19:00`,
-    location: t.location,
-    department: t.department,
-    role: t.role,
-    isPast,
-  };
-});
-
 const PAGE_SIZE = 10;
-
-function fetchSchedules(
-  page: number,
-  search: string,
-  filter: Filter,
-): Promise<{ data: Schedule[]; hasMore: boolean }> {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const filtered = allMockSchedules.filter((e) => {
-        const matchesSearch = !search || e.title.toLowerCase().includes(search.toLowerCase());
-        const matchesFilter = filter === "current" ? !e.isPast : e.isPast;
-        
-        return matchesSearch && matchesFilter;
-      });
-      const start = page * PAGE_SIZE;
-      const data = filtered.slice(start, start + PAGE_SIZE);
-      resolve({ data, hasMore: start + PAGE_SIZE < filtered.length });
-    }, 400);
-  });
-}
 
 export default function MySchedulesScreen() {
   const navigation =
@@ -107,102 +29,95 @@ export default function MySchedulesScreen() {
   const [activeFilter, setActiveFilter] = useState<Filter>("current");
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [schedules, setSchedules] = useState<Schedule[]>([]);
-  const [page, setPage] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
+
+  const { mySchedules, isLoadingSchedules, fetchMySchedules } =
+    useScheduleStore();
+  const { profile, session } = useAuthStore();
+  const { userMinistries, fetchUserMinistries } = useMinistryStore();
+
+  const isAdmin = profile?.role === "admin";
+  const isLeader = userMinistries.some((m) => m.is_leader);
+  const canCreate = isAdmin || isLeader;
+
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (debounceTimer.current) clearTimeout(debounceTimer.current);
-    debounceTimer.current = setTimeout(() => {
-      setDebouncedSearch(search);
-    }, 300);
-    return () => {
-      if (debounceTimer.current) clearTimeout(debounceTimer.current);
-    };
-  }, [search]);
+    if (session?.user?.id) {
+      fetchMySchedules(session.user.id, isAdmin);
+    }
+    fetchUserMinistries();
+  }, [session?.user?.id]);
 
-  useEffect(() => {
-    setSchedules([]);
-    setPage(0);
-    setHasMore(true);
-    loadPage(0, debouncedSearch, activeFilter, true);
-  }, [debouncedSearch, activeFilter]);
-
-  async function loadPage(p: number, searchTerm: string, filter: Filter, isReset: boolean) {
-    if (isReset) setLoading(true);
-    else setLoadingMore(true);
-
-    const result = await fetchSchedules(p, searchTerm, filter);
-
-    setSchedules((prev) =>
-      isReset ? result.data : [...prev, ...result.data],
-    );
-    setHasMore(result.hasMore);
-    setPage(p);
-
-    if (isReset) setLoading(false);
-    else setLoadingMore(false);
-  }
+  const filteredSchedules = useMemo(() => {
+    const now = new Date().getTime();
+    return mySchedules.filter((s) => {
+      const eventTime = new Date(s.event.start_at).getTime();
+      const matchesFilter =
+        activeFilter === "current" ? eventTime >= now : eventTime < now;
+      const matchesSearch =
+        !debouncedSearch ||
+        s.event.title.toLowerCase().includes(debouncedSearch.toLowerCase());
+      return matchesFilter && matchesSearch;
+    });
+  }, [mySchedules, activeFilter, debouncedSearch]);
 
   const handleLoadMore = useCallback(() => {
-    if (loadingMore || !hasMore || loading) return;
-    loadPage(page + 1, debouncedSearch, activeFilter, false);
-  }, [loadingMore, hasMore, loading, page, debouncedSearch, activeFilter]);
+    // Para simplificar agora, o fetch traz tudo. Paginação real seria no Supabase.
+  }, []);
 
   const filters: { key: Filter; label: string }[] = useMemo(
     () => [
-      { key: "current", label: "Deste Mês" },
+      { key: "current", label: "Próximas" },
       { key: "past", label: "Anteriores" },
     ],
     [],
   );
 
   const renderItem = useCallback(
-    ({ item }: { item: Schedule }) => (
+    ({ item }: { item: UpcomingSchedule }) => (
       <EventCard
-        title={item.title}
-        date={item.date}
-        location={item.location}
-        department={item.department}
-        role={item.role}
-        onDetails={() => navigation.navigate("EventDetails")}
-        onSwap={() => alert("Solicitação de troca enviada!")}
-        onConfirm={() => alert("Presença confirmada!")}
+        title={item.event.title}
+        date={formatDateTime(item.event.start_at)}
+        location={item.event.location ?? undefined}
+        description={item.event.description || undefined}
+        role={item.role_name}
+        showActions={true}
+        onDetails={() =>
+          navigation.navigate("EventDetails", {
+            event: item.event as any,
+          })
+        }
+        // TODO: integrar com scheduleService.requestSwap(item.id)
+        onSwap={() => alert("Solicitação de troca em breve!")}
+        // TODO: integrar com scheduleService.confirmPresence(item.id)
+        onConfirm={() => alert("Confirmação em breve!")}
       />
     ),
     [navigation],
   );
 
-  const keyExtractor = useCallback((item: Schedule) => String(item.id), []);
+  const keyExtractor = useCallback((item: UpcomingSchedule) => item.id, []);
 
-  const ListFooter = useCallback(() => {
-    if (!loadingMore) return null;
-    return (
-      <View className="items-center py-4">
-        <ActivityIndicator size="small" color="#000" />
-      </View>
-    );
-  }, [loadingMore]);
+  const ListFooter = useCallback(() => null, []);
 
   const ListEmpty = useCallback(() => {
-    if (loading) return null;
+    if (isLoadingSchedules) return null;
     return (
-      <View className="items-center justify-center py-16">
-        <Text style={{ color: "#888", fontSize: 16 }}>
-          Nenhuma escala encontrada
+      <View className="items-center justify-center py-16 px-10">
+        <Text style={{ color: "#888", fontSize: 16, textAlign: "center" }}>
+          Nenhuma escala encontrada.
         </Text>
       </View>
     );
-  }, [loading]);
+  }, [isLoadingSchedules]);
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={["top", "left", "right"]}>
       <HeaderSecondary
         title="Minhas Escalas"
         onBack={() => navigation.goBack()}
+        rightIcon={canCreate ? <Plus size={22} color="#000" /> : undefined}
+        onRightPress={() => navigation.navigate("CreateSchedule")}
       />
 
       <View className="px-5">
@@ -253,13 +168,13 @@ export default function MySchedulesScreen() {
         </View>
       </View>
 
-      {loading ? (
+      {isLoadingSchedules ? (
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color="#000" />
         </View>
       ) : (
         <FlatList
-          data={schedules}
+          data={filteredSchedules}
           renderItem={renderItem}
           keyExtractor={keyExtractor}
           contentContainerStyle={{
@@ -272,9 +187,6 @@ export default function MySchedulesScreen() {
           onEndReachedThreshold={0.3}
           ListFooterComponent={ListFooter}
           ListEmptyComponent={ListEmpty}
-          initialNumToRender={PAGE_SIZE}
-          maxToRenderPerBatch={PAGE_SIZE}
-          windowSize={5}
         />
       )}
     </SafeAreaView>

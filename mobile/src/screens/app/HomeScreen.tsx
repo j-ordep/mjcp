@@ -1,13 +1,9 @@
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import {
-  Calendar,
-  CalendarX,
-  Church,
-  RefreshCw,
-} from "lucide-react-native";
-import { useState } from "react";
-import { ScrollView, TouchableOpacity, View } from "react-native";
+import { Calendar, CalendarX, RefreshCw } from "lucide-react-native";
+import { useState, useEffect } from "react";
+import { formatDateTime } from "../../utils/formatDate";
+import { ScrollView, TouchableOpacity, View, ActivityIndicator } from "react-native";
 import { Text } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import MiniCard from "../../components/card/MiniCard";
@@ -16,34 +12,32 @@ import YoutubeCarousel from "../../components/card/YoutubeCarousel";
 import HeaderPrimary from "../../components/Header/HeaderPrimary";
 import NotificationsModal from "../../components/utils/NotificationsModal";
 import { RootStackParamList } from "../../navigation/AppNavigator";
+import { useEventStore } from "../../stores/useEventStore";
+import { useScheduleStore } from "../../stores/useScheduleStore";
+import { useAuthStore } from "../../stores/useAuthStore";
 
 export default function HomeScreen() {
   const [modalVisible, setModalVisible] = useState(false);
+  const { events, isLoadingEvents, fetchUpcomingEvents } = useEventStore();
+  const { mySchedules, isLoadingSchedules, fetchMySchedules } = useScheduleStore();
+  const { profile, session } = useAuthStore();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
-  // Mock: próxima escala do usuário (apenas 1)
-  const nextSchedules = [
-    {
-      title: "Ensaio da Banda",
-      date: "25/11/2025  •  18:00",
-      role: "Cantor",
-    },
-  ];
+  // Carrega os dados ao montar a tela
+  useEffect(() => {
+    fetchUpcomingEvents();
+    if (session?.user?.id) {
+      fetchMySchedules(session.user.id, profile?.role === 'admin');
+    }
+  }, [session?.user?.id]);
 
-  // Mock: próximos 2 eventos da igreja
-  const nextEvents = [
-    {
-      title: "Culto de Domingo",
-      date: "01/12/2025  •  10:00",
-      location: "Templo Principal",
-    },
-    {
-      title: "Reunião de Líderes",
-      date: "03/12/2025  •  19:30",
-      location: "Sala de Reuniões",
-    },
-  ];
+
+
+  // Pegamos apenas os 2 próximos eventos em memória
+  const nextEvents = events.slice(0, 1);
+  // Pega apenas a escala mais próxima
+  const nextSchedule = mySchedules.length > 0 ? mySchedules[0] : null;
 
   return (
     <SafeAreaView
@@ -91,7 +85,7 @@ export default function HomeScreen() {
         </View>
 
         {/* Próxima Escala */}
-        <View className="flex-row items-center justify-between mb-2 mt-1">
+        {/* <View className="flex-row items-center justify-between mb-2 mt-1">
           <Text style={{ fontWeight: "bold", fontSize: 16, color: "#111827" }}>
             Próxima Escala
           </Text>
@@ -101,26 +95,32 @@ export default function HomeScreen() {
             <Text style={{ fontSize: 13, color: "#888" }}>Ver todas →</Text>
           </TouchableOpacity>
         </View>
-        {nextSchedules.map((s, idx) => (
+        
+        {isLoadingSchedules ? (
+          <View className="py-2 items-center">
+            <ActivityIndicator size="small" color="#000" />
+          </View>
+        ) : !nextSchedule ? (
+           <View className="py-2 items-center">
+             <Text style={{ color: "#666" }}>Você não está escalado para os próximos dias.</Text>
+           </View>
+        ) : (
           <ScheduleSummaryCard
-            key={`schedule-${idx}`}
-            title={s.title}
-            date={s.date}
-            role={s.role}
+            title={nextSchedule.event.title}
+            date={formatDateTime(nextSchedule.event.start_at)}
+            role={nextSchedule.role_name}
             onPress={() =>
               navigation.navigate("EventDetails", {
-                title: s.title,
-                date: s.date,
-                role: s.role,
+                event: nextSchedule.event as any
               })
             }
           />
-        ))}
+        )} */}
 
-        {/* Próximos Eventos */}
+        {/* Próximo Evento */}
         <View className="flex-row items-center justify-between mb-2 mt-3">
           <Text style={{ fontWeight: "bold", fontSize: 16, color: "#111827" }}>
-            Próximos Eventos
+            Próximo Evento
           </Text>
           <TouchableOpacity
             onPress={() => navigation.navigate("EventsScreen")}
@@ -128,20 +128,30 @@ export default function HomeScreen() {
             <Text style={{ fontSize: 13, color: "#888" }}>Ver todos →</Text>
           </TouchableOpacity>
         </View>
-        {nextEvents.map((e, idx) => (
-          <ScheduleSummaryCard
-            key={`event-${idx}`}
-            title={e.title}
-            date={e.date}
-            location={e.location}
-            onPress={() =>
-              navigation.navigate("EventDetails", {
-                title: e.title,
-                date: e.date,
-              })
-            }
-          />
-        ))}
+        
+        {isLoadingEvents ? (
+          <View className="py-4 items-center">
+            <ActivityIndicator size="small" color="#000" />
+          </View>
+        ) : nextEvents.length === 0 ? (
+          <View className="py-2 items-center">
+            <Text style={{ color: "#666" }}>Nenhum evento agendado.</Text>
+          </View>
+        ) : (
+          nextEvents.map((e, idx) => (
+            <ScheduleSummaryCard
+              key={e.id || `event-${idx}`}
+              title={e.title}
+              date={formatDateTime(e.start_at)}
+              location={e.location || ''}
+              onPress={() =>
+                  navigation.navigate("EventDetails", {
+                    event: e
+                  })
+              }
+            />
+          ))
+        )}
 
         {/* YouTube Carousel */}
         <View className="mt-3">
