@@ -20,7 +20,7 @@ export default function ScheduleSummaryCard(props: ScheduleSummaryCardProps) {
         paddingVertical: 16,
         paddingHorizontal: 18,
         marginBottom: 12,
-        borderWidth: 1,
+        borderWidth: 2,
         borderColor: "#f0f0f0",
       }}
     >

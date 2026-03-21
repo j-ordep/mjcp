@@ -7,11 +7,13 @@ interface EventCardProps {
   title: string;
   date: string;
   location?: string
-  role: string;
+  role?: string;
   department?: string;
+  description?: string;
   onConfirm?: () => void;
   onSwap?: () => void;
   onDetails?: () => void;
+  showActions?: boolean;
 }
 
 export default function EventCard(props: EventCardProps) {
@@ -29,7 +31,7 @@ export default function EventCard(props: EventCardProps) {
         <Text style={{ fontWeight: "bold", fontSize: 20, marginBottom: 6 }}>
           {props.title}
         </Text>
-        <Text style={{ color: "#222", fontWeight: "500", marginBottom: 6 }}>
+        <Text style={{ color: "#000", fontWeight: "bold", fontSize: 16, marginBottom: 6 }}>
           {props.date}
         </Text>
         {props.location && (
@@ -38,34 +40,53 @@ export default function EventCard(props: EventCardProps) {
             <Text style={{ color: "#888", fontSize: 15 }}>{props.location}</Text>
           </View>
         )}
-        <View className="flex-row gap-8 mt-1">
-          <View className="flex-1">
-            <Text style={{ color: "#888", fontSize: 13, marginBottom: 2 }}>
-              Departamento
-            </Text>
-            <Text style={{ fontSize: 16, fontWeight: "bold" }}>{props.department}</Text>
+        
+        {props.description && (
+          <Text 
+            numberOfLines={2} 
+            style={{ color: "#444", fontSize: 14, marginBottom: 12, lineHeight: 20 }}
+          >
+            {props.description}
+          </Text>
+        )}
+        
+        {(props.department || props.role) && (
+          <View className="flex-row gap-8 mt-1">
+            {props.department && (
+              <View className="flex-1">
+                <Text style={{ color: "#888", fontSize: 13, marginBottom: 2 }}>
+                  Departamento
+                </Text>
+                <Text style={{ fontSize: 16, fontWeight: "bold" }}>{props.department}</Text>
+              </View>
+            )}
+            {props.role && (
+              <View className="flex-1">
+                <Text style={{ color: "#888", fontSize: 13, marginBottom: 2 }}>
+                  Função
+                </Text>
+                <Text style={{ fontSize: 16, fontWeight: "bold" }}>{props.role}</Text>
+              </View>
+            )}
           </View>
-          <View className="flex-1">
-            <Text style={{ color: "#888", fontSize: 13, marginBottom: 2 }}>
-              Função
-            </Text>
-            <Text style={{ fontSize: 16, fontWeight: "bold" }}>{props.role}</Text>
-          </View>
-        </View>
+        )}
       </Card.Content>
-      <View className="flex-row gap-3 px-4 pb-4">
-        <View className="flex-1">
-          <DefaultButton variant="outline" onPress={props.onSwap}>
-            Preciso trocar
-          </DefaultButton>
-        </View>
 
-        <View className="flex-1">
-          <DefaultButton variant="primary" onPress={props.onConfirm}>
-            Confirmar
-          </DefaultButton>
+      {props.showActions && (
+        <View className="flex-row gap-3 px-4 pb-4">
+          <View className="flex-1">
+            <DefaultButton variant="outline" onPress={props.onSwap}>
+              Preciso trocar
+            </DefaultButton>
+          </View>
+
+          <View className="flex-1">
+            <DefaultButton variant="primary" onPress={props.onConfirm}>
+              Confirmar
+            </DefaultButton>
+          </View>
         </View>
-      </View>
+      )}
     </Card>
   );
 }

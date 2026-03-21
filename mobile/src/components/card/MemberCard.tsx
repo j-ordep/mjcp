@@ -5,7 +5,7 @@ import { CheckCircle2 } from "lucide-react-native";
 interface MemberCardProp {
   name: string;
   role: string;
-  photo: string;
+  photo?: string | null;
   confirmed: boolean;
 }
 
@@ -22,7 +22,7 @@ export default function MemberCard(prop: MemberCardProp) {
       gap: 12,
     }}>
       <Image
-        source={{ uri: prop.photo }}
+        source={prop.photo ? { uri: prop.photo } : require('../../../assets/images/icon.png')}
         style={{ width: 40, height: 40, borderRadius: 20 }}
       />
       <View style={{ flex: 1 }}>
