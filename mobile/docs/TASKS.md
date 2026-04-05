@@ -11,13 +11,13 @@ Objetivo imediato: sair do prototipo e fechar o fluxo principal de "Criacao de E
 
 ## P0 (Critico) - Permissoes e Integridade
 
-- [ ] Ajustar RLS de `blocked_dates` para lider/admin verem indisponibilidades do seu ministerio
+- [x] Ajustar RLS de `blocked_dates` para lider/admin verem indisponibilidades do seu ministerio
   - Problema: policy atual "Leaders and admin can view blocked dates" usa apenas `is_admin()` em `supabase/migrations/20260312000100_create_rls_policies.sql`
   - Definir regra desejada:
     - Lider pode ver `blocked_dates` apenas de membros do(s) ministerio(s) onde ele e lider
     - Admin pode ver tudo
 
-- [ ] Revisar policies duplicadas e conflitos de RLS
+- [x] Revisar policies duplicadas e conflitos de RLS
   - Hoje existe "Admin can manage schedules/assignments" em `20260312000100_create_rls_policies.sql`
   - E existe "Leaders can manage schedules/assignments" em `20260312000103_add_leader_policies.sql`
   - Garantir que:
@@ -25,7 +25,7 @@ Objetivo imediato: sair do prototipo e fechar o fluxo principal de "Criacao de E
     - Lider tem acesso somente por ministerio (via `is_ministry_leader(...)`)
     - Membro nao consegue inserir/alterar `schedules` ou `schedule_assignments` de outros
 
-- [ ] Endurecer integridade de `schedule_assignments` (evitar dados inconsistentes)
+- [x] Endurecer integridade de `schedule_assignments` (evitar dados inconsistentes)
   - Garantir que `role_id` pertence ao mesmo `ministry_id` da `schedule`
   - Garantir que `user_id` pertence ao ministerio (existe `ministry_members` para aquele usuario)
   - Implementar via:
@@ -45,7 +45,7 @@ Objetivo imediato: sair do prototipo e fechar o fluxo principal de "Criacao de E
 
 ## P0 (Critico) - Fluxo de Criacao de Escalas (Produto)
 
-- [ ] Implementar `CreateScheduleScreen` (hoje e placeholder)
+- [x] Implementar `CreateScheduleScreen` (hoje e placeholder)
   - Arquivo: `src/screens/app/CreateScheduleScreen.tsx`
   - Requisitos minimos (MVP):
     - Selecionar `evento` (futuro)
@@ -58,7 +58,7 @@ Objetivo imediato: sair do prototipo e fechar o fluxo principal de "Criacao de E
       - membro bloqueou data (`blocked_dates`)
       - conflito com outro ministerio no mesmo horario (soft conflict)
 
-- [ ] Implementar service de "criar escala" com validacoes
+- [x] Implementar service de "criar escala" com validacoes
   - Arquivo: `src/services/scheduleService.ts`
   - Sugestao de funcoes:
     - `createSchedule({ eventId, ministryId, notes? })`
@@ -68,7 +68,7 @@ Objetivo imediato: sair do prototipo e fechar o fluxo principal de "Criacao de E
     - `checkConflicts(userId, eventId)`
   - Observacao: hoje existe leitura (`getUpcomingUserSchedules`, `getUpcomingAllSchedules`, `getAssignmentsByEvent`), mas nao existe escrita.
 
-- [ ] Fechar regra "lider de uma area cria escala para a area dele"
+- [x] Fechar regra "lider de uma area cria escala para a area dele"
   - Backend (RLS/RPC) deve ser a fonte de verdade (nao depender do app para bloquear).
   - Frontend apenas esconde o botao se nao tiver permissao.
 
@@ -167,10 +167,9 @@ Contexto: o mesmo evento deve aparecer "simples" para quem nao esta escalado e "
 
 ## Checklist de Entregavel (Primeiro Fluxo Completo)
 
-- [ ] Admin cria evento (ja existe)
-- [ ] Lider/admin cria schedule para (evento, ministerio)
-- [ ] Lider/admin adiciona assignments (membro + role)
+- [x] Admin cria evento (ja existe)
+- [x] Lider/admin cria schedule para (evento, ministerio)
+- [x] Lider/admin adiciona assignments (membro + role)
 - [ ] Membro ve evento no modo "escalado"
 - [ ] Membro confirma presenca
 - [ ] (Opcional) Membro solicita troca
-
