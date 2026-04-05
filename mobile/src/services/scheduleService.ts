@@ -34,6 +34,138 @@ export interface AssignmentWithDetails {
   }[] | null;
 }
 
+export interface AssignmentIntegrityValidation {
+  isValid: boolean;
+  isEventEditable: boolean;
+  isRoleFromScheduleMinistry: boolean;
+  isUserMemberOfScheduleMinistry: boolean;
+  error: string | null;
+}
+
+export interface MinistryRoleOption {
+  id: string;
+  ministry_id: string;
+  name: string;
+}
+
+export interface MinistryMemberOption {
+  user_id: string;
+  full_name: string;
+  avatar_url: string | null;
+}
+
+export interface ScheduleAssignmentDetailed {
+  id: string;
+  user_id: string;
+  role_id: string;
+  status: 'pending' | 'confirmed' | 'declined' | 'swapped';
+  member_name: string;
+  role_name: string;
+}
+
+export interface AssignmentWarningBlockedDate {
+  type: 'blocked_date';
+  date: string; // YYYY-MM-DD
+}
+
+export interface AssignmentWarningConflict {
+  type: 'conflict';
+  event_id: string;
+  event_title: string;
+  ministry_name: string | null;
+  role_name: string | null;
+  start_at: string;
+  end_at: string | null;
+}
+
+export type AssignmentWarning =
+  | AssignmentWarningBlockedDate
+  | AssignmentWarningConflict;
+
+interface ScheduleContext {
+  id: string;
+  ministry_id: string;
+  event: {
+    id: string;
+    start_at: string;
+    end_at: string | null;
+  } | null;
+}
+
+function isEventDateEditable(startAtIso: string) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const eventDate = new Date(startAtIso);
+  eventDate.setHours(0, 0, 0, 0);
+
+  return eventDate.getTime() >= today.getTime();
+}
+
+function toISODateString(dateIso: string) {
+  // Uses device local timezone; business rule is "editable until event date" (calendar day).
+  const d = new Date(dateIso);
+  const yyyy = String(d.getFullYear());
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function rangesOverlap(aStart: Date, aEnd: Date, bStart: Date, bEnd: Date) {
+  return aStart.getTime() < bEnd.getTime() && aEnd.getTime() > bStart.getTime();
+}
+
+async function getScheduleContext(scheduleId: string): Promise<{ data: ScheduleContext | null; error: string | null }> {
+  try {
+    const { data, error } = await supabase
+      .from('schedules')
+      .select(`
+        id,
+        ministry_id,
+        events!inner (
+          id,
+          start_at
+          ,end_at
+        )
+      `)
+      .eq('id', scheduleId)
+      .single();
+
+    if (error) throw error;
+
+    const joinedEvent = Array.isArray(data.events)
+      ? data.events[0] ?? null
+      : data.events ?? null;
+
+    return {
+      data: {
+        id: data.id,
+        ministry_id: data.ministry_id,
+        event: joinedEvent,
+      },
+      error: null,
+    };
+  } catch (error: any) {
+    return { data: null, error: error.message };
+  }
+}
+
+async function isEventEditableById(eventId: string): Promise<{ editable: boolean; error: string | null }> {
+  try {
+    const { data, error } = await supabase
+      .from('events')
+      .select('start_at')
+      .eq('id', eventId)
+      .single();
+
+    if (error) throw error;
+
+    return { editable: isEventDateEditable(data.start_at), error: null };
+  } catch (error: any) {
+    return { editable: false, error: error.message };
+  }
+}
+
 export async function getUpcomingUserSchedules(userId: string) {
   try {
     const { data, error } = await supabase
@@ -211,4 +343,383 @@ export async function getAssignmentsByEvent(eventId: string): Promise<{ data: As
   }
 }
 
-// TODO: Implementar createScheduleAssignment para Líderes/Admin (ver scheduling_model.md seção 3)
+export async function validateScheduleAssignmentIntegrity(
+  scheduleId: string,
+  userId: string,
+  roleId: string,
+): Promise<AssignmentIntegrityValidation> {
+  const scheduleCtx = await getScheduleContext(scheduleId);
+  if (scheduleCtx.error || !scheduleCtx.data || !scheduleCtx.data.event) {
+    return {
+      isValid: false,
+      isEventEditable: false,
+      isRoleFromScheduleMinistry: false,
+      isUserMemberOfScheduleMinistry: false,
+      error: scheduleCtx.error ?? 'Escala nao encontrada.',
+    };
+  }
+
+  const isEventEditable = isEventDateEditable(scheduleCtx.data.event.start_at);
+  if (!isEventEditable) {
+    return {
+      isValid: false,
+      isEventEditable: false,
+      isRoleFromScheduleMinistry: false,
+      isUserMemberOfScheduleMinistry: false,
+      error: 'Evento/escala nao e mais editavel apos o dia do evento.',
+    };
+  }
+
+  const roleResult = await supabase
+    .from('ministry_roles')
+    .select('id, ministry_id')
+    .eq('id', roleId)
+    .single();
+
+  if (roleResult.error || !roleResult.data) {
+    return {
+      isValid: false,
+      isEventEditable: true,
+      isRoleFromScheduleMinistry: false,
+      isUserMemberOfScheduleMinistry: false,
+      error: roleResult.error?.message ?? 'Funcao nao encontrada.',
+    };
+  }
+
+  const isRoleFromScheduleMinistry =
+    roleResult.data.ministry_id === scheduleCtx.data.ministry_id;
+
+  if (!isRoleFromScheduleMinistry) {
+    return {
+      isValid: false,
+      isEventEditable: true,
+      isRoleFromScheduleMinistry: false,
+      isUserMemberOfScheduleMinistry: false,
+      error: 'A funcao selecionada nao pertence ao ministerio da escala.',
+    };
+  }
+
+  const memberResult = await supabase
+    .from('ministry_members')
+    .select('id')
+    .eq('ministry_id', scheduleCtx.data.ministry_id)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (memberResult.error) {
+    return {
+      isValid: false,
+      isEventEditable: true,
+      isRoleFromScheduleMinistry: true,
+      isUserMemberOfScheduleMinistry: false,
+      error: memberResult.error.message,
+    };
+  }
+
+  const isUserMemberOfScheduleMinistry = !!memberResult.data;
+
+  if (!isUserMemberOfScheduleMinistry) {
+    return {
+      isValid: false,
+      isEventEditable: true,
+      isRoleFromScheduleMinistry: true,
+      isUserMemberOfScheduleMinistry: false,
+      error: 'O usuario nao pertence ao ministerio da escala.',
+    };
+  }
+
+  return {
+    isValid: true,
+    isEventEditable: true,
+    isRoleFromScheduleMinistry: true,
+    isUserMemberOfScheduleMinistry: true,
+    error: null,
+  };
+}
+
+export async function createScheduleValidated(input: {
+  eventId: string;
+  ministryId: string;
+  notes?: string | null;
+}) {
+  try {
+    const editability = await isEventEditableById(input.eventId);
+    if (editability.error) throw new Error(editability.error);
+    if (!editability.editable) {
+      throw new Error('Evento/escala nao e mais editavel apos o dia do evento.');
+    }
+
+    const { data, error } = await supabase
+      .from('schedules')
+      .upsert(
+        [
+          {
+            event_id: input.eventId,
+            ministry_id: input.ministryId,
+            notes: input.notes ?? null,
+          },
+        ],
+        { onConflict: 'event_id,ministry_id' },
+      )
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return { data, error: null };
+  } catch (error: any) {
+    return { data: null, error: error.message };
+  }
+}
+
+export async function upsertScheduleAssignmentValidated(input: {
+  scheduleId: string;
+  userId: string;
+  roleId: string;
+  status?: 'pending' | 'confirmed' | 'declined' | 'swapped';
+}) {
+  try {
+    const validation = await validateScheduleAssignmentIntegrity(
+      input.scheduleId,
+      input.userId,
+      input.roleId,
+    );
+
+    if (!validation.isValid) {
+      throw new Error(validation.error ?? 'Assignment invalido para esta escala.');
+    }
+
+    const { data, error } = await supabase
+      .from('schedule_assignments')
+      .upsert(
+        [
+          {
+            schedule_id: input.scheduleId,
+            user_id: input.userId,
+            role_id: input.roleId,
+            status: input.status ?? 'pending',
+          },
+        ],
+        {
+          onConflict: 'schedule_id,user_id,role_id',
+        },
+      )
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return { data, error: null };
+  } catch (error: any) {
+    return { data: null, error: error.message };
+  }
+}
+
+export async function getAssignmentWarningsForSchedule(input: {
+  scheduleId: string;
+  userId: string;
+}): Promise<{ data: AssignmentWarning[] | null; error: string | null }> {
+  try {
+    const scheduleCtx = await getScheduleContext(input.scheduleId);
+    if (scheduleCtx.error || !scheduleCtx.data || !scheduleCtx.data.event) {
+      throw new Error(scheduleCtx.error ?? 'Escala nao encontrada.');
+    }
+
+    const warnings: AssignmentWarning[] = [];
+
+    // Blocked date warning (calendar day)
+    const eventDate = toISODateString(scheduleCtx.data.event.start_at);
+    const blocked = await supabase
+      .from('blocked_dates')
+      .select('id,date')
+      .eq('user_id', input.userId)
+      .eq('date', eventDate)
+      .maybeSingle();
+
+    if (blocked.error) throw blocked.error;
+    if (blocked.data) {
+      warnings.push({ type: 'blocked_date', date: eventDate });
+    }
+
+    // Conflict warnings (soft, warning only)
+    const targetStart = new Date(scheduleCtx.data.event.start_at);
+    const targetEnd = scheduleCtx.data.event.end_at
+      ? new Date(scheduleCtx.data.event.end_at)
+      : new Date(scheduleCtx.data.event.start_at);
+
+    const { data, error } = await supabase
+      .from('schedule_assignments')
+      .select(`
+        id,
+        status,
+        schedules!inner (
+          id,
+          event_id,
+          ministries (
+            name
+          ),
+          events!inner (
+            id,
+            title,
+            start_at,
+            end_at
+          )
+        ),
+        ministry_roles (
+          name
+        )
+      `)
+      .eq('user_id', input.userId)
+      .neq('status', 'declined');
+
+    if (error) throw error;
+
+    (data ?? []).forEach((row: any) => {
+      const joinedSchedule = Array.isArray(row.schedules)
+        ? row.schedules[0] ?? null
+        : row.schedules ?? null;
+      const joinedEvent = joinedSchedule?.events
+        ? (Array.isArray(joinedSchedule.events) ? joinedSchedule.events[0] : joinedSchedule.events)
+        : null;
+
+      if (!joinedEvent) return;
+      if (joinedEvent.id === scheduleCtx.data!.event!.id) return;
+
+      const otherStart = new Date(joinedEvent.start_at);
+      const otherEnd = joinedEvent.end_at ? new Date(joinedEvent.end_at) : otherStart;
+
+      if (!rangesOverlap(otherStart, otherEnd, targetStart, targetEnd)) return;
+
+      const ministry = joinedSchedule?.ministries
+        ? (Array.isArray(joinedSchedule.ministries) ? joinedSchedule.ministries[0] : joinedSchedule.ministries)
+        : null;
+      const role = row.ministry_roles
+        ? (Array.isArray(row.ministry_roles) ? row.ministry_roles[0] : row.ministry_roles)
+        : null;
+
+      warnings.push({
+        type: 'conflict',
+        event_id: joinedEvent.id,
+        event_title: joinedEvent.title,
+        ministry_name: ministry?.name ?? null,
+        role_name: role?.name ?? null,
+        start_at: joinedEvent.start_at,
+        end_at: joinedEvent.end_at ?? null,
+      });
+    });
+
+    return { data: warnings, error: null };
+  } catch (error: any) {
+    return { data: null, error: error.message };
+  }
+}
+
+export async function getScheduleByEventAndMinistry(eventId: string, ministryId: string) {
+  try {
+    const { data, error } = await supabase
+      .from('schedules')
+      .select('id,event_id,ministry_id,notes,created_at')
+      .eq('event_id', eventId)
+      .eq('ministry_id', ministryId)
+      .maybeSingle();
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error: any) {
+    return { data: null, error: error.message };
+  }
+}
+
+export async function getMinistryRolesOptions(ministryId: string) {
+  try {
+    const { data, error } = await supabase
+      .from('ministry_roles')
+      .select('id,ministry_id,name')
+      .eq('ministry_id', ministryId)
+      .order('name', { ascending: true });
+
+    if (error) throw error;
+    return { data: (data ?? []) as MinistryRoleOption[], error: null };
+  } catch (error: any) {
+    return { data: null, error: error.message };
+  }
+}
+
+export async function getMinistryMembersOptions(ministryId: string) {
+  try {
+    const { data, error } = await supabase
+      .from('ministry_members')
+      .select(`
+        user_id,
+        profiles!inner (
+          full_name,
+          avatar_url
+        )
+      `)
+      .eq('ministry_id', ministryId);
+
+    if (error) throw error;
+
+    const formatted: MinistryMemberOption[] = (data ?? []).map((row: any) => {
+      const profile = Array.isArray(row.profiles)
+        ? row.profiles[0] ?? null
+        : row.profiles ?? null;
+
+      return {
+        user_id: row.user_id,
+        full_name: profile?.full_name ?? 'Membro',
+        avatar_url: profile?.avatar_url ?? null,
+      };
+    });
+
+    return { data: formatted, error: null };
+  } catch (error: any) {
+    return { data: null, error: error.message };
+  }
+}
+
+export async function getScheduleAssignmentsDetailed(scheduleId: string) {
+  try {
+    const { data, error } = await supabase
+      .from('schedule_assignments')
+      .select(`
+        id,
+        user_id,
+        role_id,
+        status,
+        profiles (
+          full_name,
+          avatar_url
+        ),
+        ministry_roles (
+          name
+        )
+      `)
+      .eq('schedule_id', scheduleId)
+      .order('created_at', { ascending: true });
+
+    if (error) throw error;
+
+    const formatted: ScheduleAssignmentDetailed[] = (data ?? []).map((row: any) => {
+      const profile = Array.isArray(row.profiles)
+        ? row.profiles[0] ?? null
+        : row.profiles ?? null;
+      const role = Array.isArray(row.ministry_roles)
+        ? row.ministry_roles[0] ?? null
+        : row.ministry_roles ?? null;
+
+      return {
+        id: row.id,
+        user_id: row.user_id,
+        role_id: row.role_id,
+        status: row.status,
+        member_name: profile?.full_name ?? 'Membro',
+        role_name: role?.name ?? 'Funcao',
+      };
+    });
+
+    return { data: formatted, error: null };
+  } catch (error: any) {
+    return { data: null, error: error.message };
+  }
+}
