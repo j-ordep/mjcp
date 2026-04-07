@@ -1,10 +1,11 @@
 import { supabase } from '../lib/supabase';
+import type { AssignmentStatus, TableRow } from '../types/database.types';
 
 export interface UpcomingSchedule {
   id: string; // assignment_id
   schedule_id: string;
   role_id: string;
-  status: string;
+  status: AssignmentStatus | 'vago';
   role_name: string;
   event: {
     id: string;
@@ -92,6 +93,212 @@ interface ScheduleContext {
   } | null;
 }
 
+interface ScheduleContextRow {
+  id: string;
+  ministry_id: string;
+  events:
+    | {
+        id: string;
+        start_at: string;
+        end_at: string | null;
+      }
+    | {
+        id: string;
+        start_at: string;
+        end_at: string | null;
+      }[]
+    | null;
+}
+
+interface UpcomingUserScheduleRow {
+  id: string;
+  schedule_id: string;
+  role_id: string;
+  status: AssignmentStatus;
+  schedules:
+    | {
+        event_id: string;
+        events:
+          | {
+              id: string;
+              title: string;
+              start_at: string;
+              location: string | null;
+              description: string | null;
+            }
+          | {
+              id: string;
+              title: string;
+              start_at: string;
+              location: string | null;
+              description: string | null;
+            }[];
+      }
+    | {
+        event_id: string;
+        events:
+          | {
+              id: string;
+              title: string;
+              start_at: string;
+              location: string | null;
+              description: string | null;
+            }
+          | {
+              id: string;
+              title: string;
+              start_at: string;
+              location: string | null;
+              description: string | null;
+            }[];
+      }[];
+  ministry_roles:
+    | {
+        name: string;
+      }
+    | {
+        name: string;
+      }[];
+}
+
+interface UpcomingAllScheduleAssignmentRow {
+  id: string;
+  user_id: string;
+  role_id: string;
+  status: AssignmentStatus;
+  ministry_roles:
+    | {
+        name: string;
+      }
+    | {
+        name: string;
+      }[]
+    | null;
+  profiles:
+    | {
+        full_name: string | null;
+      }
+    | {
+        full_name: string | null;
+      }[]
+    | null;
+}
+
+interface UpcomingAllScheduleRow {
+  id: string;
+  ministry_id: string;
+  event_id: string;
+  events:
+    | {
+        id: string;
+        title: string;
+        start_at: string;
+        location: string | null;
+        description: string | null;
+      }
+    | {
+        id: string;
+        title: string;
+        start_at: string;
+        location: string | null;
+        description: string | null;
+      }[];
+  schedule_assignments: UpcomingAllScheduleAssignmentRow[];
+}
+
+interface ConflictQueryRow {
+  id: string;
+  status: AssignmentStatus;
+  schedules:
+    | {
+        id: string;
+        event_id: string;
+        ministries: { name: string } | { name: string }[] | null;
+        events:
+          | {
+              id: string;
+              title: string;
+              start_at: string;
+              end_at: string | null;
+            }
+          | {
+              id: string;
+              title: string;
+              start_at: string;
+              end_at: string | null;
+            }[];
+      }
+    | {
+        id: string;
+        event_id: string;
+        ministries: { name: string } | { name: string }[] | null;
+        events:
+          | {
+              id: string;
+              title: string;
+              start_at: string;
+              end_at: string | null;
+            }
+          | {
+              id: string;
+              title: string;
+              start_at: string;
+              end_at: string | null;
+            }[];
+      }[]
+    | null;
+  ministry_roles: { name: string } | { name: string }[] | null;
+}
+
+interface MinistryMemberOptionRow {
+  user_id: string;
+  profiles:
+    | {
+        full_name: string | null;
+        avatar_url: string | null;
+      }
+    | {
+        full_name: string | null;
+        avatar_url: string | null;
+      }[]
+    | null;
+}
+
+interface ScheduleAssignmentDetailedRow {
+  id: string;
+  user_id: string;
+  role_id: string;
+  status: AssignmentStatus;
+  profiles:
+    | {
+        full_name: string | null;
+        avatar_url: string | null;
+      }
+    | {
+        full_name: string | null;
+        avatar_url: string | null;
+      }[]
+    | null;
+  ministry_roles:
+    | {
+        name: string;
+      }
+    | {
+        name: string;
+      }[]
+    | null;
+}
+
+function getErrorMessage(error: unknown) {
+  if (error instanceof Error) return error.message;
+  return 'Erro inesperado.';
+}
+
+function firstRelation<T>(value: T | T[] | null | undefined) {
+  if (Array.isArray(value)) return value[0] ?? null;
+  return value ?? null;
+}
+
 function isEventDateEditable(startAtIso: string) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -129,13 +336,11 @@ async function getScheduleContext(scheduleId: string): Promise<{ data: ScheduleC
         )
       `)
       .eq('id', scheduleId)
-      .single();
+      .single<ScheduleContextRow>();
 
     if (error) throw error;
 
-    const joinedEvent = Array.isArray(data.events)
-      ? data.events[0] ?? null
-      : data.events ?? null;
+    const joinedEvent = firstRelation(data.events);
 
     return {
       data: {
@@ -145,8 +350,8 @@ async function getScheduleContext(scheduleId: string): Promise<{ data: ScheduleC
       },
       error: null,
     };
-  } catch (error: any) {
-    return { data: null, error: error.message };
+  } catch (error: unknown) {
+    return { data: null, error: getErrorMessage(error) };
   }
 }
 
@@ -156,13 +361,13 @@ async function isEventEditableById(eventId: string): Promise<{ editable: boolean
       .from('events')
       .select('start_at')
       .eq('id', eventId)
-      .single();
+      .single<Pick<TableRow<'events'>, 'start_at'>>();
 
     if (error) throw error;
 
     return { editable: isEventDateEditable(data.start_at), error: null };
-  } catch (error: any) {
-    return { editable: false, error: error.message };
+  } catch (error: unknown) {
+    return { editable: false, error: getErrorMessage(error) };
   }
 }
 
@@ -197,27 +402,38 @@ export async function getUpcomingUserSchedules(userId: string) {
     
     if (!data) return { data: [], error: null };
 
-    const formattedData: UpcomingSchedule[] = data
-      .map((a: any) => ({
-        id: a.id,
-        schedule_id: a.schedule_id,
-        role_id: a.role_id,
-        status: a.status,
-        role_name: a.ministry_roles.name,
-        event: {
-          id: a.schedules.events.id,
-          title: a.schedules.events.title,
-          start_at: a.schedules.events.start_at,
-          location: a.schedules.events.location,
-          description: a.schedules.events.description,
-        }
-      }))
+    const formattedData = (data as UpcomingUserScheduleRow[])
+      .reduce<UpcomingSchedule[]>((acc, assignment) => {
+        const schedule = firstRelation(assignment.schedules);
+        const event = schedule ? firstRelation(schedule.events) : null;
+        const role = firstRelation(assignment.ministry_roles);
+
+        if (!schedule || !event || !role) return acc;
+
+        acc.push({
+          id: assignment.id,
+          schedule_id: assignment.schedule_id,
+          role_id: assignment.role_id,
+          status: assignment.status,
+          role_name: role.name,
+          event: {
+            id: event.id,
+            title: event.title,
+            start_at: event.start_at,
+            location: event.location,
+            description: event.description,
+          }
+        });
+
+        return acc;
+      }, [])
       .sort((a, b) => new Date(a.event.start_at).getTime() - new Date(b.event.start_at).getTime());
 
     return { data: formattedData, error: null };
-  } catch (error: any) {
-    console.error('Erro ao buscar escalas do usuário:', error.message);
-    return { data: null, error: error.message };
+  } catch (error: unknown) {
+    const message = getErrorMessage(error);
+    console.error('Erro ao buscar escalas do usuário:', message);
+    return { data: null, error: message };
   }
 }
 
@@ -261,40 +477,46 @@ export async function getUpcomingAllSchedules() {
     // Como aqui temos MÚLTIPLOS assignments por schedule, vamos achatar ou adaptar
     const formattedData: UpcomingSchedule[] = [];
     
-    data.forEach((s: any) => {
-      const eventTime = new Date(s.events.start_at).getTime();
+    (data as UpcomingAllScheduleRow[]).forEach((schedule) => {
+      const event = firstRelation(schedule.events);
+      if (!event) return;
+
+      const eventTime = new Date(event.start_at).getTime();
       if (eventTime < now) return;
 
       // Se não houver assignments, mostramos a vaga vazia ou o slot
-      if (s.schedule_assignments.length === 0) {
+      if (schedule.schedule_assignments.length === 0) {
         formattedData.push({
-          id: `empty-${s.id}`,
-          schedule_id: s.id,
+          id: `empty-${schedule.id}`,
+          schedule_id: schedule.id,
           role_id: '',
           status: 'vago',
           role_name: 'Vaga Disponível',
           event: {
-            id: s.events.id,
-            title: s.events.title,
-            start_at: s.events.start_at,
-            location: s.events.location,
-            description: s.events.description,
+            id: event.id,
+            title: event.title,
+            start_at: event.start_at,
+            location: event.location,
+            description: event.description,
           }
         });
       } else {
-        s.schedule_assignments.forEach((a: any) => {
+        schedule.schedule_assignments.forEach((assignment) => {
+          const role = firstRelation(assignment.ministry_roles);
+          const profile = firstRelation(assignment.profiles);
+
           formattedData.push({
-            id: a.id,
-            schedule_id: s.id,
-            role_id: a.role_id,
-            status: a.status,
-            role_name: `${a.ministry_roles?.name || 'Membro'} - ${a.profiles?.full_name || 'N/A'}`,
+            id: assignment.id,
+            schedule_id: schedule.id,
+            role_id: assignment.role_id,
+            status: assignment.status,
+            role_name: `${role?.name || 'Membro'} - ${profile?.full_name || 'N/A'}`,
             event: {
-              id: s.events.id,
-              title: s.events.title,
-              start_at: s.events.start_at,
-              location: s.events.location,
-              description: s.events.description,
+              id: event.id,
+              title: event.title,
+              start_at: event.start_at,
+              location: event.location,
+              description: event.description,
             }
           });
         });
@@ -302,9 +524,10 @@ export async function getUpcomingAllSchedules() {
     });
 
     return { data: formattedData, error: null };
-  } catch (error: any) {
-    console.error('Erro ao buscar todas as escalas:', error.message);
-    return { data: null, error: error.message };
+  } catch (error: unknown) {
+    const message = getErrorMessage(error);
+    console.error('Erro ao buscar todas as escalas:', message);
+    return { data: null, error: message };
   }
 }
 
@@ -337,9 +560,10 @@ export async function getAssignmentsByEvent(eventId: string): Promise<{ data: As
     if (error) throw error;
     // Cast via unknown: PostgREST infere arrays nos joins, interface reflete isso corretamente
     return { data: (data as unknown) as AssignmentWithDetails[], error: null };
-  } catch (error: any) {
-    console.error('Erro ao buscar escalados do evento:', error.message);
-    return { data: null, error: error.message };
+  } catch (error: unknown) {
+    const message = getErrorMessage(error);
+    console.error('Erro ao buscar escalados do evento:', message);
+    return { data: null, error: message };
   }
 }
 
@@ -467,8 +691,8 @@ export async function createScheduleValidated(input: {
     if (error) throw error;
 
     return { data, error: null };
-  } catch (error: any) {
-    return { data: null, error: error.message };
+  } catch (error: unknown) {
+    return { data: null, error: getErrorMessage(error) };
   }
 }
 
@@ -510,8 +734,8 @@ export async function upsertScheduleAssignmentValidated(input: {
     if (error) throw error;
 
     return { data, error: null };
-  } catch (error: any) {
-    return { data: null, error: error.message };
+  } catch (error: unknown) {
+    return { data: null, error: getErrorMessage(error) };
   }
 }
 
@@ -574,12 +798,10 @@ export async function getAssignmentWarningsForSchedule(input: {
 
     if (error) throw error;
 
-    (data ?? []).forEach((row: any) => {
-      const joinedSchedule = Array.isArray(row.schedules)
-        ? row.schedules[0] ?? null
-        : row.schedules ?? null;
+    ((data ?? []) as ConflictQueryRow[]).forEach((row) => {
+      const joinedSchedule = firstRelation(row.schedules);
       const joinedEvent = joinedSchedule?.events
-        ? (Array.isArray(joinedSchedule.events) ? joinedSchedule.events[0] : joinedSchedule.events)
+        ? firstRelation(joinedSchedule.events)
         : null;
 
       if (!joinedEvent) return;
@@ -591,10 +813,10 @@ export async function getAssignmentWarningsForSchedule(input: {
       if (!rangesOverlap(otherStart, otherEnd, targetStart, targetEnd)) return;
 
       const ministry = joinedSchedule?.ministries
-        ? (Array.isArray(joinedSchedule.ministries) ? joinedSchedule.ministries[0] : joinedSchedule.ministries)
+        ? firstRelation(joinedSchedule.ministries)
         : null;
       const role = row.ministry_roles
-        ? (Array.isArray(row.ministry_roles) ? row.ministry_roles[0] : row.ministry_roles)
+        ? firstRelation(row.ministry_roles)
         : null;
 
       warnings.push({
@@ -609,8 +831,8 @@ export async function getAssignmentWarningsForSchedule(input: {
     });
 
     return { data: warnings, error: null };
-  } catch (error: any) {
-    return { data: null, error: error.message };
+  } catch (error: unknown) {
+    return { data: null, error: getErrorMessage(error) };
   }
 }
 
@@ -625,8 +847,8 @@ export async function getScheduleByEventAndMinistry(eventId: string, ministryId:
 
     if (error) throw error;
     return { data, error: null };
-  } catch (error: any) {
-    return { data: null, error: error.message };
+  } catch (error: unknown) {
+    return { data: null, error: getErrorMessage(error) };
   }
 }
 
@@ -640,8 +862,8 @@ export async function getMinistryRolesOptions(ministryId: string) {
 
     if (error) throw error;
     return { data: (data ?? []) as MinistryRoleOption[], error: null };
-  } catch (error: any) {
-    return { data: null, error: error.message };
+  } catch (error: unknown) {
+    return { data: null, error: getErrorMessage(error) };
   }
 }
 
@@ -660,10 +882,8 @@ export async function getMinistryMembersOptions(ministryId: string) {
 
     if (error) throw error;
 
-    const formatted: MinistryMemberOption[] = (data ?? []).map((row: any) => {
-      const profile = Array.isArray(row.profiles)
-        ? row.profiles[0] ?? null
-        : row.profiles ?? null;
+    const formatted: MinistryMemberOption[] = ((data ?? []) as MinistryMemberOptionRow[]).map((row) => {
+      const profile = firstRelation(row.profiles);
 
       return {
         user_id: row.user_id,
@@ -673,8 +893,8 @@ export async function getMinistryMembersOptions(ministryId: string) {
     });
 
     return { data: formatted, error: null };
-  } catch (error: any) {
-    return { data: null, error: error.message };
+  } catch (error: unknown) {
+    return { data: null, error: getErrorMessage(error) };
   }
 }
 
@@ -700,13 +920,9 @@ export async function getScheduleAssignmentsDetailed(scheduleId: string) {
 
     if (error) throw error;
 
-    const formatted: ScheduleAssignmentDetailed[] = (data ?? []).map((row: any) => {
-      const profile = Array.isArray(row.profiles)
-        ? row.profiles[0] ?? null
-        : row.profiles ?? null;
-      const role = Array.isArray(row.ministry_roles)
-        ? row.ministry_roles[0] ?? null
-        : row.ministry_roles ?? null;
+    const formatted: ScheduleAssignmentDetailed[] = ((data ?? []) as ScheduleAssignmentDetailedRow[]).map((row) => {
+      const profile = firstRelation(row.profiles);
+      const role = firstRelation(row.ministry_roles);
 
       return {
         id: row.id,
@@ -719,7 +935,7 @@ export async function getScheduleAssignmentsDetailed(scheduleId: string) {
     });
 
     return { data: formatted, error: null };
-  } catch (error: any) {
-    return { data: null, error: error.message };
+  } catch (error: unknown) {
+    return { data: null, error: getErrorMessage(error) };
   }
 }

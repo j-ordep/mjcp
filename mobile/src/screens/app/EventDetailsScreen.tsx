@@ -8,6 +8,7 @@ import EventInfoCard from "../../components/card/EventInfoCard";
 import MemberCard from "../../components/card/MemberCard";
 import TeamStatusCard from "../../components/card/TeamStatusCard";
 import HeaderSecondary from "../../components/Header/HeaderSecondary";
+import type { EventDetailsScreenProps } from "../../navigation/AppNavigator";
 import {
   AssignmentWithDetails,
   getAssignmentsByEvent,
@@ -15,7 +16,10 @@ import {
 import { useAuthStore } from "../../stores/useAuthStore";
 import { formatDateShort, formatTime } from "../../utils/formatDate";
 
-export default function EventDetailsScreen({ route, navigation }) {
+export default function EventDetailsScreen({
+  route,
+  navigation,
+}: EventDetailsScreenProps) {
   const { event } = route.params; // Recebe o objeto event completo da lista
   const { profile } = useAuthStore();
 

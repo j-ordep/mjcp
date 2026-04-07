@@ -1,11 +1,13 @@
 # MJCP Mobile - Tarefas e Melhorias (Backlog)
 
-Data: 2026-04-04 (America/Sao_Paulo)
+Data: 2026-04-05 (America/Sao_Paulo)
 
 Objetivo imediato: sair do prototipo e fechar o fluxo principal de "Criacao de Escalas" com regra:
 - Admin pode criar/gerenciar tudo
 - Lider so cria/gerencia escalas da(s) sua(s) area(s)/ministerio(s)
+- Lider tambem pode se auto-escalar no proprio ministerio, desde que respeite as mesmas validacoes de membro/funcao da escala
 - Membro apenas visualiza e interage com o que for dele (confirmar/trocar)
+- Datas nao podem ficar em branco em formularios; quando nao houver valor inicial, o padrao deve ser a data/hora atual do sistema no momento da criacao/carregamento do formulario, ja selecionada no campo
 
 ---
 
@@ -35,6 +37,10 @@ Objetivo imediato: sair do prototipo e fechar o fluxo principal de "Criacao de E
 - [ ] Validacoes de data no banco
   - [ ] `events`: `end_at` deve ser > `start_at` quando `end_at` nao for nulo
   - [ ] `room_reservations`: `end_at > start_at`
+  - Regra de produto confirmada em 2026-04-05:
+    - `events.start_at` e obrigatorio
+    - nao permitir criar evento com `start_at` no passado
+    - se o usuario nao informar `end_at`, o sistema deve preencher automaticamente `start_at + 3 horas`
 
 - [ ] Indices para performance basica
   - [ ] `schedule_assignments (user_id, status)`
@@ -71,6 +77,10 @@ Objetivo imediato: sair do prototipo e fechar o fluxo principal de "Criacao de E
 - [x] Fechar regra "lider de uma area cria escala para a area dele"
   - Backend (RLS/RPC) deve ser a fonte de verdade (nao depender do app para bloquear).
   - Frontend apenas esconde o botao se nao tiver permissao.
+  - Regra complementar confirmada:
+    - lider pode atribuir a si mesmo uma funcao no proprio ministerio
+    - isso nao cria permissao extra fora do ministerio dele
+    - continua valendo a regra de integridade: `user_id` precisa pertencer ao ministerio e `role_id` precisa pertencer ao mesmo ministerio da `schedule`
 
 ---
 
@@ -98,16 +108,34 @@ Objetivo imediato: sair do prototipo e fechar o fluxo principal de "Criacao de E
 
 Contexto: o mesmo evento deve aparecer "simples" para quem nao esta escalado e "completo" para quem esta.
 
+Decisao registrada em 2026-04-05:
+- Direcao preferida atual:
+  - `EventsScreen` permanece como card informativo de eventos
+  - botoes de acao (`Confirmar`, `Preciso trocar`) ficam apenas nos cards de escala do usuario (`MySchedulesScreen`) e/ou em `EventDetailsScreen` quando ele estiver escalado
+  - motivo: separa descoberta de eventos de acao operacional sobre a escala, reduz ruido visual e evita duplicar a mesma acao em duas listas
+- Alternativa mantida documentada para reavaliacao futura:
+  - `EventsScreen` pode exibir card enriquecido com acoes quando `is_assigned = true`
+  - nesse modelo, o mesmo card mistura informacao de evento e acao de escala no feed geral
+  - essa opcao pode ser reconsiderada se houver evidencias de que os usuarios usam mais a lista geral de eventos do que `MySchedulesScreen`
+
 - [ ] Padronizar payload do backend para renderizacao de cards
   - Em vez de logica fragmentada, criar DTO/shape:
     - `is_assigned`
     - `my_role`
     - `my_ministry`
     - `team_counts` (confirmed/pending) quando aplicavel
+  - Mesmo na direcao preferida, esse payload continua util para enriquecer `EventsScreen` com estado "voce esta escalado" sem expor botoes de acao.
 
 - [ ] Implementar EventCard simples vs completo em `EventsScreen`
   - Hoje `EventsScreen` usa `EventCard` com `showActions={false}`
-  - Necessario: para eventos onde usuario estiver escalado, habilitar info de departamento/funcao (e possivelmente acoes).
+  - Direcao preferida atual:
+    - se `is_assigned = false`: card simples, apenas informativo
+    - se `is_assigned = true`: card informativo enriquecido com `my_ministry` e `my_role`, sem botoes de acao
+    - acoes continuam em `MySchedulesScreen` e `EventDetailsScreen`
+  - Caminho alternativo documentado:
+    - se `is_assigned = true`: card completo com `my_ministry`, `my_role` e botoes `Confirmar` / `Preciso trocar`
+    - exigir cuidado para nao duplicar acoes ja presentes em `MySchedulesScreen` e `EventDetailsScreen`
+    - exigir definicao clara de prioridade entre telas para evitar estados inconsistentes e refresh duplicado
 
 ---
 
@@ -126,6 +154,8 @@ Contexto: o mesmo evento deve aparecer "simples" para quem nao esta escalado e "
   - Definir padrao:
     - app assume fuso local da igreja
     - sempre salvar em UTC (ISO) e formatar no client
+    - campos de data/hora nunca iniciam vazios; default visual e funcional deve usar a data/hora atual do sistema em runtime quando o usuario ainda nao selecionou valor
+    - para eventos sem horario de termino informado, usar duracao padrao de `3 horas`
 
 ---
 

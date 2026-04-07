@@ -1,5 +1,8 @@
 import { NavigationContainer } from "@react-navigation/native";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import {
+  createNativeStackNavigator,
+  NativeStackScreenProps,
+} from "@react-navigation/native-stack";
 import { useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
 
@@ -18,10 +21,9 @@ import SignUpScreen from "../screens/auth/SignUpScreen";
 import { getProfile } from "../services/profileService";
 import { useAuthStore } from "../stores/useAuthStore";
 
-const Stack = createNativeStackNavigator();
-
 export type RootStackParamList = {
-  Login: undefined;
+  SignIn: undefined;
+  SignUp: undefined;
   Main: undefined;
   EventsScreen: undefined;
   EventDetails: { event: import("../types/models").Event };
@@ -38,6 +40,18 @@ export type RootStackParamList = {
     | undefined;
   CreateSchedule: undefined;
 };
+
+export type EventDetailsScreenProps = NativeStackScreenProps<
+  RootStackParamList,
+  "EventDetails"
+>;
+
+export type CreateEventScreenProps = NativeStackScreenProps<
+  RootStackParamList,
+  "CreateEvent"
+>;
+
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
   const { session, isLoading, setSession, setProfile, setLoading } =

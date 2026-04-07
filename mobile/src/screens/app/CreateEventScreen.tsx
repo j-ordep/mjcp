@@ -6,8 +6,20 @@ import { Calendar } from 'react-native-calendars';
 import { Calendar as CalendarIcon, Clock, X, Sparkles } from 'lucide-react-native';
 import HeaderSecondary from '../../components/Header/HeaderSecondary';
 import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useEventStore } from '../../stores/useEventStore';
 import DefaultButton from '../../components/button/DefaultButton';
+import type {
+  CreateEventScreenProps,
+  RootStackParamList,
+} from '../../navigation/AppNavigator';
+import {
+  createLocalDateTime,
+  formatLocalDateKey,
+  formatTimeFromDate,
+  getDefaultEndAt,
+  getNow,
+} from '../../utils/eventDate';
 
 const PRESETS = [
   { id: 'culto-familia', label: 'Culto da Família', title: 'Culto da Família', time: '18:00', location: 'Templo', description: "Culto da Família"},
@@ -15,8 +27,9 @@ const PRESETS = [
   { id: 'culto-cura-libertacao', label: 'Culto de cura e libertação', title: 'Culto de cura e libertação', time: '19:30', location: 'Templo', description: "Culto de cura e libertação"},
 ];
 
-export default function CreateEventScreen({ route }) {
-  const navigation = useNavigation();
+export default function CreateEventScreen({ route }: CreateEventScreenProps) {
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const params = route.params || {};
   const isEdit = params.mode === 'edit';
   const eventId = params.eventId;
@@ -27,10 +40,13 @@ export default function CreateEventScreen({ route }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
-  const [time, setTime] = useState(''); // Formato HH:MM
+  const [time, setTime] = useState(() => formatTimeFromDate(getNow())); // Formato HH:MM
   const [isPublic, setIsPublic] = useState(true);
   const [showCalendar, setShowCalendar] = useState(false);
-  const [selectedDays, setSelectedDays] = useState<Record<string, any>>({}); 
+  const [selectedDays, setSelectedDays] = useState<Record<string, any>>(() => {
+    const todayKey = formatLocalDateKey(getNow());
+    return { [todayKey]: { selected: true, selectedColor: '#000' } };
+  });
 
   useEffect(() => {
     if (isEdit && initialData) {
@@ -130,14 +146,14 @@ export default function CreateEventScreen({ route }) {
       // NOTA: a data é construída sem timezone explícito, usando o fuso local do device.
       // .toISOString() converte para UTC — correto para o campo TIMESTAMPTZ do Supabase.
       // Todos os usuários devem estar no mesmo fuso (Igreja local). Se multi-fuso for necessário no futuro, usar date-fns-tz.
-      const eventDate = new Date(`${y}-${m}-${d}T${hh}:${mm}:00`);
+      const eventDate = createLocalDateTime(`${y}-${m}-${d}`, `${hh}:${mm}`);
       
       const { error } = await updateExistingEvent(eventId, {
         title,
         description,
         location,
         start_at: eventDate.toISOString(),
-        end_at: new Date(eventDate.getTime() + 7200000).toISOString(),
+        end_at: getDefaultEndAt(eventDate).toISOString(),
         is_public: isPublic
       });
 
@@ -151,13 +167,13 @@ export default function CreateEventScreen({ route }) {
       const eventsToCreate = dates.map(dateStr => {
         const [y, m, d] = dateStr.split('-');
         // Mesma nota de timezone acima: usa fuso local do device.
-        const eventDate = new Date(`${y}-${m}-${d}T${hh}:${mm}:00`);
+        const eventDate = createLocalDateTime(`${y}-${m}-${d}`, `${hh}:${mm}`);
         return {
           title,
           description,
           location,
           start_at: eventDate.toISOString(),
-          end_at: new Date(eventDate.getTime() + 7200000).toISOString(),
+          end_at: getDefaultEndAt(eventDate).toISOString(),
           is_public: isPublic
         };
       });
