@@ -27,6 +27,10 @@ Objetivo imediato: sair do prototipo e fechar o fluxo principal de "Criacao de E
     - Lider tem acesso somente por ministerio (via `is_ministry_leader(...)`)
     - Membro nao consegue inserir/alterar `schedules` ou `schedule_assignments` de outros
 
+- [x] Permitir que lider gerencie ministry_members e ministry_member_roles apenas do proprio ministerio
+  - Necessario para tela separada de gestao de membros/capacidades
+  - Admin continua com acesso total
+
 - [x] Endurecer integridade de `schedule_assignments` (evitar dados inconsistentes)
   - Garantir que `role_id` pertence ao mesmo `ministry_id` da `schedule`
   - Garantir que `user_id` pertence ao ministerio (existe `ministry_members` para aquele usuario)
@@ -51,6 +55,46 @@ Objetivo imediato: sair do prototipo e fechar o fluxo principal de "Criacao de E
 
 ## P0 (Critico) - Fluxo de Criacao de Escalas (Produto)
 
+Decisao atualizada em 2026-04-07:
+- separar claramente `criacao da escala` de `montagem da equipe`
+- `CreateScheduleScreen` deve cuidar apenas do Step 1: contexto da escala
+- a montagem da equipe deixa de acontecer na mesma tela da criacao
+- depois de salvar a escala, o usuario volta para `MySchedulesScreen`
+- ao tocar em um card de escala, abrir uma nova tela de `Editar Escala`
+- essa nova tela concentra:
+  - edicao dos dados da escala
+  - montagem da equipe
+  - adicao/remocao de membros
+- `EventDetailsScreen` nao deve ser reutilizada para esse fluxo administrativo
+- regra de permissao mantida:
+  - admin gerencia tudo
+  - lider gerencia apenas escalas do proprio ministerio
+  - membro apenas visualiza e confirma a propria participacao
+
+- [x] Refatorar o fluxo para separar criacao de escala e montagem da equipe
+  - `MySchedulesScreen` continua como ponto de entrada da operacao
+  - CTA `Criar Escala` abre apenas o Step 1
+  - ao salvar, voltar para a lista de escalas
+  - ao tocar em uma escala, abrir nova tela/modal de `Editar Escala`
+  - evitar misturar criacao + membros na mesma superficie
+
+- [x] Criar tela de `Editar Escala`
+  - editar dados basicos da escala
+  - gerenciar equipe da escala
+  - adicionar/remover assignments
+  - respeitar permissao por ministerio
+
+- [x] Revisar `MySchedulesScreen` para servir melhor como hub operacional de escalas
+  - lista de cards de escala
+  - acao de criar escala
+  - acao de abrir escala existente
+  - diferenciar acoes de admin/lider vs membro
+
+- [x] Revisar UX para evitar sobrecarga e overengineering
+  - manter Step 1 simples e curto
+  - mover toda complexidade operacional para a tela de edicao
+  - evitar reusar telas com responsabilidade diferente so por conveniencia
+  - priorizar clareza de permissao e fluxo sobre efeitos visuais
 - [x] Implementar `CreateScheduleScreen` (hoje e placeholder)
   - Arquivo: `src/screens/app/CreateScheduleScreen.tsx`
   - Requisitos minimos (MVP):
@@ -203,3 +247,4 @@ Decisao registrada em 2026-04-05:
 - [ ] Membro ve evento no modo "escalado"
 - [ ] Membro confirma presenca
 - [ ] (Opcional) Membro solicita troca
+

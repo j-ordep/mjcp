@@ -13,31 +13,23 @@ import HeaderPrimary from "../../components/Header/HeaderPrimary";
 import NotificationsModal from "../../components/utils/NotificationsModal";
 import { RootStackParamList } from "../../navigation/AppNavigator";
 import { useEventStore } from "../../stores/useEventStore";
-import { useScheduleStore } from "../../stores/useScheduleStore";
-import { useAuthStore } from "../../stores/useAuthStore";
 
 export default function HomeScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const { events, isLoadingEvents, fetchUpcomingEvents } = useEventStore();
-  const { mySchedules, isLoadingSchedules, fetchMySchedules } = useScheduleStore();
-  const { profile, session } = useAuthStore();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   // Carrega os dados ao montar a tela
   useEffect(() => {
     fetchUpcomingEvents();
-    if (session?.user?.id) {
-      fetchMySchedules(session.user.id, profile?.role === 'admin');
-    }
-  }, [session?.user?.id]);
+  }, [fetchUpcomingEvents]);
 
 
 
   // Pegamos apenas os 2 próximos eventos em memória
   const nextEvents = events.slice(0, 1);
   // Pega apenas a escala mais próxima
-  const nextSchedule = mySchedules.length > 0 ? mySchedules[0] : null;
 
   return (
     <SafeAreaView

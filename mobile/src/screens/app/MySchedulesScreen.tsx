@@ -1,7 +1,7 @@
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Plus, Search } from "lucide-react-native";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -13,7 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import EventCard from "../../components/card/EventCard";
 import HeaderSecondary from "../../components/Header/HeaderSecondary";
 import { RootStackParamList } from "../../navigation/AppNavigator";
-import { UpcomingSchedule } from "../../services/scheduleService";
+import type { ScheduleCard } from "../../services/scheduleService";
 import { useAuthStore } from "../../stores/useAuthStore";
 import { useMinistryStore } from "../../stores/useMinistryStore";
 import { useScheduleStore } from "../../stores/useScheduleStore";
@@ -21,49 +21,76 @@ import { formatDateTime } from "../../utils/formatDate";
 
 type Filter = "current" | "past";
 
-const PAGE_SIZE = 10;
-
 export default function MySchedulesScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [activeFilter, setActiveFilter] = useState<Filter>("current");
   const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
 
-  const { mySchedules, isLoadingSchedules, fetchMySchedules } =
-    useScheduleStore();
   const { profile, session } = useAuthStore();
-  const { userMinistries, fetchUserMinistries } = useMinistryStore();
+  const { userMinistries, fetchUserMinistries, isLoadingMinistries } =
+    useMinistryStore();
+  const { scheduleCards, viewMode, isLoadingSchedules, fetchScheduleCards } =
+    useScheduleStore();
 
   const isAdmin = profile?.role === "admin";
-  const isLeader = userMinistries.some((m) => m.is_leader);
-  const canCreate = isAdmin || isLeader;
+  const leaderMinistryIds = useMemo(
+    () =>
+      userMinistries
+        .filter((ministry) => ministry.is_leader)
+        .map((ministry) => ministry.id),
+    [userMinistries],
+  );
+  const hasManageableScope = isAdmin || leaderMinistryIds.length > 0;
+  const canCreate = hasManageableScope;
 
-  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
 
-  useEffect(() => {
-    if (session?.user?.id) {
-      fetchMySchedules(session.user.id, isAdmin);
-    }
-    fetchUserMinistries();
-  }, [session?.user?.id]);
+      const load = async () => {
+        if (!session?.user?.id) return;
+
+        await fetchUserMinistries(true);
+        if (!isActive) return;
+
+        const refreshedUserMinistries = useMinistryStore.getState().userMinistries;
+        const refreshedLeaderMinistryIds = refreshedUserMinistries
+          .filter((ministry) => ministry.is_leader)
+          .map((ministry) => ministry.id);
+
+        await fetchScheduleCards({
+          userId: session.user.id,
+          isAdmin,
+          leaderMinistryIds: isAdmin ? [] : refreshedLeaderMinistryIds,
+          forceRefresh: true,
+        });
+      };
+
+      void load();
+
+      return () => {
+        isActive = false;
+      };
+    }, [fetchScheduleCards, fetchUserMinistries, isAdmin, session?.user?.id]),
+  );
 
   const filteredSchedules = useMemo(() => {
     const now = new Date().getTime();
-    return mySchedules.filter((s) => {
-      const eventTime = new Date(s.event.start_at).getTime();
+    const normalizedSearch = search.trim().toLowerCase();
+
+    return scheduleCards.filter((schedule) => {
+      const eventTime = new Date(schedule.event.start_at).getTime();
       const matchesFilter =
         activeFilter === "current" ? eventTime >= now : eventTime < now;
       const matchesSearch =
-        !debouncedSearch ||
-        s.event.title.toLowerCase().includes(debouncedSearch.toLowerCase());
+        !normalizedSearch ||
+        schedule.event.title.toLowerCase().includes(normalizedSearch) ||
+        schedule.ministry.name.toLowerCase().includes(normalizedSearch);
+
       return matchesFilter && matchesSearch;
     });
-  }, [mySchedules, activeFilter, debouncedSearch]);
-
-  const handleLoadMore = useCallback(() => {
-    // Para simplificar agora, o fetch traz tudo. Paginação real seria no Supabase.
-  }, []);
+  }, [activeFilter, scheduleCards, search]);
 
   const filters: { key: Filter; label: string }[] = useMemo(
     () => [
@@ -74,42 +101,56 @@ export default function MySchedulesScreen() {
   );
 
   const renderItem = useCallback(
-    ({ item }: { item: UpcomingSchedule }) => (
-      <EventCard
-        title={item.event.title}
-        date={formatDateTime(item.event.start_at)}
-        location={item.event.location ?? undefined}
-        description={item.event.description || undefined}
-        role={item.role_name}
-        showActions={true}
-        onDetails={() =>
-          navigation.navigate("EventDetails", {
-            event: item.event as any,
-          })
-        }
-        // TODO: integrar com scheduleService.requestSwap(item.id)
-        onSwap={() => alert("Solicitação de troca em breve!")}
-        // TODO: integrar com scheduleService.confirmPresence(item.id)
-        onConfirm={() => alert("Confirmação em breve!")}
-      />
-    ),
-    [navigation],
+    ({ item }: { item: ScheduleCard }) => {
+      const roleLabel =
+        item.my_assignments.length > 0
+          ? item.my_assignments.map((assignment) => assignment.role_name).join(", ")
+          : undefined;
+
+      return (
+        <EventCard
+          title={item.event.title}
+          date={formatDateTime(item.event.start_at)}
+          location={item.event.location ?? undefined}
+          description={item.event.description || undefined}
+          department={item.ministry.name}
+          role={roleLabel || undefined}
+          showActions={viewMode === "personal"}
+          onDetails={() => {
+            if (item.can_manage) {
+              navigation.navigate("EditSchedule", {
+                scheduleId: item.id,
+              });
+              return;
+            }
+
+            navigation.navigate("EventDetails", {
+              event: item.event as any,
+            });
+          }}
+          onSwap={() => alert("Solicitação de troca em breve!")}
+          onConfirm={() => alert("Confirmação em breve!")}
+        />
+      );
+    },
+    [navigation, viewMode],
   );
 
-  const keyExtractor = useCallback((item: UpcomingSchedule) => item.id, []);
-
-  const ListFooter = useCallback(() => null, []);
+  const keyExtractor = useCallback((item: ScheduleCard) => item.id, []);
 
   const ListEmpty = useCallback(() => {
-    if (isLoadingSchedules) return null;
+    if (isLoadingSchedules || isLoadingMinistries) return null;
+
     return (
       <View className="items-center justify-center py-16 px-10">
         <Text style={{ color: "#888", fontSize: 16, textAlign: "center" }}>
-          Nenhuma escala encontrada.
+          {viewMode === "manageable"
+            ? "Nenhuma escala gerenciável encontrada."
+            : "Nenhuma escala pessoal encontrada."}
         </Text>
       </View>
     );
-  }, [isLoadingSchedules]);
+  }, [isLoadingMinistries, isLoadingSchedules, viewMode]);
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={["top", "left", "right"]}>
@@ -121,7 +162,19 @@ export default function MySchedulesScreen() {
       />
 
       <View className="px-5">
-        {/* Search */}
+        <View className="mb-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3">
+          <Text style={{ fontWeight: "700", color: "#111827", marginBottom: 4 }}>
+            {viewMode === "manageable"
+              ? "Hub operacional de escalas"
+              : "Minhas participações"}
+          </Text>
+          <Text style={{ color: "#6b7280" }}>
+            {viewMode === "manageable"
+              ? "Abra uma escala para editar contexto, equipe e assignments."
+              : "Acompanhe onde você está escalado e use os atalhos do seu card."}
+          </Text>
+        </View>
+
         <View className="flex-row items-center bg-gray-100 rounded-xl border border-gray-200 px-3 mb-4">
           <Search size={18} color="#888" />
           <TextInput
@@ -139,36 +192,35 @@ export default function MySchedulesScreen() {
           />
         </View>
 
-        {/* Filters */}
         <View className="flex-row gap-2 mb-4">
-          {filters.map((f) => (
+          {filters.map((filter) => (
             <TouchableOpacity
-              key={f.key}
-              onPress={() => setActiveFilter(f.key)}
+              key={filter.key}
+              onPress={() => setActiveFilter(filter.key)}
               style={{
                 paddingVertical: 8,
                 paddingHorizontal: 18,
                 borderRadius: 10,
-                backgroundColor: activeFilter === f.key ? "#000" : "#f3f4f6",
-                borderWidth: activeFilter === f.key ? 0 : 1,
+                backgroundColor: activeFilter === filter.key ? "#000" : "#f3f4f6",
+                borderWidth: activeFilter === filter.key ? 0 : 1,
                 borderColor: "#e5e7eb",
               }}
             >
               <Text
                 style={{
-                  color: activeFilter === f.key ? "#fff" : "#222",
-                  fontWeight: activeFilter === f.key ? "bold" : "normal",
+                  color: activeFilter === filter.key ? "#fff" : "#222",
+                  fontWeight: activeFilter === filter.key ? "bold" : "normal",
                   fontSize: 14,
                 }}
               >
-                {f.label}
+                {filter.label}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
       </View>
 
-      {isLoadingSchedules ? (
+      {isLoadingSchedules || (profile?.role === "leader" && isLoadingMinistries) ? (
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color="#000" />
         </View>
@@ -183,9 +235,6 @@ export default function MySchedulesScreen() {
             paddingTop: 4,
           }}
           showsVerticalScrollIndicator={false}
-          onEndReached={handleLoadMore}
-          onEndReachedThreshold={0.3}
-          ListFooterComponent={ListFooter}
           ListEmptyComponent={ListEmpty}
         />
       )}

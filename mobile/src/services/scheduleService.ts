@@ -40,6 +40,7 @@ export interface AssignmentIntegrityValidation {
   isEventEditable: boolean;
   isRoleFromScheduleMinistry: boolean;
   isUserMemberOfScheduleMinistry: boolean;
+  doesUserHaveCapability: boolean;
   error: string | null;
 }
 
@@ -53,6 +54,7 @@ export interface MinistryMemberOption {
   user_id: string;
   full_name: string;
   avatar_url: string | null;
+  capability_role_ids: string[];
 }
 
 export interface ScheduleAssignmentDetailed {
@@ -206,6 +208,186 @@ interface UpcomingAllScheduleRow {
   schedule_assignments: UpcomingAllScheduleAssignmentRow[];
 }
 
+interface ScheduleCardManageableRow {
+  id: string;
+  notes: string | null;
+  created_at: string;
+  ministry_id: string;
+  event_id: string;
+  events:
+    | {
+        id: string;
+        title: string;
+        start_at: string;
+        location: string | null;
+        description: string | null;
+      }
+    | {
+        id: string;
+        title: string;
+        start_at: string;
+        location: string | null;
+        description: string | null;
+      }[];
+  ministries:
+    | {
+        id: string;
+        name: string;
+      }
+    | {
+        id: string;
+        name: string;
+      }[]
+    | null;
+  schedule_assignments:
+    | {
+        id: string;
+        user_id: string;
+        role_id: string;
+        status: AssignmentStatus;
+        ministry_roles:
+          | {
+              name: string;
+            }
+          | {
+              name: string;
+            }[]
+          | null;
+      }[]
+    | null;
+}
+
+interface ScheduleCardMemberRow {
+  id: string;
+  schedule_id: string;
+  role_id: string;
+  status: AssignmentStatus;
+  ministry_roles:
+    | {
+        name: string;
+      }
+    | {
+        name: string;
+      }[]
+    | null;
+  schedules:
+    | {
+        id: string;
+        notes: string | null;
+        created_at: string;
+        event_id: string;
+        ministry_id: string;
+        events:
+          | {
+              id: string;
+              title: string;
+              start_at: string;
+              location: string | null;
+              description: string | null;
+            }
+          | {
+              id: string;
+              title: string;
+              start_at: string;
+              location: string | null;
+              description: string | null;
+            }[];
+        ministries:
+          | {
+              id: string;
+              name: string;
+            }
+          | {
+              id: string;
+              name: string;
+            }[]
+          | null;
+        schedule_assignments:
+          | {
+              id: string;
+              status: AssignmentStatus;
+            }[]
+          | null;
+      }
+    | {
+        id: string;
+        notes: string | null;
+        created_at: string;
+        event_id: string;
+        ministry_id: string;
+        events:
+          | {
+              id: string;
+              title: string;
+              start_at: string;
+              location: string | null;
+              description: string | null;
+            }
+          | {
+              id: string;
+              title: string;
+              start_at: string;
+              location: string | null;
+              description: string | null;
+            }[];
+        ministries:
+          | {
+              id: string;
+              name: string;
+            }
+          | {
+              id: string;
+              name: string;
+            }[]
+          | null;
+        schedule_assignments:
+          | {
+              id: string;
+              status: AssignmentStatus;
+            }[]
+          | null;
+      }[]
+    | null;
+}
+
+interface ScheduleDetailsRow {
+  id: string;
+  event_id: string;
+  ministry_id: string;
+  notes: string | null;
+  created_at: string;
+  events:
+    | {
+        id: string;
+        title: string;
+        start_at: string;
+        end_at: string | null;
+        location: string | null;
+        description: string | null;
+      }
+    | {
+        id: string;
+        title: string;
+        start_at: string;
+        end_at: string | null;
+        location: string | null;
+        description: string | null;
+      }[]
+    | null;
+  ministries:
+    | {
+        id: string;
+        name: string;
+        color: string | null;
+      }
+    | {
+        id: string;
+        name: string;
+        color: string | null;
+      }[]
+    | null;
+}
+
 interface ConflictQueryRow {
   id: string;
   status: AssignmentStatus;
@@ -262,6 +444,11 @@ interface MinistryMemberOptionRow {
         avatar_url: string | null;
       }[]
     | null;
+  ministry_member_roles:
+    | {
+        role_id: string;
+      }[]
+    | null;
 }
 
 interface ScheduleAssignmentDetailedRow {
@@ -297,6 +484,24 @@ function getErrorMessage(error: unknown) {
 function firstRelation<T>(value: T | T[] | null | undefined) {
   if (Array.isArray(value)) return value[0] ?? null;
   return value ?? null;
+}
+
+function countAssignmentsByStatus(
+  assignments: { status: AssignmentStatus }[] | null | undefined,
+) {
+  const base = { total: 0, pending: 0, confirmed: 0 };
+
+  (assignments ?? []).forEach((assignment) => {
+    base.total += 1;
+    if (assignment.status === 'pending') base.pending += 1;
+    if (assignment.status === 'confirmed') base.confirmed += 1;
+  });
+
+  return base;
+}
+
+function compareScheduleCardsByDate(a: ScheduleCard, b: ScheduleCard) {
+  return new Date(a.event.start_at).getTime() - new Date(b.event.start_at).getTime();
 }
 
 function isEventDateEditable(startAtIso: string) {
@@ -531,6 +736,294 @@ export async function getUpcomingAllSchedules() {
   }
 }
 
+export async function getManageableScheduleCards(
+  userId: string,
+  ministryIds?: string[],
+) {
+  try {
+    let query = supabase
+      .from('schedules')
+      .select(`
+        id,
+        notes,
+        created_at,
+        ministry_id,
+        event_id,
+        events!inner (
+          id,
+          title,
+          start_at,
+          location,
+          description
+        ),
+        ministries!inner (
+          id,
+          name
+        ),
+        schedule_assignments (
+          id,
+          user_id,
+          role_id,
+          status,
+          ministry_roles (
+            name
+          )
+        )
+      `)
+      .gte('events.start_at', new Date().toISOString())
+      .order('created_at', { ascending: false });
+
+    if (ministryIds && ministryIds.length > 0) {
+      query = query.in('ministry_id', ministryIds);
+    }
+
+    const { data, error } = await query;
+
+    if (error) throw error;
+
+    const cards = ((data ?? []) as ScheduleCardManageableRow[])
+      .reduce<ScheduleCard[]>((acc, row) => {
+        const event = firstRelation(row.events);
+        const ministry = firstRelation(row.ministries);
+
+        if (!event || !ministry) return acc;
+
+        acc.push({
+          id: row.id,
+          notes: row.notes,
+          created_at: row.created_at,
+          event: {
+            id: event.id,
+            title: event.title,
+            start_at: event.start_at,
+            location: event.location,
+            description: event.description,
+          },
+          ministry: {
+            id: ministry.id,
+            name: ministry.name,
+          },
+          team: countAssignmentsByStatus(row.schedule_assignments),
+          my_assignments: (row.schedule_assignments ?? [])
+            .filter((assignment) => assignment.user_id === userId)
+            .map((assignment) => ({
+              id: assignment.id,
+              role_id: assignment.role_id,
+              role_name:
+                firstRelation(assignment.ministry_roles)?.name ?? "Função",
+              status: assignment.status,
+            })),
+          can_manage: true,
+        });
+
+        return acc;
+      }, [])
+      .sort(compareScheduleCardsByDate);
+
+    return { data: cards, error: null };
+  } catch (error: unknown) {
+    return { data: null, error: getErrorMessage(error) };
+  }
+}
+
+export async function getUserScheduleCards(userId: string) {
+  try {
+    const { data, error } = await supabase
+      .from('schedule_assignments')
+      .select(`
+        id,
+        schedule_id,
+        role_id,
+        status,
+        ministry_roles (
+          name
+        ),
+        schedules!inner (
+          id,
+          notes,
+          created_at,
+          event_id,
+          ministry_id,
+          events!inner (
+            id,
+            title,
+            start_at,
+            location,
+            description
+          ),
+          ministries!inner (
+            id,
+            name
+          ),
+          schedule_assignments (
+            id,
+            status
+          )
+        )
+      `)
+      .eq('user_id', userId);
+
+    if (error) throw error;
+
+    const grouped = new Map<string, ScheduleCard>();
+
+    ((data ?? []) as ScheduleCardMemberRow[]).forEach((row) => {
+      const schedule = firstRelation(row.schedules);
+      const event = schedule ? firstRelation(schedule.events) : null;
+      const ministry = schedule ? firstRelation(schedule.ministries) : null;
+      const role = firstRelation(row.ministry_roles);
+
+      if (!schedule || !event || !ministry || !role) return;
+
+      if (!grouped.has(schedule.id)) {
+        grouped.set(schedule.id, {
+          id: schedule.id,
+          notes: schedule.notes,
+          created_at: schedule.created_at,
+          event: {
+            id: event.id,
+            title: event.title,
+            start_at: event.start_at,
+            location: event.location,
+            description: event.description,
+          },
+          ministry: {
+            id: ministry.id,
+            name: ministry.name,
+          },
+          team: countAssignmentsByStatus(schedule.schedule_assignments),
+          my_assignments: [],
+          can_manage: false,
+        });
+      }
+
+      grouped.get(schedule.id)?.my_assignments.push({
+        id: row.id,
+        role_id: row.role_id,
+        role_name: role.name,
+        status: row.status,
+      });
+    });
+
+    return {
+      data: Array.from(grouped.values()).sort(compareScheduleCardsByDate),
+      error: null,
+    };
+  } catch (error: unknown) {
+    return { data: null, error: getErrorMessage(error) };
+  }
+}
+
+export async function getScheduleDetails(scheduleId: string) {
+  try {
+    const { data, error } = await supabase
+      .from('schedules')
+      .select(`
+        id,
+        event_id,
+        ministry_id,
+        notes,
+        created_at,
+        events!inner (
+          id,
+          title,
+          start_at,
+          end_at,
+          location,
+          description
+        ),
+        ministries!inner (
+          id,
+          name,
+          color
+        )
+      `)
+      .eq('id', scheduleId)
+      .single<ScheduleDetailsRow>();
+
+    if (error) throw error;
+
+    const event = firstRelation(data.events);
+    const ministry = firstRelation(data.ministries);
+
+    if (!event || !ministry) {
+      throw new Error('Nao foi possivel carregar o contexto da escala.');
+    }
+
+    return {
+      data: {
+        id: data.id,
+        event_id: data.event_id,
+        ministry_id: data.ministry_id,
+        notes: data.notes,
+        created_at: data.created_at,
+        event: {
+          id: event.id,
+          title: event.title,
+          start_at: event.start_at,
+          end_at: event.end_at,
+          location: event.location,
+          description: event.description,
+        },
+        ministry: {
+          id: ministry.id,
+          name: ministry.name,
+          color: ministry.color,
+        },
+      },
+      error: null,
+    };
+  } catch (error: unknown) {
+    return { data: null, error: getErrorMessage(error) };
+  }
+}
+
+export async function updateSchedule(input: {
+  scheduleId: string;
+  notes?: string | null;
+}) {
+  try {
+    const scheduleCtx = await getScheduleContext(input.scheduleId);
+    if (scheduleCtx.error || !scheduleCtx.data || !scheduleCtx.data.event) {
+      throw new Error(scheduleCtx.error ?? 'Escala nao encontrada.');
+    }
+
+    if (!isEventDateEditable(scheduleCtx.data.event.start_at)) {
+      throw new Error('Evento/escala nao e mais editavel apos o dia do evento.');
+    }
+
+    const { data, error } = await supabase
+      .from('schedules')
+      .update({
+        notes: input.notes ?? null,
+      })
+      .eq('id', input.scheduleId)
+      .select('id,event_id,ministry_id,notes,created_at')
+      .single();
+
+    if (error) throw error;
+
+    return { data, error: null };
+  } catch (error: unknown) {
+    return { data: null, error: getErrorMessage(error) };
+  }
+}
+
+export async function removeScheduleAssignment(assignmentId: string) {
+  try {
+    const { error } = await supabase
+      .from('schedule_assignments')
+      .delete()
+      .eq('id', assignmentId);
+
+    if (error) throw error;
+
+    return { error: null };
+  } catch (error: unknown) {
+    return { error: getErrorMessage(error) };
+  }
+}
+
 export async function getAssignmentsByEvent(eventId: string): Promise<{ data: AssignmentWithDetails[] | null; error: string | null }> {
   try {
     const { data, error } = await supabase
@@ -579,6 +1072,7 @@ export async function validateScheduleAssignmentIntegrity(
       isEventEditable: false,
       isRoleFromScheduleMinistry: false,
       isUserMemberOfScheduleMinistry: false,
+      doesUserHaveCapability: false,
       error: scheduleCtx.error ?? 'Escala nao encontrada.',
     };
   }
@@ -590,6 +1084,7 @@ export async function validateScheduleAssignmentIntegrity(
       isEventEditable: false,
       isRoleFromScheduleMinistry: false,
       isUserMemberOfScheduleMinistry: false,
+      doesUserHaveCapability: false,
       error: 'Evento/escala nao e mais editavel apos o dia do evento.',
     };
   }
@@ -606,6 +1101,7 @@ export async function validateScheduleAssignmentIntegrity(
       isEventEditable: true,
       isRoleFromScheduleMinistry: false,
       isUserMemberOfScheduleMinistry: false,
+      doesUserHaveCapability: false,
       error: roleResult.error?.message ?? 'Funcao nao encontrada.',
     };
   }
@@ -619,6 +1115,7 @@ export async function validateScheduleAssignmentIntegrity(
       isEventEditable: true,
       isRoleFromScheduleMinistry: false,
       isUserMemberOfScheduleMinistry: false,
+      doesUserHaveCapability: false,
       error: 'A funcao selecionada nao pertence ao ministerio da escala.',
     };
   }
@@ -636,19 +1133,53 @@ export async function validateScheduleAssignmentIntegrity(
       isEventEditable: true,
       isRoleFromScheduleMinistry: true,
       isUserMemberOfScheduleMinistry: false,
+      doesUserHaveCapability: false,
       error: memberResult.error.message,
     };
   }
 
-  const isUserMemberOfScheduleMinistry = !!memberResult.data;
-
-  if (!isUserMemberOfScheduleMinistry) {
+  if (!memberResult.data) {
     return {
       isValid: false,
       isEventEditable: true,
       isRoleFromScheduleMinistry: true,
       isUserMemberOfScheduleMinistry: false,
+      doesUserHaveCapability: false,
       error: 'O usuario nao pertence ao ministerio da escala.',
+    };
+  }
+
+  const isUserMemberOfScheduleMinistry = true;
+  const memberId = memberResult.data.id;
+
+  const capabilityResult = await supabase
+    .from('ministry_member_roles')
+    .select('id')
+    .eq('member_id', memberId)
+    .eq('role_id', roleId)
+    .maybeSingle();
+
+  if (capabilityResult.error) {
+    return {
+      isValid: false,
+      isEventEditable: true,
+      isRoleFromScheduleMinistry: true,
+      isUserMemberOfScheduleMinistry: true,
+      doesUserHaveCapability: false,
+      error: capabilityResult.error.message,
+    };
+  }
+
+  const doesUserHaveCapability = !!capabilityResult.data;
+
+  if (!doesUserHaveCapability) {
+    return {
+      isValid: false,
+      isEventEditable: true,
+      isRoleFromScheduleMinistry: true,
+      isUserMemberOfScheduleMinistry: true,
+      doesUserHaveCapability: false,
+      error: 'O usuario nao possui capability para a funcao selecionada.',
     };
   }
 
@@ -657,7 +1188,60 @@ export async function validateScheduleAssignmentIntegrity(
     isEventEditable: true,
     isRoleFromScheduleMinistry: true,
     isUserMemberOfScheduleMinistry: true,
+    doesUserHaveCapability: true,
     error: null,
+  };
+}
+
+export interface ScheduleCardAssignmentSummary {
+  id: string;
+  role_id: string;
+  role_name: string;
+  status: AssignmentStatus;
+}
+
+export interface ScheduleCard {
+  id: string;
+  notes: string | null;
+  created_at: string;
+  event: {
+    id: string;
+    title: string;
+    start_at: string;
+    location: string | null;
+    description: string | null;
+  };
+  ministry: {
+    id: string;
+    name: string;
+  };
+  team: {
+    total: number;
+    pending: number;
+    confirmed: number;
+  };
+  my_assignments: ScheduleCardAssignmentSummary[];
+  can_manage: boolean;
+}
+
+export interface ScheduleDetails {
+  id: string;
+  event_id: string;
+  ministry_id: string;
+  notes: string | null;
+  created_at: string;
+  event: {
+    id: string;
+    title: string;
+    start_at: string;
+    end_at: string | null;
+    location: string | null;
+    description: string | null;
+  };
+  ministry: {
+    id: string;
+    name: string;
+    color: string | null;
   };
 }
 
@@ -876,6 +1460,9 @@ export async function getMinistryMembersOptions(ministryId: string) {
         profiles!inner (
           full_name,
           avatar_url
+        ),
+        ministry_member_roles (
+          role_id
         )
       `)
       .eq('ministry_id', ministryId);
@@ -889,6 +1476,7 @@ export async function getMinistryMembersOptions(ministryId: string) {
         user_id: row.user_id,
         full_name: profile?.full_name ?? 'Membro',
         avatar_url: profile?.avatar_url ?? null,
+        capability_role_ids: (row.ministry_member_roles ?? []).map((role) => role.role_id),
       };
     });
 
@@ -939,3 +1527,6 @@ export async function getScheduleAssignmentsDetailed(scheduleId: string) {
     return { data: null, error: getErrorMessage(error) };
   }
 }
+
+
+

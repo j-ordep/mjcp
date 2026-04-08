@@ -1,48 +1,70 @@
 import { create } from "zustand";
 import {
-  getUpcomingAllSchedules,
-  getUpcomingUserSchedules,
-  UpcomingSchedule,
+  getManageableScheduleCards,
+  getUserScheduleCards,
+  type ScheduleCard,
 } from "../services/scheduleService";
 
+type ScheduleViewMode = "manageable" | "personal";
+
+interface FetchScheduleCardsInput {
+  userId: string;
+  isAdmin?: boolean;
+  leaderMinistryIds?: string[];
+  forceRefresh?: boolean;
+}
+
 interface ScheduleState {
-  mySchedules: UpcomingSchedule[];
+  scheduleCards: ScheduleCard[];
+  viewMode: ScheduleViewMode;
   isLoadingSchedules: boolean;
   error: string | null;
-  // #4 userId e isAdmin passados como parâmetros — store não acessa useAuthStore diretamente
-  fetchMySchedules: (
-    userId: string,
-    isAdmin?: boolean,
-    forceRefresh?: boolean,
-  ) => Promise<void>;
+  fetchScheduleCards: (input: FetchScheduleCardsInput) => Promise<void>;
+  clearScheduleCards: () => void;
 }
 
 export const useScheduleStore = create<ScheduleState>((set, get) => ({
-  mySchedules: [],
+  scheduleCards: [],
+  viewMode: "personal",
   isLoadingSchedules: false,
   error: null,
 
-  fetchMySchedules: async (
-    userId: string,
+  fetchScheduleCards: async ({
+    userId,
     isAdmin = false,
+    leaderMinistryIds = [],
     forceRefresh = false,
-  ) => {
-    // Se já temos as escalas salvas e não queremos forçar reload, ignorar
-    if (!forceRefresh && get().mySchedules.length > 0) return;
-
+  }) => {
     if (!userId) return;
+    if (!forceRefresh && get().scheduleCards.length > 0) return;
 
     set({ isLoadingSchedules: true, error: null });
 
-    // #9 Decisão de "admin vs membro" fica explícita no caller, não hardcoded no store
-    const { data, error } = isAdmin
-      ? await getUpcomingAllSchedules()
-      : await getUpcomingUserSchedules(userId);
+    const shouldUseManageableView = isAdmin || leaderMinistryIds.length > 0;
+    const result = shouldUseManageableView
+      ? await getManageableScheduleCards(
+          userId,
+          isAdmin ? undefined : leaderMinistryIds,
+        )
+      : await getUserScheduleCards(userId);
 
-    if (error) {
-      set({ error, isLoadingSchedules: false });
-    } else {
-      set({ mySchedules: data || [], isLoadingSchedules: false });
+    if (result.error) {
+      set({
+        error: result.error,
+        isLoadingSchedules: false,
+        scheduleCards: [],
+      });
+      return;
     }
+
+    set({
+      scheduleCards: result.data ?? [],
+      viewMode: shouldUseManageableView ? "manageable" : "personal",
+      isLoadingSchedules: false,
+    });
+  },
+
+  clearScheduleCards: () => {
+    set({ scheduleCards: [], error: null, viewMode: "personal" });
   },
 }));
