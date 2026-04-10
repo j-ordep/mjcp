@@ -22,6 +22,7 @@ Separar a criacao de escala da edicao operacional, reduzir a sobrecarga visual d
   - remover assignment
   - abrir gestao de membros do ministerio
   - revisar status pendente/confirmado
+  - pedir confirmacao antes de remover um assignment
 
 ## Decisoes de produto/UX assumidas
 
@@ -44,9 +45,17 @@ Separar a criacao de escala da edicao operacional, reduzir a sobrecarga visual d
 - Lider pode criar e gerenciar escalas do proprio ministerio.
 - A edicao operacional da equipe funciona em tela dedicada.
 - O card de `Minhas Escalas` foi ajustado para priorizar a funcao do usuario.
+- A remocao de membro da escala ja pede confirmacao explicita antes de excluir.
+- A exclusao da escala ainda nao existe na UI.
+- A atualizacao do contexto da escala ainda nao esta conectada na UI, embora exista funcao de update no service.
 
 ## Pendencias e proximos pensamentos
 
 - Confirmar em uso real se todos os cenarios de lider/admin tambem recebem `my_assignments` quando estiverem escalados.
 - Avaliar se o topo de `EditScheduleScreen` pode ficar ainda mais enxuto, com resumo visual pequeno do evento e ministerio.
+- Implementar edicao do contexto da escala em `EditScheduleScreen` usando o service ja existente.
+- Implementar exclusao da escala com confirmacao explicita do usuario.
+- Padronizar a experiencia de confirmacao destrutiva para:
+  - remover membro da escala
+  - excluir escala
 - Conectar confirmacao de presenca e fluxo de troca, que continuam fora deste recorte.

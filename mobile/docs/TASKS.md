@@ -79,10 +79,14 @@ Decisao atualizada em 2026-04-07:
   - evitar misturar criacao + membros na mesma superficie
 
 - [x] Criar tela de `Editar Escala`
-  - editar dados basicos da escala
-  - gerenciar equipe da escala
-  - adicionar/remover assignments
-  - respeitar permissao por ministerio
+  - status atual confirmado no codigo:
+    - gerenciar equipe da escala
+    - adicionar assignments
+    - remover assignments
+    - respeitar permissao por ministerio
+  - pendente para fechar o escopo originalmente desejado:
+    - editar dados basicos da escala
+    - excluir escala com confirmacao explicita do usuario
 
 - [x] Revisar `MySchedulesScreen` para servir melhor como hub operacional de escalas
   - lista de cards de escala
@@ -102,21 +106,27 @@ Decisao atualizada em 2026-04-07:
     - Selecionar `ministerio` permitido:
       - Admin: qualquer ministerio
       - Lider: apenas ministerios onde `ministry_members.is_leader = true`
-    - Criar/editar `schedules` (1 por (event_id, ministry_id))
-    - Adicionar `schedule_assignments` (membro + funcao/role)
+    - Criar `schedules` (1 por (event_id, ministry_id))
+    - Nao adicionar `schedule_assignments` nesta tela
+    - Ao salvar, voltar para `MySchedulesScreen`
+    - Montagem da equipe acontece apenas na tela de `Editar Escala`
     - Mostrar warnings (nao bloquear) para:
-      - membro bloqueou data (`blocked_dates`)
-      - conflito com outro ministerio no mesmo horario (soft conflict)
+      - nao se aplicam nesta tela apos a separacao do fluxo; warnings de indisponibilidade/conflito ficam na adicao de assignments na tela de edicao
 
 - [x] Implementar service de "criar escala" com validacoes
   - Arquivo: `src/services/scheduleService.ts`
-  - Sugestao de funcoes:
+  - Funcoes hoje confirmadas no codigo:
     - `createSchedule({ eventId, ministryId, notes? })`
     - `upsertScheduleAssignment({ scheduleId, userId, roleId })`
     - `removeScheduleAssignment(assignmentId)`
     - `checkBlockedDates(userId, dateRange)`
     - `checkConflicts(userId, eventId)`
-  - Observacao: hoje existe leitura (`getUpcomingUserSchedules`, `getUpcomingAllSchedules`, `getAssignmentsByEvent`), mas nao existe escrita.
+    - `getManageableScheduleCards(...)`
+    - `getUserScheduleCards(...)`
+    - `getScheduleDetails(scheduleId)`
+  - Pendente para a proxima rodada:
+    - ligar `updateSchedule(...)` na UI de `Editar Escala`
+    - implementar `deleteSchedule(...)` com confirmacao explicita
 
 - [x] Fechar regra "lider de uma area cria escala para a area dele"
   - Backend (RLS/RPC) deve ser a fonte de verdade (nao depender do app para bloquear).
@@ -130,21 +140,65 @@ Decisao atualizada em 2026-04-07:
 
 ## P1 (Alto) - Conectar Interacoes do Membro
 
-- [ ] Confirmar presenca (membro)
-  - Onde esta o TODO:
-    - `src/screens/app/MySchedulesScreen.tsx` (botao "Confirmar")
-    - `src/screens/app/EventDetailsScreen.tsx` (botao "Confirmar presenca")
-  - Implementar update em `schedule_assignments`:
-    - `status = 'confirmed'`
-    - `confirmed_at = now()`
+- [x] Confirmar presenca (membro e lider escalado)
+  - Estado atual confirmado no codigo:
+    - `EditScheduleScreen` ja permite confirmar a propria participacao no nivel da `schedule`
+    - `MySchedulesScreen` ja permite confirmar a propria participacao quando o card possui `my_assignments`
+    - `EventDetailsScreen` ja permite confirmar a propria participacao
+    - a confirmacao acontece no nivel correto do dominio: `schedule_assignments`
   - Regras:
     - so o dono do assignment pode confirmar (policy ja existe para UPDATE own)
+    - para a UX atual, confirmar a escala deve confirmar os assignments do proprio usuario naquela `schedule`
 
 - [ ] Solicitar troca (membro)
-  - Criar `swap_requests` (ja existe tabela)
+  - Decisao atualizada em 2026-04-10:
+    - lider nao aprova swap
+    - lider apenas recebe notificacao e pode agir manualmente na escala se quiser
+    - a troca e validada pela primeira pessoa elegivel que aceitar
+    - nao e prioridade manter historico forte da substituicao entre pessoas
+    - o historico mais relevante fica nas notificacoes para acompanhamento do lider
+    - pessoas elegiveis:
+      - mesmo ministerio
+      - mesma funcao/capability da solicitacao
+    - no dia do evento e depois dele, a escala vira historico e fica somente leitura
+    - nesse estado nao pode:
+      - criar swap
+      - aceitar swap
+      - alterar equipe
+      - confirmar presenca
+  - `swap_requests` ja existe no banco
+  - Estado atual confirmado no codigo:
+    - `MySchedulesScreen` ja consegue abrir o fluxo minimo e criar `swap_requests`
+    - `EditScheduleScreen` ja consegue abrir o fluxo minimo e criar `swap_requests`
+    - `EventDetailsScreen` ja consegue abrir o fluxo minimo e criar `swap_requests`
   - Definir UX minima:
-    - usuario informa "motivo" e opcionalmente "para quem" (to_user_id)
-    - notificar lider/admin
+    - usuario escolhe a propria funcao/assignment e informa motivo opcional
+    - se o usuario ja tiver uma solicitacao pendente naquela escala:
+      - nao abrir novo pedido
+      - oferecer cancelamento da solicitacao atual
+    - nao permitir dois pedidos pendentes para a mesma escala pelo mesmo solicitante
+    - modal deve ficar estavel em iOS/Android:
+      - overlay independente da animacao do sheet
+      - teclado nao pode cobrir conteudo
+      - teclado deve fechar ao tocar fora / submeter / fluxo natural
+    - validar e exibir corretamente pessoas elegiveis do mesmo ministerio e mesma funcao
+    - permitir aceite pela primeira pessoa elegivel
+    - garantir concorrencia segura no aceite ("first write wins")
+  - Pendente nesta rodada:
+    - notificacoes ainda nao foram conectadas
+    - remover/ajustar qualquer fluxo que trate lider como aprovador
+  - Preparado no repo e pendente de aplicar no Supabase:
+    - migration para impedir criacao/aceite/cancelamento de swap no dia do evento ou depois dele
+
+- [ ] Revisar experiencia do usuario escalado
+  - Lider escalado deve manter os dois contextos:
+    - contexto de gerenciador da escala
+    - contexto de participante da escala
+  - `EditScheduleScreen` ja comecou a refletir isso com bloco de "Minha participacao"
+  - ainda falta revisar consistencia entre:
+    - `MySchedulesScreen`
+    - `EventDetailsScreen`
+    - `EditScheduleScreen`
 
 ---
 
@@ -169,6 +223,9 @@ Decisao registrada em 2026-04-05:
     - `my_ministry`
     - `team_counts` (confirmed/pending) quando aplicavel
   - Mesmo na direcao preferida, esse payload continua util para enriquecer `EventsScreen` com estado "voce esta escalado" sem expor botoes de acao.
+  - Observacao:
+    - a lista atual ja carrega `my_assignments`, mas ainda existe logica de contexto espalhada nas telas
+    - consolidar este payload ajuda especialmente no caso de lider que tambem esta escalado
 
 - [ ] Implementar EventCard simples vs completo em `EventsScreen`
   - Hoje `EventsScreen` usa `EventCard` com `showActions={false}`
@@ -186,12 +243,28 @@ Decisao registrada em 2026-04-05:
 ## P1 (Alto) - Tipos e Qualidade de Codigo
 
 - [ ] Gerar/atualizar `src/types/database.types.ts`
-  - Observacao: arquivo atualmente esta vazio.
+  - Observacao:
+    - este item esta parcialmente desatualizado; o arquivo nao esta mais vazio
+    - ainda assim, vale revisar cobertura e remover pontos frageis restantes
   - Beneficio: tipagem forte do Supabase e menos `any`.
 
-- [ ] Tipar navegacao e params
+- [~] Criar base inicial de testes automatizados
+  - Estado atual:
+    - `npm test` ja compila e executa testes unitarios leves sem depender de Jest
+    - suite inicial cobre `src/utils/scheduleParticipation.ts`
+    - cobertura ampliada para `src/utils/scheduleRules.ts` com regras de contagem, editabilidade, overlap e warnings
+    - cobertura ampliada para mapeamentos de `ministry` e `schedule cards`, reduzindo risco nas transformacoes do service layer
+  - Proximos alvos naturais:
+    - `scheduleService`
+    - `ministryService`
+    - utilitarios de renderizacao/estado de escala
+
+- [~] Tipar navegacao e params
   - Ex.: `EventDetailsScreen` recebe `route/naviation` sem tipos.
   - Consolidar em `RootStackParamList` e tipos do React Navigation.
+  - Estado atual:
+    - `EventDetailsScreen` ja usa props tipadas do navigator
+    - `EventDetails` no navigator ja aceita payload menor do que `Event`, reduzindo casts frageis no fluxo de escalas
 
 - [ ] Padronizar timezone e datas
   - Hoje eventos sao criados usando `new Date(...).toISOString()` (ok para TIMESTAMPTZ)
@@ -208,6 +281,13 @@ Decisao registrada em 2026-04-05:
 - [ ] Criar notificacao ao:
   - novo assignment criado
   - swap request criado/atualizado
+  - swap request criado para:
+    - membros elegiveis do mesmo ministerio e mesma funcao
+    - lider responsavel pela escala
+  - acompanhamento operacional do lider:
+    - quando o pedido for criado
+    - quando alguem assumir a troca
+    - quando o pedido for cancelado
   - reserva de sala criada/cancelada
   - (opcional) confirmacao/declinio
 
@@ -236,6 +316,9 @@ Decisao registrada em 2026-04-05:
 - [ ] Loading/error states consistentes em todas as telas
 - [ ] Pull-to-refresh (Home, Events, MySchedules)
 - [ ] Estados vazios com mensagem clara
+- [ ] Definir estrategia futura de retencao/limpeza de escalas antigas
+  - nao e prioridade agora
+  - por enquanto permanecem como historico somente leitura
 
 ---
 
@@ -244,7 +327,10 @@ Decisao registrada em 2026-04-05:
 - [x] Admin cria evento (ja existe)
 - [x] Lider/admin cria schedule para (evento, ministerio)
 - [x] Lider/admin adiciona assignments (membro + role)
+- [x] Lider/admin remove assignments com confirmacao explicita do usuario
+- [ ] Lider/admin atualiza dados basicos da escala
+- [ ] Lider/admin exclui escala com confirmacao explicita do usuario
 - [ ] Membro ve evento no modo "escalado"
-- [ ] Membro confirma presenca
+- [x] Membro confirma presenca
 - [ ] (Opcional) Membro solicita troca
 
