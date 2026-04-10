@@ -1,15 +1,31 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { DoorOpen, Home, Music, User } from "lucide-react-native";
+import { DoorOpen, Home, Music, User, Users } from "lucide-react-native";
+import { useEffect, useMemo } from "react";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import HomeScreen from "../screens/app/HomeScreen";
+import ManageMinistryMembersScreen from "../screens/app/ManageMinistryMembersScreen";
 import MusicScreen from "../screens/app/MusicScreen";
 import ProfileScreen from "../screens/app/ProfileScreen";
 import RoomsScreen from "../screens/app/RoomsScreen";
+import { useAuthStore } from "../stores/useAuthStore";
+import { useMinistryStore } from "../stores/useMinistryStore";
 
 const Tab = createBottomTabNavigator();
 
 export default function TabNavigator() {
   const insets = useSafeAreaInsets();
+  const { profile, session } = useAuthStore();
+  const { userMinistries, fetchUserMinistries } = useMinistryStore();
+
+  useEffect(() => {
+    if (!session?.user?.id) return;
+    void fetchUserMinistries();
+  }, [fetchUserMinistries, session?.user?.id]);
+
+  const showMemberManagementTab = useMemo(() => {
+    if (profile?.role === "admin") return true;
+    return userMinistries.some((ministry) => ministry.is_leader);
+  }, [profile?.role, userMinistries]);
 
   return (
     <Tab.Navigator
@@ -57,6 +73,18 @@ export default function TabNavigator() {
           ),
         }}
       />
+      {showMemberManagementTab ? (
+        <Tab.Screen
+          name="ManageMembers"
+          component={ManageMinistryMembersScreen}
+          options={{
+            tabBarLabel: "Membros",
+            tabBarIcon: ({ color, size }) => (
+              <Users color={color} size={size ?? 24} />
+            ),
+          }}
+        />
+      ) : null}
       <Tab.Screen
         name="Profile"
         component={ProfileScreen}

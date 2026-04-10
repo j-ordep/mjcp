@@ -14,6 +14,8 @@ interface EventCardProps {
   onSwap?: () => void;
   onDetails?: () => void;
   showActions?: boolean;
+  swapLabel?: string;
+  swapVariant?: 'outline' | 'destructive';
 }
 
 export default function EventCard(props: EventCardProps) {
@@ -75,8 +77,8 @@ export default function EventCard(props: EventCardProps) {
       {props.showActions && (
         <View className="flex-row gap-3 px-4 pb-4">
           <View className="flex-1">
-            <DefaultButton variant="outline" onPress={props.onSwap}>
-              Preciso trocar
+            <DefaultButton variant={props.swapVariant ?? "outline"} onPress={props.onSwap}>
+              {props.swapLabel ?? "Preciso trocar"}
             </DefaultButton>
           </View>
 

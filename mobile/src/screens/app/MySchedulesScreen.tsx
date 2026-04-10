@@ -1,9 +1,10 @@
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Search } from "lucide-react-native";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Plus, Search } from "lucide-react-native";
+import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   TouchableOpacity,
   View,
@@ -12,201 +13,341 @@ import { Text, TextInput } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import EventCard from "../../components/card/EventCard";
 import HeaderSecondary from "../../components/Header/HeaderSecondary";
+import RequestSwapModal, {
+  type SwapAssignmentOption,
+} from "../../components/schedule/RequestSwapModal";
 import { RootStackParamList } from "../../navigation/AppNavigator";
+import {
+  cancelOwnSwapRequest,
+  confirmMyAssignmentsForSchedule,
+  createSwapRequest,
+  getOwnPendingSwapRequestForAssignments,
+  getOwnPendingSwapRequestsForAssignments,
+  getSwapCandidatesForAssignment,
+  type SwapCandidateOption,
+  type ScheduleCard,
+} from "../../services/scheduleService";
+import { useAuthStore } from "../../stores/useAuthStore";
+import { useMinistryStore } from "../../stores/useMinistryStore";
+import { useScheduleStore } from "../../stores/useScheduleStore";
+import { formatDateTime } from "../../utils/formatDate";
+import {
+  getOwnRoleLabel,
+  hasPendingAssignments,
+} from "../../utils/scheduleParticipation";
 
 type Filter = "current" | "past";
-
-interface Schedule {
-  id: number;
-  title: string;
-  date: string;
-  location: string;
-  department: string;
-  role: string;
-  isPast: boolean;
-}
-
-// Mock: escalas do usuário
-const allMockSchedules: Schedule[] = Array.from({ length: 40 }, (_, i) => {
-  const templates = [
-    {
-      title: "Ensaio da Banda",
-      location: "Sala de Ensaio 1",
-      department: "Louvor",
-      role: "Cantor",
-    },
-    {
-      title: "Culto de Celebração",
-      location: "Templo Principal",
-      department: "Ministério de Música",
-      role: "Tecladista",
-    },
-    {
-      title: "Culto de Jovens",
-      location: "Templo Principal",
-      department: "Ministério Jovem",
-      role: "Backing Vocal",
-    },
-    {
-      title: "Ensaio Geral",
-      location: "Sala de Ensaio 2",
-      department: "Louvor",
-      role: "Guitarrista",
-    },
-    {
-      title: "Culto Domingo",
-      location: "Templo Principal",
-      department: "Ministério de Música",
-      role: "Baixista",
-    },
-  ];
-  const t = templates[i % templates.length];
-  
-  // Create a mix of past and future dates for testing
-  const isPast = i % 3 === 0; // 1 in 3 events are in the past
-  const month = isPast ? 10 : 12; // Outubro para passados, Dezembro para futuros
-  const day = (i % 28) + 1;
-  const year = 2025;
-  
-  return {
-    id: i + 1,
-    title: t.title,
-    date: `${String(day).padStart(2, "0")}/${String(month).padStart(2, "0")}/${year} 19:00`,
-    location: t.location,
-    department: t.department,
-    role: t.role,
-    isPast,
-  };
-});
-
-const PAGE_SIZE = 10;
-
-function fetchSchedules(
-  page: number,
-  search: string,
-  filter: Filter,
-): Promise<{ data: Schedule[]; hasMore: boolean }> {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const filtered = allMockSchedules.filter((e) => {
-        const matchesSearch = !search || e.title.toLowerCase().includes(search.toLowerCase());
-        const matchesFilter = filter === "current" ? !e.isPast : e.isPast;
-        
-        return matchesSearch && matchesFilter;
-      });
-      const start = page * PAGE_SIZE;
-      const data = filtered.slice(start, start + PAGE_SIZE);
-      resolve({ data, hasMore: start + PAGE_SIZE < filtered.length });
-    }, 400);
-  });
-}
 
 export default function MySchedulesScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [activeFilter, setActiveFilter] = useState<Filter>("current");
   const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [schedules, setSchedules] = useState<Schedule[]>([]);
-  const [page, setPage] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isSwapModalVisible, setIsSwapModalVisible] = useState(false);
+  const [isSavingSwapRequest, setIsSavingSwapRequest] = useState(false);
+  const [swapReason, setSwapReason] = useState("");
+  const [selectedSwapAssignmentId, setSelectedSwapAssignmentId] = useState<string | null>(null);
+  const [swapAssignments, setSwapAssignments] = useState<SwapAssignmentOption[]>([]);
+  const [swapCandidates, setSwapCandidates] = useState<SwapCandidateOption[]>([]);
+  const [pendingSwapRequestByAssignmentId, setPendingSwapRequestByAssignmentId] = useState<
+    Record<string, string>
+  >({});
 
-  useEffect(() => {
-    if (debounceTimer.current) clearTimeout(debounceTimer.current);
-    debounceTimer.current = setTimeout(() => {
-      setDebouncedSearch(search);
-    }, 300);
-    return () => {
-      if (debounceTimer.current) clearTimeout(debounceTimer.current);
-    };
-  }, [search]);
+  const { profile, session } = useAuthStore();
+  const { userMinistries, fetchUserMinistries, isLoadingMinistries } =
+    useMinistryStore();
+  const { scheduleCards, viewMode, isLoadingSchedules, fetchScheduleCards } =
+    useScheduleStore();
 
-  useEffect(() => {
-    setSchedules([]);
-    setPage(0);
-    setHasMore(true);
-    loadPage(0, debouncedSearch, activeFilter, true);
-  }, [debouncedSearch, activeFilter]);
+  const isAdmin = profile?.role === "admin";
+  const leaderMinistryIds = useMemo(
+    () =>
+      userMinistries
+        .filter((ministry) => ministry.is_leader)
+        .map((ministry) => ministry.id),
+    [userMinistries],
+  );
+  const hasManageableScope = isAdmin || leaderMinistryIds.length > 0;
+  const canCreate = hasManageableScope;
 
-  async function loadPage(p: number, searchTerm: string, filter: Filter, isReset: boolean) {
-    if (isReset) setLoading(true);
-    else setLoadingMore(true);
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
 
-    const result = await fetchSchedules(p, searchTerm, filter);
+      const load = async () => {
+        if (!session?.user?.id) return;
 
-    setSchedules((prev) =>
-      isReset ? result.data : [...prev, ...result.data],
-    );
-    setHasMore(result.hasMore);
-    setPage(p);
+        await fetchUserMinistries(true);
+        if (!isActive) return;
 
-    if (isReset) setLoading(false);
-    else setLoadingMore(false);
-  }
+        const refreshedUserMinistries = useMinistryStore.getState().userMinistries;
+        const refreshedLeaderMinistryIds = refreshedUserMinistries
+          .filter((ministry) => ministry.is_leader)
+          .map((ministry) => ministry.id);
 
-  const handleLoadMore = useCallback(() => {
-    if (loadingMore || !hasMore || loading) return;
-    loadPage(page + 1, debouncedSearch, activeFilter, false);
-  }, [loadingMore, hasMore, loading, page, debouncedSearch, activeFilter]);
+        await fetchScheduleCards({
+          userId: session.user.id,
+          isAdmin,
+          leaderMinistryIds: isAdmin ? [] : refreshedLeaderMinistryIds,
+          forceRefresh: true,
+        });
+      };
+
+      void load();
+
+      return () => {
+        isActive = false;
+      };
+    }, [fetchScheduleCards, fetchUserMinistries, isAdmin, session?.user?.id]),
+  );
+
+  const filteredSchedules = useMemo(() => {
+    const now = new Date().getTime();
+    const normalizedSearch = search.trim().toLowerCase();
+
+    return scheduleCards.filter((schedule) => {
+      const eventTime = new Date(schedule.event.start_at).getTime();
+      const matchesFilter =
+        activeFilter === "current" ? eventTime >= now : eventTime < now;
+      const matchesSearch =
+        !normalizedSearch ||
+        schedule.event.title.toLowerCase().includes(normalizedSearch) ||
+        schedule.ministry.name.toLowerCase().includes(normalizedSearch);
+
+      return matchesFilter && matchesSearch;
+    });
+  }, [activeFilter, scheduleCards, search]);
 
   const filters: { key: Filter; label: string }[] = useMemo(
     () => [
-      { key: "current", label: "Deste Mês" },
+      { key: "current", label: "Próximas" },
       { key: "past", label: "Anteriores" },
     ],
     [],
   );
 
-  const renderItem = useCallback(
-    ({ item }: { item: Schedule }) => (
-      <EventCard
-        title={item.title}
-        date={item.date}
-        location={item.location}
-        department={item.department}
-        role={item.role}
-        onDetails={() => navigation.navigate("EventDetails")}
-        onSwap={() => alert("Solicitação de troca enviada!")}
-        onConfirm={() => alert("Presença confirmada!")}
-      />
-    ),
-    [navigation],
+  const loadSwapCandidates = useCallback(async (assignmentId: string | null) => {
+    if (!assignmentId) {
+      setSwapCandidates([]);
+      return;
+    }
+
+    const { data, error } = await getSwapCandidatesForAssignment(assignmentId);
+    if (error) {
+      Alert.alert("Nao foi possivel carregar candidatos", error);
+      setSwapCandidates([]);
+      return;
+    }
+
+    setSwapCandidates(data ?? []);
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      const loadPendingSwapRequests = async () => {
+        const assignmentIds = scheduleCards.flatMap((schedule) =>
+          schedule.my_assignments.map((assignment) => assignment.id),
+        );
+
+        const { data, error } = await getOwnPendingSwapRequestsForAssignments(assignmentIds);
+        if (error) {
+          setPendingSwapRequestByAssignmentId({});
+          return;
+        }
+
+        const nextMap = Object.fromEntries(
+          (data ?? []).map((request) => [request.from_assignment_id, request.id]),
+        );
+        setPendingSwapRequestByAssignmentId(nextMap);
+      };
+
+      void loadPendingSwapRequests();
+    }, [scheduleCards]),
   );
 
-  const keyExtractor = useCallback((item: Schedule) => String(item.id), []);
+  const handleOpenSwapForAssignments = useCallback(
+    async (assignments: SwapAssignmentOption[]) => {
+      if (assignments.length === 0) return;
 
-  const ListFooter = useCallback(() => {
-    if (!loadingMore) return null;
-    return (
-      <View className="items-center py-4">
-        <ActivityIndicator size="small" color="#000" />
-      </View>
-    );
-  }, [loadingMore]);
+      const { data: pendingRequest, error } =
+        await getOwnPendingSwapRequestForAssignments(
+          assignments.map((assignment) => assignment.id),
+        );
+
+      if (error) {
+        Alert.alert("Nao foi possivel verificar a troca", error);
+        return;
+      }
+
+      if (pendingRequest) {
+        setPendingSwapRequestByAssignmentId((current) => ({
+          ...current,
+          [pendingRequest.from_assignment_id]: pendingRequest.id,
+        }));
+        return;
+      }
+
+      setSwapAssignments(assignments);
+      const nextAssignmentId = assignments[0]?.id ?? null;
+      setSelectedSwapAssignmentId(nextAssignmentId);
+      void loadSwapCandidates(nextAssignmentId);
+      setSwapReason("");
+      setIsSwapModalVisible(true);
+    },
+    [loadSwapCandidates],
+  );
+
+  const renderItem = useCallback(
+    ({ item }: { item: ScheduleCard }) => {
+      const roleLabel =
+        item.my_assignments.length > 0
+          ? getOwnRoleLabel(item.my_assignments)
+          : undefined;
+      const showOwnActions = item.my_assignments.length > 0;
+      const hasPendingOwnAssignments = hasPendingAssignments(item.my_assignments);
+      const pendingOwnSwapRequestId =
+        item.my_assignments
+          .map((assignment) => pendingSwapRequestByAssignmentId[assignment.id])
+          .find(Boolean) ?? null;
+      const hasPendingOwnSwapRequest = !!pendingOwnSwapRequestId;
+
+      return (
+        <EventCard
+          title={item.event.title}
+          date={formatDateTime(item.event.start_at)}
+          location={item.event.location ?? undefined}
+          description={item.event.description || undefined}
+          department={item.ministry.name}
+          role={roleLabel || undefined}
+          showActions={showOwnActions}
+          swapLabel={hasPendingOwnSwapRequest ? "Cancelar troca" : "Preciso trocar"}
+          swapVariant={hasPendingOwnSwapRequest ? "destructive" : "outline"}
+          onDetails={() => {
+            if (item.can_manage) {
+              navigation.navigate("EditSchedule", {
+                scheduleId: item.id,
+              });
+              return;
+            }
+
+            navigation.navigate("EventDetails", {
+              event: item.event,
+            });
+          }}
+          onSwap={() => {
+            if (hasPendingOwnSwapRequest && pendingOwnSwapRequestId) {
+              Alert.alert(
+                "Cancelar troca",
+                "Deseja cancelar sua solicitacao pendente desta escala?",
+                [
+                  { text: "Voltar", style: "cancel" },
+                  {
+                    text: "Cancelar troca",
+                    style: "destructive",
+                    onPress: async () => {
+                      const { error } = await cancelOwnSwapRequest(pendingOwnSwapRequestId);
+                      if (error) {
+                        Alert.alert("Nao foi possivel cancelar", error);
+                        return;
+                      }
+
+                      setPendingSwapRequestByAssignmentId((current) => {
+                        const next = { ...current };
+                        for (const assignment of item.my_assignments) {
+                          delete next[assignment.id];
+                        }
+                        return next;
+                      });
+                      Alert.alert(
+                        "Solicitacao cancelada",
+                        "Sua solicitacao pendente foi cancelada.",
+                      );
+                    },
+                  },
+                ],
+              );
+              return;
+            }
+
+            void handleOpenSwapForAssignments(item.my_assignments);
+          }}
+          onConfirm={async () => {
+            if (!session?.user?.id || !hasPendingOwnAssignments) return;
+
+            const { error } = await confirmMyAssignmentsForSchedule({
+              scheduleId: item.id,
+              userId: session.user.id,
+            });
+
+            if (error) {
+              Alert.alert("Nao foi possivel confirmar", error);
+              return;
+            }
+
+            await fetchScheduleCards({
+              userId: session.user.id,
+              isAdmin,
+              leaderMinistryIds,
+              forceRefresh: true,
+            });
+            Alert.alert(
+              "Presenca confirmada",
+              "Sua participacao nesta escala foi confirmada.",
+            );
+          }}
+        />
+      );
+    },
+    [
+      fetchScheduleCards,
+      handleOpenSwapForAssignments,
+      isAdmin,
+      leaderMinistryIds,
+      navigation,
+      pendingSwapRequestByAssignmentId,
+      session?.user?.id,
+    ],
+  );
+
+  const keyExtractor = useCallback((item: ScheduleCard) => item.id, []);
 
   const ListEmpty = useCallback(() => {
-    if (loading) return null;
+    if (isLoadingSchedules || isLoadingMinistries) return null;
+
     return (
-      <View className="items-center justify-center py-16">
-        <Text style={{ color: "#888", fontSize: 16 }}>
-          Nenhuma escala encontrada
+      <View className="items-center justify-center py-16 px-10">
+        <Text style={{ color: "#888", fontSize: 16, textAlign: "center" }}>
+          {viewMode === "manageable"
+            ? "Nenhuma escala gerenciável encontrada."
+            : "Nenhuma escala pessoal encontrada."}
         </Text>
       </View>
     );
-  }, [loading]);
+  }, [isLoadingMinistries, isLoadingSchedules, viewMode]);
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={["top", "left", "right"]}>
       <HeaderSecondary
         title="Minhas Escalas"
         onBack={() => navigation.goBack()}
+        rightIcon={canCreate ? <Plus size={22} color="#000" /> : undefined}
+        onRightPress={() => navigation.navigate("CreateSchedule")}
       />
 
       <View className="px-5">
-        {/* Search */}
+        <View className="mb-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3">
+          <Text style={{ fontWeight: "700", color: "#111827", marginBottom: 4 }}>
+            {viewMode === "manageable"
+              ? "Hub operacional de escalas"
+              : "Minhas participações"}
+          </Text>
+          <Text style={{ color: "#6b7280" }}>
+            {viewMode === "manageable"
+              ? "Abra uma escala para editar contexto, equipe e assignments."
+              : "Acompanhe onde você está escalado e use os atalhos do seu card."}
+          </Text>
+        </View>
+
         <View className="flex-row items-center bg-gray-100 rounded-xl border border-gray-200 px-3 mb-4">
           <Search size={18} color="#888" />
           <TextInput
@@ -224,42 +365,41 @@ export default function MySchedulesScreen() {
           />
         </View>
 
-        {/* Filters */}
         <View className="flex-row gap-2 mb-4">
-          {filters.map((f) => (
+          {filters.map((filter) => (
             <TouchableOpacity
-              key={f.key}
-              onPress={() => setActiveFilter(f.key)}
+              key={filter.key}
+              onPress={() => setActiveFilter(filter.key)}
               style={{
                 paddingVertical: 8,
                 paddingHorizontal: 18,
                 borderRadius: 10,
-                backgroundColor: activeFilter === f.key ? "#000" : "#f3f4f6",
-                borderWidth: activeFilter === f.key ? 0 : 1,
+                backgroundColor: activeFilter === filter.key ? "#000" : "#f3f4f6",
+                borderWidth: activeFilter === filter.key ? 0 : 1,
                 borderColor: "#e5e7eb",
               }}
             >
               <Text
                 style={{
-                  color: activeFilter === f.key ? "#fff" : "#222",
-                  fontWeight: activeFilter === f.key ? "bold" : "normal",
+                  color: activeFilter === filter.key ? "#fff" : "#222",
+                  fontWeight: activeFilter === filter.key ? "bold" : "normal",
                   fontSize: 14,
                 }}
               >
-                {f.label}
+                {filter.label}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
       </View>
 
-      {loading ? (
+      {isLoadingSchedules || (profile?.role === "leader" && isLoadingMinistries) ? (
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color="#000" />
         </View>
       ) : (
         <FlatList
-          data={schedules}
+          data={filteredSchedules}
           renderItem={renderItem}
           keyExtractor={keyExtractor}
           contentContainerStyle={{
@@ -268,15 +408,55 @@ export default function MySchedulesScreen() {
             paddingTop: 4,
           }}
           showsVerticalScrollIndicator={false}
-          onEndReached={handleLoadMore}
-          onEndReachedThreshold={0.3}
-          ListFooterComponent={ListFooter}
           ListEmptyComponent={ListEmpty}
-          initialNumToRender={PAGE_SIZE}
-          maxToRenderPerBatch={PAGE_SIZE}
-          windowSize={5}
         />
       )}
+
+      <RequestSwapModal
+        visible={isSwapModalVisible}
+        title="Escolha qual funcao desta escala voce precisa trocar."
+        assignments={swapAssignments}
+        candidates={swapCandidates}
+        selectedAssignmentId={selectedSwapAssignmentId}
+        reason={swapReason}
+        isSaving={isSavingSwapRequest}
+        onClose={() => setIsSwapModalVisible(false)}
+        onSelectAssignment={(assignmentId) => {
+          setSelectedSwapAssignmentId(assignmentId);
+          void loadSwapCandidates(assignmentId);
+        }}
+        onChangeReason={setSwapReason}
+        onSubmit={async () => {
+          if (!selectedSwapAssignmentId) return;
+
+          setIsSavingSwapRequest(true);
+          const { data, error } = await createSwapRequest({
+            fromAssignmentId: selectedSwapAssignmentId,
+            reason: swapReason,
+          });
+          setIsSavingSwapRequest(false);
+
+          if (error) {
+            Alert.alert("Nao foi possivel solicitar troca", error);
+            return;
+          }
+
+          setIsSwapModalVisible(false);
+          setSelectedSwapAssignmentId(null);
+          setSwapReason("");
+          setPendingSwapRequestByAssignmentId((current) => {
+            if (!data?.id) return current;
+            return {
+              ...current,
+              [selectedSwapAssignmentId]: data.id,
+            };
+          });
+          Alert.alert(
+            "Solicitacao enviada",
+            "Sua solicitacao de troca foi registrada.",
+          );
+        }}
+      />
     </SafeAreaView>
   );
 }

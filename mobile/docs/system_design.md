@@ -125,7 +125,7 @@ CREATE TABLE public.ministry_members (
 
 #### `ministry_member_roles` — capabilities (roles the member can perform)
 
-> See [scheduling_model.md](file:///c:/dev/mjcp/mobile/ai/scheduling_model.md) for detailed explanation of capabilities vs assignments.
+> See `docs/scheduling_model.md` for detailed explanation of capabilities vs assignments.
 
 ```sql
 CREATE TABLE public.ministry_member_roles (

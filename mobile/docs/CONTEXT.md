@@ -79,7 +79,7 @@ mobile/
 │   │       └── NotificationsModal.tsx  # Modal de notificações
 │   └── theme/
 │       └── theme.ts           # Temas light/dark (Material Design 3)
-└── ai/                        # Documentação AI e contexto
+└── docs/                      # Documentacao e contexto do projeto
 ```
 
 ---

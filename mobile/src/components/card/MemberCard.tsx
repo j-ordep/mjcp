@@ -22,7 +22,7 @@ export default function MemberCard(prop: MemberCardProp) {
       gap: 12,
     }}>
       <Image
-        source={prop.photo ? { uri: prop.photo } : require('../../../assets/images/icon.png')}
+        source={prop.photo ? { uri: prop.photo } : require('../../../assets/icon.png')}
         style={{ width: 40, height: 40, borderRadius: 20 }}
       />
       <View style={{ flex: 1 }}>

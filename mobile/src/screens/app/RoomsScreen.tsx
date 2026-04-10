@@ -7,7 +7,7 @@ import RoomCard from "../../components/card/RoomCard";
 import HeaderSecondary from "../../components/Header/HeaderSecondary";
 import CalendarModal from "../../components/utils/CalendarModal";
 
-export default function EventsScreen({ navigation }) {
+export default function RoomsScreen({ navigation }) {
   const [selectedDate, setSelectedDate] = useState("27/11/2025");
   const [selectedDateISO, setSelectedDateISO] = useState("2025-11-27");
   const [calendarVisible, setCalendarVisible] = useState(false);

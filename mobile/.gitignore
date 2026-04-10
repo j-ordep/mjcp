@@ -3,6 +3,8 @@
 # dependencies
 node_modules/
 
+/supabase
+
 # Expo
 .expo/
 dist/
@@ -36,6 +38,7 @@ yarn-error.*
 
 # typescript
 *.tsbuildinfo
+.tests-dist/
 
 # generated native folders
 /ios
