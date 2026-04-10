@@ -6,7 +6,10 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "test": "npm run test:unit",
+    "test:build": "tsc -p tsconfig.test.json",
+    "test:unit": "npm run test:build && node .tests-dist/tests/scheduleParticipation.test.js && node .tests-dist/tests/scheduleRules.test.js && node .tests-dist/tests/ministryMappers.test.js && node .tests-dist/tests/scheduleCardMappers.test.js"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",

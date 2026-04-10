@@ -1,0 +1,21 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "node16",
+    "moduleResolution": "node16",
+    "target": "es2020",
+    "outDir": ".tests-dist",
+    "rootDir": ".",
+    "noEmit": false,
+    "declaration": false,
+    "sourceMap": false,
+    "types": ["node"]
+  },
+  "include": [
+    "src/utils/ministryMappers.ts",
+    "src/utils/scheduleCardMappers.ts",
+    "src/utils/scheduleRules.ts",
+    "src/utils/scheduleParticipation.ts",
+    "tests/**/*.ts"
+  ]
+}
