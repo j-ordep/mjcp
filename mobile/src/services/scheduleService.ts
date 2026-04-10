@@ -1,5 +1,11 @@
 import { supabase } from '../lib/supabase';
 import type { AssignmentStatus, TableRow } from '../types/database.types';
+import {
+  countAssignmentsByStatus,
+  isEventDateEditable,
+  rangesOverlap,
+  toISODateString,
+} from "../utils/scheduleRules";
 
 export interface UpcomingSchedule {
   id: string; // assignment_id
@@ -22,6 +28,7 @@ export interface UpcomingSchedule {
  */
 export interface AssignmentWithDetails {
   id: string;
+  schedule_id: string;
   user_id: string;
   role_id: string;
   status: 'pending' | 'confirmed' | 'declined' | 'swapped';
@@ -364,6 +371,7 @@ interface ScheduleDetailsRow {
         end_at: string | null;
         location: string | null;
         description: string | null;
+        is_public: boolean;
       }
     | {
         id: string;
@@ -372,6 +380,7 @@ interface ScheduleDetailsRow {
         end_at: string | null;
         location: string | null;
         description: string | null;
+        is_public: boolean;
       }[]
     | null;
   ministries:
@@ -476,8 +485,111 @@ interface ScheduleAssignmentDetailedRow {
     | null;
 }
 
+interface SwapRequestRow {
+  id: string;
+  from_assignment_id: string;
+  to_assignment_id: string | null;
+  to_user_id: string | null;
+  reason: string | null;
+  status: 'pending' | 'approved' | 'rejected' | 'cancelled';
+  reviewed_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface SwapAssignmentContextRow {
+  id: string;
+  schedule_id: string;
+  user_id: string;
+  role_id: string;
+  status: AssignmentStatus;
+  profiles:
+    | {
+        full_name: string | null;
+        avatar_url: string | null;
+      }
+    | {
+        full_name: string | null;
+        avatar_url: string | null;
+      }[]
+    | null;
+  ministry_roles:
+    | {
+        name: string;
+      }
+    | {
+        name: string;
+      }[]
+    | null;
+  schedules:
+    | {
+        ministry_id: string;
+        event_id: string;
+        events:
+          | {
+              id: string;
+              title: string;
+              start_at: string;
+            }
+          | {
+              id: string;
+              title: string;
+              start_at: string;
+            }[];
+        ministries:
+          | {
+              id: string;
+              name: string;
+            }
+          | {
+              id: string;
+              name: string;
+            }[]
+          | null;
+      }
+    | {
+        ministry_id: string;
+        event_id: string;
+        events:
+          | {
+              id: string;
+              title: string;
+              start_at: string;
+            }
+          | {
+              id: string;
+              title: string;
+              start_at: string;
+            }[];
+        ministries:
+          | {
+              id: string;
+              name: string;
+            }
+          | {
+              id: string;
+              name: string;
+            }[]
+          | null;
+      }[]
+    | null;
+}
+
+interface SwapProfileRow {
+  id: string;
+  full_name: string | null;
+}
+
 function getErrorMessage(error: unknown) {
   if (error instanceof Error) return error.message;
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'message' in error &&
+    typeof (error as { message?: unknown }).message === 'string'
+  ) {
+    return (error as { message: string }).message;
+  }
   return 'Erro inesperado.';
 }
 
@@ -486,45 +598,8 @@ function firstRelation<T>(value: T | T[] | null | undefined) {
   return value ?? null;
 }
 
-function countAssignmentsByStatus(
-  assignments: { status: AssignmentStatus }[] | null | undefined,
-) {
-  const base = { total: 0, pending: 0, confirmed: 0 };
-
-  (assignments ?? []).forEach((assignment) => {
-    base.total += 1;
-    if (assignment.status === 'pending') base.pending += 1;
-    if (assignment.status === 'confirmed') base.confirmed += 1;
-  });
-
-  return base;
-}
-
 function compareScheduleCardsByDate(a: ScheduleCard, b: ScheduleCard) {
   return new Date(a.event.start_at).getTime() - new Date(b.event.start_at).getTime();
-}
-
-function isEventDateEditable(startAtIso: string) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const eventDate = new Date(startAtIso);
-  eventDate.setHours(0, 0, 0, 0);
-
-  return eventDate.getTime() >= today.getTime();
-}
-
-function toISODateString(dateIso: string) {
-  // Uses device local timezone; business rule is "editable until event date" (calendar day).
-  const d = new Date(dateIso);
-  const yyyy = String(d.getFullYear());
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}`;
-}
-
-function rangesOverlap(aStart: Date, aEnd: Date, bStart: Date, bEnd: Date) {
-  return aStart.getTime() < bEnd.getTime() && aEnd.getTime() > bStart.getTime();
 }
 
 async function getScheduleContext(scheduleId: string): Promise<{ data: ScheduleContext | null; error: string | null }> {
@@ -930,7 +1005,8 @@ export async function getScheduleDetails(scheduleId: string) {
           start_at,
           end_at,
           location,
-          description
+          description,
+          is_public
         ),
         ministries!inner (
           id,
@@ -964,6 +1040,7 @@ export async function getScheduleDetails(scheduleId: string) {
           end_at: event.end_at,
           location: event.location,
           description: event.description,
+          is_public: event.is_public,
         },
         ministry: {
           id: ministry.id,
@@ -1009,6 +1086,30 @@ export async function updateSchedule(input: {
   }
 }
 
+export async function deleteSchedule(scheduleId: string) {
+  try {
+    const scheduleCtx = await getScheduleContext(scheduleId);
+    if (scheduleCtx.error || !scheduleCtx.data || !scheduleCtx.data.event) {
+      throw new Error(scheduleCtx.error ?? "Escala nao encontrada.");
+    }
+
+    if (!isEventDateEditable(scheduleCtx.data.event.start_at)) {
+      throw new Error("Evento/escala nao e mais editavel apos o dia do evento.");
+    }
+
+    const { error } = await supabase
+      .from("schedules")
+      .delete()
+      .eq("id", scheduleId);
+
+    if (error) throw error;
+
+    return { error: null };
+  } catch (error: unknown) {
+    return { error: getErrorMessage(error) };
+  }
+}
+
 export async function removeScheduleAssignment(assignmentId: string) {
   try {
     const { error } = await supabase
@@ -1024,12 +1125,66 @@ export async function removeScheduleAssignment(assignmentId: string) {
   }
 }
 
+export async function confirmMyAssignmentsForSchedule(input: {
+  scheduleId: string;
+  userId: string;
+}) {
+  try {
+    const scheduleCtx = await getScheduleContext(input.scheduleId);
+    if (scheduleCtx.error || !scheduleCtx.data || !scheduleCtx.data.event) {
+      throw new Error(scheduleCtx.error ?? "Escala nao encontrada.");
+    }
+
+    const { error } = await supabase
+      .from("schedule_assignments")
+      .update({
+        status: "confirmed",
+        confirmed_at: new Date().toISOString(),
+      })
+      .eq("schedule_id", input.scheduleId)
+      .eq("user_id", input.userId);
+
+    if (error) throw error;
+
+    return { error: null };
+  } catch (error: unknown) {
+    return { error: getErrorMessage(error) };
+  }
+}
+
+export async function confirmAssignmentsByIds(input: {
+  assignmentIds: string[];
+  userId: string;
+}) {
+  try {
+    if (input.assignmentIds.length === 0) {
+      return { error: null };
+    }
+
+    const { error } = await supabase
+      .from("schedule_assignments")
+      .update({
+        status: "confirmed",
+        confirmed_at: new Date().toISOString(),
+      })
+      .eq("user_id", input.userId)
+      .in("id", input.assignmentIds);
+
+    if (error) throw error;
+
+    return { error: null };
+  } catch (error: unknown) {
+    return { error: getErrorMessage(error) };
+  }
+}
+
 export async function getAssignmentsByEvent(eventId: string): Promise<{ data: AssignmentWithDetails[] | null; error: string | null }> {
   try {
     const { data, error } = await supabase
       .from('schedule_assignments')
       .select(`
         id,
+        schedule_id,
         user_id,
         role_id,
         status,
@@ -1193,6 +1348,333 @@ export async function validateScheduleAssignmentIntegrity(
   };
 }
 
+export async function createSwapRequest(input: {
+  fromAssignmentId: string;
+  toUserId?: string | null;
+  reason?: string | null;
+}) {
+  try {
+    const { data, error } = await supabase
+      .from("swap_requests")
+      .insert([
+        {
+          from_assignment_id: input.fromAssignmentId,
+          to_user_id: input.toUserId ?? null,
+          reason: input.reason?.trim() ? input.reason.trim() : null,
+        },
+      ])
+      .select("id,from_assignment_id,to_assignment_id,to_user_id,reason,status,reviewed_by,created_at,updated_at")
+      .single<TableRow<"swap_requests">>();
+
+    if (error) throw error;
+
+    return { data, error: null };
+  } catch (error: unknown) {
+    return { data: null, error: getErrorMessage(error) };
+  }
+}
+
+export async function getVisibleSwapRequests(
+  status?: 'pending' | 'approved' | 'rejected' | 'cancelled',
+) {
+  try {
+    let query = supabase
+      .from('swap_requests')
+      .select(
+        'id,from_assignment_id,to_assignment_id,to_user_id,reason,status,reviewed_by,created_at,updated_at',
+      )
+      .order('created_at', { ascending: false });
+
+    if (status) {
+      query = query.eq('status', status);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    const rows = (data ?? []) as SwapRequestRow[];
+    if (rows.length === 0) {
+      return { data: [] as SwapRequestReviewItem[], error: null };
+    }
+
+    const fromAssignmentIds = rows.map((row) => row.from_assignment_id);
+    const profileIds = Array.from(
+      new Set(
+        rows
+          .flatMap((row) => [row.to_user_id, row.reviewed_by])
+          .filter((value): value is string => !!value),
+      ),
+    );
+
+    const [assignmentResult, profileResult] = await Promise.all([
+      supabase
+        .from('schedule_assignments')
+        .select(
+          `
+          id,
+          schedule_id,
+          user_id,
+          role_id,
+          status,
+          profiles (
+            full_name,
+            avatar_url
+          ),
+          ministry_roles (
+            name
+          ),
+          schedules!inner (
+            ministry_id,
+            event_id,
+            events!inner (
+              id,
+              title,
+              start_at
+            ),
+            ministries!inner (
+              id,
+              name
+            )
+          )
+        `,
+        )
+        .in('id', fromAssignmentIds),
+      profileIds.length > 0
+        ? supabase.from('profiles').select('id,full_name').in('id', profileIds)
+        : Promise.resolve({ data: [], error: null }),
+    ]);
+
+    if (assignmentResult.error) throw assignmentResult.error;
+    if (profileResult.error) throw profileResult.error;
+
+    const assignmentMap = new Map(
+      ((assignmentResult.data ?? []) as SwapAssignmentContextRow[]).map((row) => [row.id, row]),
+    );
+    const profileMap = new Map(
+      ((profileResult.data ?? []) as SwapProfileRow[]).map((row) => [row.id, row]),
+    );
+
+    const mapped = rows.map<SwapRequestReviewItem>((row) => {
+      const assignment = assignmentMap.get(row.from_assignment_id) ?? null;
+      const assignmentProfile = assignment?.profiles ? firstRelation(assignment.profiles) : null;
+      const assignmentRole = assignment?.ministry_roles
+        ? firstRelation(assignment.ministry_roles)
+        : null;
+      const assignmentSchedule = assignment?.schedules
+        ? firstRelation(assignment.schedules)
+        : null;
+      const assignmentEvent = assignmentSchedule?.events
+        ? firstRelation(assignmentSchedule.events)
+        : null;
+      const assignmentMinistry = assignmentSchedule?.ministries
+        ? firstRelation(assignmentSchedule.ministries)
+        : null;
+      const targetUser = row.to_user_id ? profileMap.get(row.to_user_id) ?? null : null;
+      const reviewer = row.reviewed_by ? profileMap.get(row.reviewed_by) ?? null : null;
+
+      return {
+        id: row.id,
+        status: row.status,
+        reason: row.reason,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+        from_assignment:
+          assignment && assignmentSchedule && assignmentEvent && assignmentMinistry
+            ? {
+                id: assignment.id,
+                schedule_id: assignment.schedule_id,
+                user_id: assignment.user_id,
+                member_name: assignmentProfile?.full_name ?? 'Membro',
+                role_name: assignmentRole?.name ?? 'Funcao',
+                ministry_id: assignmentSchedule.ministry_id,
+                ministry_name: assignmentMinistry.name,
+                event_id: assignmentEvent.id,
+                event_title: assignmentEvent.title,
+                event_start_at: assignmentEvent.start_at,
+              }
+            : null,
+        to_user: targetUser
+          ? {
+              id: targetUser.id,
+              full_name: targetUser.full_name ?? 'Membro',
+            }
+          : null,
+        reviewed_by: reviewer
+          ? {
+              id: reviewer.id,
+              full_name: reviewer.full_name ?? 'Usuario',
+            }
+          : null,
+      };
+    });
+
+    return { data: mapped, error: null };
+  } catch (error: unknown) {
+    return { data: null, error: getErrorMessage(error) };
+  }
+}
+
+export async function acceptSwapRequest(requestId: string) {
+  try {
+    const { data, error } = await supabase
+      .rpc('accept_swap_request', {
+        p_swap_request_id: requestId,
+      });
+
+    if (error) throw error;
+
+    return { data, error: null };
+  } catch (error: unknown) {
+    return { data: null, error: getErrorMessage(error) };
+  }
+}
+
+export async function cancelOwnSwapRequest(requestId: string) {
+  try {
+    const { data, error } = await supabase
+      .rpc('cancel_own_swap_request', {
+        p_swap_request_id: requestId,
+      });
+
+    if (error) throw error;
+
+    return { data, error: null };
+  } catch (error: unknown) {
+    return { data: null, error: getErrorMessage(error) };
+  }
+}
+
+export async function getSwapCandidatesForAssignment(assignmentId: string) {
+  try {
+    const { data: assignment, error: assignmentError } = await supabase
+      .from('schedule_assignments')
+      .select(
+        `
+        id,
+        user_id,
+        role_id,
+        schedules!inner (
+          ministry_id
+        )
+      `,
+      )
+      .eq('id', assignmentId)
+      .single<{
+        id: string;
+        user_id: string;
+        role_id: string;
+        schedules:
+          | {
+              ministry_id: string;
+            }
+          | {
+              ministry_id: string;
+            }[];
+      }>();
+
+    if (assignmentError) throw assignmentError;
+
+    const schedule = firstRelation(assignment.schedules);
+    if (!schedule) {
+      throw new Error('Contexto da escala nao encontrado.');
+    }
+
+    const { data, error } = await supabase
+      .from('ministry_members')
+      .select(
+        `
+        user_id,
+        profiles!inner (
+          full_name,
+          avatar_url
+        ),
+        ministry_member_roles!inner (
+          role_id
+        )
+      `,
+      )
+      .eq('ministry_id', schedule.ministry_id)
+      .eq('ministry_member_roles.role_id', assignment.role_id)
+      .neq('user_id', assignment.user_id);
+
+    if (error) throw error;
+
+    const mapped: SwapCandidateOption[] = ((data ?? []) as {
+      user_id: string;
+      profiles:
+        | {
+            full_name: string | null;
+            avatar_url: string | null;
+          }
+        | {
+            full_name: string | null;
+            avatar_url: string | null;
+          }[]
+        | null;
+    }[]).map((row) => {
+      const profile = firstRelation(row.profiles);
+      return {
+        user_id: row.user_id,
+        full_name: profile?.full_name ?? 'Membro',
+        avatar_url: profile?.avatar_url ?? null,
+      };
+    });
+
+    return { data: mapped, error: null };
+  } catch (error: unknown) {
+    return { data: null, error: getErrorMessage(error) };
+  }
+}
+
+export async function getOwnPendingSwapRequestForAssignments(assignmentIds: string[]) {
+  try {
+    if (assignmentIds.length === 0) {
+      return { data: null as PendingOwnSwapRequest | null, error: null };
+    }
+
+    const { data, error } = await supabase
+      .from('swap_requests')
+      .select('id,from_assignment_id,reason,created_at')
+      .in('from_assignment_id', assignmentIds)
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (error) throw error;
+
+    return {
+      data: ((data ?? [])[0] as PendingOwnSwapRequest | undefined) ?? null,
+      error: null,
+    };
+  } catch (error: unknown) {
+    return { data: null, error: getErrorMessage(error) };
+  }
+}
+
+export async function getOwnPendingSwapRequestsForAssignments(assignmentIds: string[]) {
+  try {
+    if (assignmentIds.length === 0) {
+      return { data: [] as PendingOwnSwapRequest[], error: null };
+    }
+
+    const { data, error } = await supabase
+      .from('swap_requests')
+      .select('id,from_assignment_id,reason,created_at')
+      .in('from_assignment_id', assignmentIds)
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    return {
+      data: (data ?? []) as PendingOwnSwapRequest[],
+      error: null,
+    };
+  } catch (error: unknown) {
+    return { data: null, error: getErrorMessage(error) };
+  }
+}
+
 export interface ScheduleCardAssignmentSummary {
   id: string;
   role_id: string;
@@ -1224,6 +1706,47 @@ export interface ScheduleCard {
   can_manage: boolean;
 }
 
+export interface SwapRequestReviewItem {
+  id: string;
+  status: 'pending' | 'approved' | 'rejected' | 'cancelled';
+  reason: string | null;
+  created_at: string;
+  updated_at: string;
+  from_assignment: {
+    id: string;
+    schedule_id: string;
+    user_id: string;
+    member_name: string;
+    role_name: string;
+    ministry_id: string;
+    ministry_name: string;
+    event_id: string;
+    event_title: string;
+    event_start_at: string;
+  } | null;
+  to_user: {
+    id: string;
+    full_name: string;
+  } | null;
+  reviewed_by: {
+    id: string;
+    full_name: string;
+  } | null;
+}
+
+export interface SwapCandidateOption {
+  user_id: string;
+  full_name: string;
+  avatar_url: string | null;
+}
+
+export interface PendingOwnSwapRequest {
+  id: string;
+  from_assignment_id: string;
+  reason: string | null;
+  created_at: string;
+}
+
 export interface ScheduleDetails {
   id: string;
   event_id: string;
@@ -1237,6 +1760,7 @@ export interface ScheduleDetails {
     end_at: string | null;
     location: string | null;
     description: string | null;
+    is_public: boolean;
   };
   ministry: {
     id: string;

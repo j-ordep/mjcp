@@ -4,15 +4,15 @@ import { Text } from "react-native-paper";
 interface ScheduleSummaryCardProps {
   eventTitle?: string | null;
   eventDate?: string | null;
+  eventLocation?: string | null;
   ministryName?: string | null;
-  notes?: string | null;
 }
 
 export default function ScheduleSummaryCard({
   eventTitle,
   eventDate,
+  eventLocation,
   ministryName,
-  notes,
 }: ScheduleSummaryCardProps) {
   return (
     <View
@@ -32,12 +32,14 @@ export default function ScheduleSummaryCard({
       {eventDate ? (
         <Text style={{ color: "#6b7280", marginBottom: 4 }}>Data: {eventDate}</Text>
       ) : null}
+      {eventLocation ? (
+        <Text style={{ color: "#6b7280", marginBottom: 4 }}>Local: {eventLocation}</Text>
+      ) : null}
       {ministryName ? (
-        <Text style={{ color: "#374151", marginBottom: notes ? 4 : 0 }}>
+        <Text style={{ color: "#374151" }}>
           Ministerio: {ministryName}
         </Text>
       ) : null}
-      {notes ? <Text style={{ color: "#6b7280" }}>Observacoes: {notes}</Text> : null}
     </View>
   );
 }

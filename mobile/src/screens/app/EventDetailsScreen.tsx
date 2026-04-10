@@ -1,5 +1,5 @@
 import { Edit, Info, Users } from "lucide-react-native";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Alert, ScrollView, View } from "react-native";
 import { Text } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -8,10 +8,17 @@ import EventInfoCard from "../../components/card/EventInfoCard";
 import MemberCard from "../../components/card/MemberCard";
 import TeamStatusCard from "../../components/card/TeamStatusCard";
 import HeaderSecondary from "../../components/Header/HeaderSecondary";
+import RequestSwapModal from "../../components/schedule/RequestSwapModal";
 import type { EventDetailsScreenProps } from "../../navigation/AppNavigator";
 import {
-  AssignmentWithDetails,
+  type AssignmentWithDetails,
+  cancelOwnSwapRequest,
+  confirmMyAssignmentsForSchedule,
+  createSwapRequest,
   getAssignmentsByEvent,
+  getOwnPendingSwapRequestForAssignments,
+  getSwapCandidatesForAssignment,
+  type SwapCandidateOption,
 } from "../../services/scheduleService";
 import { useAuthStore } from "../../stores/useAuthStore";
 import { formatDateShort, formatTime } from "../../utils/formatDate";
@@ -20,23 +27,23 @@ export default function EventDetailsScreen({
   route,
   navigation,
 }: EventDetailsScreenProps) {
-  const { event } = route.params; // Recebe o objeto event completo da lista
-  const { profile } = useAuthStore();
+  const { event } = route.params;
+  const { profile, session } = useAuthStore();
 
   const [assignments, setAssignments] = useState<AssignmentWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isConfirmingPresence, setIsConfirmingPresence] = useState(false);
+  const [isSwapModalVisible, setIsSwapModalVisible] = useState(false);
+  const [isSubmittingSwap, setIsSubmittingSwap] = useState(false);
+  const [selectedOwnAssignmentId, setSelectedOwnAssignmentId] = useState<string | null>(null);
+  const [swapCandidates, setSwapCandidates] = useState<SwapCandidateOption[]>([]);
+  const [swapReason, setSwapReason] = useState("");
+  const [pendingOwnSwapRequestId, setPendingOwnSwapRequestId] = useState<string | null>(null);
 
   const isAdmin = profile?.role === "admin";
 
-  // Verifica se o usuário logado está escalado neste evento
-  // PostgREST retorna profiles como array; [0] pega o único perfil
-  const myAssignment = assignments.find((a) => a.user_id === profile?.id);
-  const isAssigned = !!myAssignment;
-  const myRole = myAssignment?.ministry_roles?.[0]?.name;
-  const myMinistry = myAssignment?.ministry_roles?.[0]?.ministries?.[0]?.name;
-
   useEffect(() => {
-    fetchAssignments();
+    void fetchAssignments();
   }, [event.id]);
 
   const fetchAssignments = async () => {
@@ -48,10 +55,137 @@ export default function EventDetailsScreen({
     setIsLoading(false);
   };
 
-  const confirmedCount = assignments.filter(
-    (a) => a.status === "confirmed",
-  ).length;
+  const myAssignments = useMemo(
+    () => assignments.filter((assignment) => assignment.user_id === session?.user?.id),
+    [assignments, session?.user?.id],
+  );
+  const selectedOwnAssignment =
+    myAssignments.find((assignment) => assignment.id === selectedOwnAssignmentId) ??
+    myAssignments[0] ??
+    null;
+  const isAssigned = myAssignments.length > 0;
+  const myScheduleIds = Array.from(new Set(myAssignments.map((assignment) => assignment.schedule_id)));
+  const myRole = myAssignments
+    .map((assignment) => assignment.ministry_roles?.[0]?.name)
+    .filter(Boolean)
+    .join(", ");
+  const myMinistry = selectedOwnAssignment?.ministry_roles?.[0]?.ministries?.[0]?.name;
+  const confirmedCount = assignments.filter((assignment) => assignment.status === "confirmed").length;
   const totalCount = assignments.length;
+
+  useEffect(() => {
+    if (!selectedOwnAssignmentId && myAssignments.length > 0) {
+      setSelectedOwnAssignmentId(myAssignments[0].id);
+    }
+  }, [myAssignments, selectedOwnAssignmentId]);
+
+  useEffect(() => {
+    const loadCandidates = async () => {
+      if (!selectedOwnAssignmentId) {
+        setSwapCandidates([]);
+        return;
+      }
+
+      const { data, error } = await getSwapCandidatesForAssignment(selectedOwnAssignmentId);
+      if (error) {
+        Alert.alert("Nao foi possivel carregar candidatos", error);
+        setSwapCandidates([]);
+        return;
+      }
+
+      setSwapCandidates(data ?? []);
+    };
+
+    void loadCandidates();
+  }, [selectedOwnAssignmentId]);
+
+  useEffect(() => {
+    const loadPendingOwnSwapRequest = async () => {
+      const { data, error } = await getOwnPendingSwapRequestForAssignments(
+        myAssignments.map((assignment) => assignment.id),
+      );
+
+      if (error) {
+        setPendingOwnSwapRequestId(null);
+        return;
+      }
+
+      setPendingOwnSwapRequestId(data?.id ?? null);
+    };
+
+    void loadPendingOwnSwapRequest();
+  }, [myAssignments]);
+
+  const handleConfirmPresence = async () => {
+    if (!selectedOwnAssignment || !session?.user?.id) return;
+
+    if (myScheduleIds.length > 1) {
+      Alert.alert(
+        "Confirme pela escala",
+        "Voce esta em mais de uma escala neste evento. Confirme a presenca pela tela da escala correspondente.",
+      );
+      return;
+    }
+
+    setIsConfirmingPresence(true);
+    const { error } = await confirmMyAssignmentsForSchedule({
+      scheduleId: selectedOwnAssignment.schedule_id,
+      userId: session.user.id,
+    });
+    setIsConfirmingPresence(false);
+
+    if (error) {
+      Alert.alert("Nao foi possivel confirmar", error);
+      return;
+    }
+
+    await fetchAssignments();
+    Alert.alert("Presenca confirmada", "Sua participacao nesta escala foi confirmada.");
+  };
+
+  const handleOpenSwapModal = () => {
+    if (myAssignments.length === 0) return;
+
+    void (async () => {
+      const { data: pendingRequest, error } = await getOwnPendingSwapRequestForAssignments(
+        myAssignments.map((assignment) => assignment.id),
+      );
+
+      if (error) {
+        Alert.alert("Nao foi possivel verificar a troca", error);
+        return;
+      }
+
+      if (pendingRequest) {
+        setPendingOwnSwapRequestId(pendingRequest.id);
+        return;
+      }
+
+      setSelectedOwnAssignmentId((current) => current ?? myAssignments[0].id);
+      setSwapReason("");
+      setIsSwapModalVisible(true);
+    })();
+  };
+
+  const handleSubmitSwapRequest = async () => {
+    if (!selectedOwnAssignment) return;
+
+    setIsSubmittingSwap(true);
+    const { data, error } = await createSwapRequest({
+      fromAssignmentId: selectedOwnAssignment.id,
+      reason: swapReason,
+    });
+    setIsSubmittingSwap(false);
+
+    if (error) {
+      Alert.alert("Nao foi possivel solicitar a troca", error);
+      return;
+    }
+
+    setIsSwapModalVisible(false);
+    setPendingOwnSwapRequestId(data?.id ?? null);
+    Alert.alert("Solicitacao enviada", "Sua solicitacao de troca foi registrada.");
+  };
 
   return (
     <SafeAreaView
@@ -68,7 +202,11 @@ export default function EventDetailsScreen({
                 navigation.navigate("CreateEvent", {
                   mode: "edit",
                   eventId: event.id,
-                  initialData: event,
+                  initialData: {
+                    ...event,
+                    end_at: event.end_at ?? null,
+                    is_public: event.is_public ?? true,
+                  },
                 })
             : undefined
         }
@@ -79,11 +217,11 @@ export default function EventDetailsScreen({
           title={event.title}
           date={formatDateShort(event.start_at)}
           time={formatTime(event.start_at)}
-          location={event.location || "Não informado"}
-          description={event.description || "Sem descrição."}
+          location={event.location || "Nao informado"}
+          description={event.description || "Sem descricao."}
           isAssigned={isAssigned}
           department={myMinistry}
-          role={myRole}
+          role={myRole || undefined}
         />
 
         {isLoading ? (
@@ -103,7 +241,7 @@ export default function EventDetailsScreen({
               }}
             >
               <Text style={{ fontWeight: "bold", fontSize: 16 }}>
-                Equipe Escalada
+                Equipe escalada
               </Text>
               <View style={{ flexDirection: "row", alignItems: "center" }}>
                 <Users size={16} color="#888" style={{ marginRight: 4 }} />
@@ -142,45 +280,82 @@ export default function EventDetailsScreen({
           >
             <Info size={24} color="#666" style={{ marginBottom: 8 }} />
             <Text style={{ color: "#666", textAlign: "center" }}>
-              Este evento ainda não possui uma equipe escalada.
+              Este evento ainda nao possui uma equipe escalada.
             </Text>
           </View>
         )}
 
-        {/* Action Buttons for Assigned Users */}
-        {isAssigned && (
+        {isAssigned ? (
           <View style={{ flexDirection: "row", gap: 12, marginBottom: 24 }}>
             <View style={{ flex: 1 }}>
               <DefaultButton
-                variant="outline"
-                onPress={() =>
+                variant={pendingOwnSwapRequestId ? "destructive" : "outline"}
+                onPress={() => {
+                  if (!pendingOwnSwapRequestId) {
+                    handleOpenSwapModal();
+                    return;
+                  }
+
                   Alert.alert(
-                    "Indisponível",
-                    "Funcionalidade de troca em breve",
-                  )
-                }
+                    "Cancelar troca",
+                    "Deseja cancelar sua solicitacao pendente desta escala?",
+                    [
+                      { text: "Voltar", style: "cancel" },
+                      {
+                        text: "Cancelar troca",
+                        style: "destructive",
+                        onPress: async () => {
+                          const { error } = await cancelOwnSwapRequest(
+                            pendingOwnSwapRequestId,
+                          );
+                          if (error) {
+                            Alert.alert("Nao foi possivel cancelar", error);
+                            return;
+                          }
+
+                          setPendingOwnSwapRequestId(null);
+                          Alert.alert(
+                            "Solicitacao cancelada",
+                            "Sua solicitacao pendente foi cancelada.",
+                          );
+                        },
+                      },
+                    ],
+                  );
+                }}
               >
-                Preciso trocar
+                {pendingOwnSwapRequestId ? "Cancelar troca" : "Preciso trocar"}
               </DefaultButton>
             </View>
             <View style={{ flex: 1 }}>
-              {/* TODO: integrar com scheduleService.confirmPresence(myAssignment.id) */}
               <DefaultButton
                 variant="primary"
-                onPress={() =>
-                  Alert.alert(
-                    "Em breve",
-                    "Confirmação de presença será integrada em breve.",
-                  )
-                }
-                isLoading={false}
+                onPress={handleConfirmPresence}
+                isLoading={isConfirmingPresence}
               >
-                Confirmar presença
+                Confirmar presenca
               </DefaultButton>
             </View>
           </View>
-        )}
+        ) : null}
       </ScrollView>
+
+      <RequestSwapModal
+        visible={isSwapModalVisible}
+        title="Escolha qual funcao desta escala voce precisa trocar."
+        assignments={myAssignments.map((assignment) => ({
+          id: assignment.id,
+          role_name: assignment.ministry_roles?.[0]?.name ?? "Funcao",
+        }))}
+        candidates={swapCandidates}
+        selectedAssignmentId={selectedOwnAssignmentId}
+        reason={swapReason}
+        isSaving={isSubmittingSwap}
+        onClose={() => setIsSwapModalVisible(false)}
+        onSelectAssignment={setSelectedOwnAssignmentId}
+        onChangeReason={setSwapReason}
+        onSubmit={handleSubmitSwapRequest}
+      />
     </SafeAreaView>
   );
 }

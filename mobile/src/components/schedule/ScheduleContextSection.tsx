@@ -179,7 +179,6 @@ export default function ScheduleContextSection({
           eventTitle={selectedEvent?.title}
           eventDate={selectedEvent ? formatDateTime(selectedEvent.start_at) : null}
           ministryName={selectedMinistry?.name}
-          notes={notes || null}
         />
       ) : null}
 

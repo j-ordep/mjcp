@@ -72,7 +72,7 @@ export default function HomeScreen() {
           <MiniCard
             title="Solicitar Troca"
             icon={<RefreshCw size={22} />}
-            onPress={() => alert("Funcionalidade em breve!")}
+            onPress={() => navigation.navigate("SwapRequests")}
           />
         </View>
 

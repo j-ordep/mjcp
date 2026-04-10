@@ -18,6 +18,7 @@ import EventsScreen from "../screens/app/EventsScreen";
 import ManageMinistryMembersScreen from "../screens/app/ManageMinistryMembersScreen";
 import MySchedulesScreen from "../screens/app/MySchedulesScreen";
 import ProfileScreen from "../screens/app/ProfileScreen";
+import SwapRequestsScreen from "../screens/app/SwapRequestsScreen";
 import SignInScreen from "../screens/auth/SignInScreen";
 import SignUpScreen from "../screens/auth/SignUpScreen";
 import { getProfile } from "../services/profileService";
@@ -28,7 +29,13 @@ export type RootStackParamList = {
   SignUp: undefined;
   Main: undefined;
   EventsScreen: undefined;
-  EventDetails: { event: import("../types/models").Event };
+  EventDetails: {
+    event: Pick<
+      import("../types/models").Event,
+      "id" | "title" | "description" | "location" | "start_at"
+    > &
+      Partial<Pick<import("../types/models").Event, "end_at" | "is_public">>;
+  };
   Profile: undefined;
   EditProfile: undefined;
   BlockDatesScreen: undefined;
@@ -49,6 +56,7 @@ export type RootStackParamList = {
         ministryId?: string;
       }
     | undefined;
+  SwapRequests: undefined;
 };
 
 export type EventDetailsScreenProps = NativeStackScreenProps<
@@ -174,6 +182,10 @@ export default function AppNavigator() {
             <Stack.Screen
               name="ManageMinistryMembers"
               component={ManageMinistryMembersScreen}
+            />
+            <Stack.Screen
+              name="SwapRequests"
+              component={SwapRequestsScreen}
             />
           </>
         )}

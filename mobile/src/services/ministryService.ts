@@ -1,6 +1,13 @@
 import { supabase } from "../lib/supabase";
 import type { TableRow } from "../types/database.types";
 import { Ministry } from "../types/models";
+import {
+  extractAssignmentIds,
+  firstRelation,
+  mapMinistryMemberWithCapabilities,
+  mapSearchableUsers,
+  mapUserMinistries,
+} from "../utils/ministryMappers";
 
 export interface UserMinistry extends Ministry {
   is_leader: boolean;
@@ -96,41 +103,13 @@ interface MinistryMemberDetailedRow {
   ministry_member_roles: MinistryMemberCapabilityRow[] | null;
 }
 
-function firstRelation<T>(value: T | T[] | null | undefined) {
-  if (Array.isArray(value)) return value[0] ?? null;
-  return value ?? null;
+interface MinistryMemberAssignmentRow {
+  id: string;
 }
 
 function getErrorMessage(error: unknown) {
   if (error instanceof Error) return error.message;
   return "Erro inesperado.";
-}
-
-function mapMemberRow(row: MinistryMemberDetailedRow): MinistryMemberWithCapabilities {
-  const profile = firstRelation(row.profiles);
-  const capability_roles = (row.ministry_member_roles ?? [])
-    .map((capabilityRow) => {
-      const role = firstRelation(capabilityRow.ministry_roles);
-      if (!role) return null;
-      return {
-        id: role.id,
-        name: role.name,
-      };
-    })
-    .filter((role): role is MinistryCapabilityOption => !!role);
-
-  return {
-    id: row.id,
-    ministry_id: row.ministry_id,
-    user_id: row.user_id,
-    full_name: profile?.full_name ?? "Membro",
-    email: profile?.email ?? null,
-    avatar_url: profile?.avatar_url ?? null,
-    is_leader: row.is_leader,
-    joined_at: row.joined_at,
-    capability_role_ids: capability_roles.map((role) => role.id),
-    capability_roles,
-  };
 }
 
 /**
@@ -262,7 +241,9 @@ export async function getMinistryMembersDetailed(ministryId: string) {
     if (error) throw error;
 
     return {
-      data: ((data ?? []) as MinistryMemberDetailedRow[]).map(mapMemberRow),
+      data: ((data ?? []) as MinistryMemberDetailedRow[]).map(
+        mapMinistryMemberWithCapabilities,
+      ),
       error: null,
     };
   } catch (error: unknown) {
@@ -318,6 +299,42 @@ export async function updateMinistryMemberLeaderStatus(memberId: string, isLeade
 
 export async function removeUserFromMinistry(memberId: string) {
   try {
+    const { data: member, error: memberError } = await supabase
+      .from("ministry_members")
+      .select("id,ministry_id,user_id")
+      .eq("id", memberId)
+      .single<Pick<TableRow<"ministry_members">, "id" | "ministry_id" | "user_id">>();
+
+    if (memberError) throw memberError;
+
+    const { data: assignments, error: assignmentsError } = await supabase
+      .from("schedule_assignments")
+      .select(
+        `
+        id,
+        schedules!inner (
+          ministry_id
+        )
+      `,
+      )
+      .eq("user_id", member.user_id)
+      .eq("schedules.ministry_id", member.ministry_id);
+
+    if (assignmentsError) throw assignmentsError;
+
+    const assignmentIds = ((assignments ?? []) as MinistryMemberAssignmentRow[]).map(
+      (assignment) => assignment.id,
+    );
+
+    if (assignmentIds.length > 0) {
+      const { error: deleteAssignmentsError } = await supabase
+        .from("schedule_assignments")
+        .delete()
+        .in("id", assignmentIds);
+
+      if (deleteAssignmentsError) throw deleteAssignmentsError;
+    }
+
     const { error } = await supabase
       .from("ministry_members")
       .delete()

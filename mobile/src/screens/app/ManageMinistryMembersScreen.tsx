@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Alert, ScrollView, TouchableOpacity, View } from "react-native";
 import { Text, TextInput } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
-import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { Search, ShieldCheck, UserPlus, Users, X } from "lucide-react-native";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { Search, ShieldCheck, UserPlus, X } from "lucide-react-native";
 import DefaultButton from "../../components/button/DefaultButton";
 import HeaderSecondary from "../../components/Header/HeaderSecondary";
 import type { RootStackParamList } from "../../navigation/AppNavigator";
@@ -24,8 +25,12 @@ import { getMinistryRolesOptions, type MinistryRoleOption } from "../../services
 import { useAuthStore } from "../../stores/useAuthStore";
 import type { Ministry } from "../../types/models";
 
-type Props = NativeStackScreenProps<RootStackParamList, "ManageMinistryMembers">;
 type ManageableMinistry = Ministry | UserMinistry;
+type ManageMembersRoute = {
+  key: string;
+  name: "ManageMinistryMembers";
+  params?: RootStackParamList["ManageMinistryMembers"];
+};
 
 function getInitials(name: string) {
   return name
@@ -36,7 +41,10 @@ function getInitials(name: string) {
     .join("");
 }
 
-export default function ManageMinistryMembersScreen({ navigation, route }: Props) {
+export default function ManageMinistryMembersScreen() {
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const route = useRoute<ManageMembersRoute>();
   const { session, profile } = useAuthStore();
   const [ministries, setMinistries] = useState<ManageableMinistry[]>([]);
   const [selectedMinistryId, setSelectedMinistryId] = useState<string | null>(route.params?.ministryId ?? null);
@@ -215,21 +223,34 @@ export default function ManageMinistryMembersScreen({ navigation, route }: Props
   const handleRemoveMember = async () => {
     if (!selectedMember) return;
 
-    setIsSaving(true);
-    const result = await removeUserFromMinistry(selectedMember.id);
-    setIsSaving(false);
+    Alert.alert(
+      "Remover do ministerio",
+      "Deseja remover este membro do ministerio? Se ele estiver em escalas deste ministerio, tambem sera removido delas.",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Remover",
+          style: "destructive",
+          onPress: async () => {
+            setIsSaving(true);
+            const result = await removeUserFromMinistry(selectedMember.id);
+            setIsSaving(false);
 
-    if (result.error) {
-      Alert.alert("Erro", result.error);
-      return;
-    }
+            if (result.error) {
+              Alert.alert("Erro", result.error);
+              return;
+            }
 
-    if (selectedMinistryId) {
-      await loadMinistryData(selectedMinistryId);
-      await runUserSearch(search);
-    }
-    closeEditor();
-    Alert.alert("Sucesso", "Membro removido do ministerio.");
+            if (selectedMinistryId) {
+              await loadMinistryData(selectedMinistryId);
+              await runUserSearch(search);
+            }
+            closeEditor();
+            Alert.alert("Sucesso", "Membro removido do ministerio.");
+          },
+        },
+      ],
+    );
   };
 
   const selectedMinistry = ministries.find((ministry) => ministry.id === selectedMinistryId);
@@ -239,7 +260,21 @@ export default function ManageMinistryMembersScreen({ navigation, route }: Props
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={["top", "left", "right"]}>
-      <HeaderSecondary title="Membros do Ministério" onBack={() => navigation.goBack()} />
+      {navigation.canGoBack() ? (
+        <HeaderSecondary title="Membros do Ministério" onBack={() => navigation.goBack()} />
+      ) : (
+        <View className="px-5 pt-5 pb-3">
+          <Text
+            style={{
+              fontWeight: "bold",
+              fontSize: 18,
+              textAlign: "center",
+            }}
+          >
+            Membros do Ministério
+          </Text>
+        </View>
+      )}
 
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
         <View style={{ backgroundColor: "#111827", borderRadius: 24, padding: 20, marginBottom: 18 }}>
