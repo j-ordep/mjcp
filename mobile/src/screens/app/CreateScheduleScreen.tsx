@@ -34,7 +34,6 @@ export default function CreateScheduleScreen() {
   const [ministries, setMinistries] = useState<ManageableMinistry[]>([]);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [selectedMinistryId, setSelectedMinistryId] = useState<string | null>(null);
-  const [notes, setNotes] = useState("");
 
   const isAdmin = profile?.role === "admin";
 
@@ -60,7 +59,7 @@ export default function CreateScheduleScreen() {
     } catch (error: any) {
       Alert.alert(
         "Erro",
-        error.message ?? "Não foi possível carregar ministérios.",
+        error.message ?? "Nao foi possivel carregar ministerios.",
       );
     } finally {
       setIsLoadingMinistries(false);
@@ -86,14 +85,14 @@ export default function CreateScheduleScreen() {
 
     if (!canCreateSchedule) {
       Alert.alert(
-        "Sem permissão",
-        "Apenas admin ou líder de ministério pode criar escala.",
+        "Sem permissao",
+        "Apenas admin ou lider de ministerio pode criar escala.",
       );
       return;
     }
 
     if (!selectedEventId || !selectedMinistryId) {
-      Alert.alert("Campos obrigatórios", "Selecione evento e ministério.");
+      Alert.alert("Campos obrigatorios", "Selecione evento e ministerio.");
       return;
     }
 
@@ -101,12 +100,11 @@ export default function CreateScheduleScreen() {
     const { error } = await createScheduleValidated({
       eventId: selectedEventId,
       ministryId: selectedMinistryId,
-      notes: notes.trim() || null,
     });
     setIsSaving(false);
 
     if (error) {
-      Alert.alert("Não foi possível salvar a escala", error);
+      Alert.alert("Nao foi possivel salvar a escala", error);
       return;
     }
 
@@ -123,10 +121,10 @@ export default function CreateScheduleScreen() {
       forceRefresh: true,
     });
 
-    Alert.alert("Escala criada", "Agora você pode abrir a escala na lista para montar a equipe.", [
+    Alert.alert("Escala criada", "Agora voce pode abrir a escala na lista para montar a equipe.", [
       {
         text: "OK",
-        onPress: () => navigation.navigate("MySchedulesScreen"),
+        onPress: () => navigation.navigate("ScheduleScreen"),
       },
     ]);
   };
@@ -139,22 +137,6 @@ export default function CreateScheduleScreen() {
         contentContainerStyle={{ padding: 20, paddingBottom: 32, backgroundColor: "#f8fafc" }}
         showsVerticalScrollIndicator={false}
       >
-        <View
-          style={{
-            backgroundColor: "#111827",
-            borderRadius: 24,
-            padding: 20,
-            marginBottom: 18,
-          }}
-        >
-          <Text style={{ color: "#fff", fontSize: 21, fontWeight: "700", marginBottom: 6 }}>
-            Defina o contexto da escala
-          </Text>
-          <Text style={{ color: "rgba(255,255,255,0.72)", lineHeight: 20 }}>
-            Escolha evento, ministério e observações. A montagem da equipe acontece depois, na tela de edição.
-          </Text>
-        </View>
-
         {!canCreateSchedule ? (
           <View
             style={{
@@ -171,10 +153,10 @@ export default function CreateScheduleScreen() {
             <ShieldAlert size={20} color="#c2410c" />
             <View style={{ flex: 1 }}>
               <Text style={{ color: "#9a3412", fontWeight: "600", marginBottom: 2 }}>
-                Sem permissão para criar escala
+                Sem permissao para criar escala
               </Text>
               <Text style={{ color: "#9a3412" }}>
-                Você precisa ser líder de pelo menos um ministério ou admin.
+                Voce precisa ser lider de pelo menos um ministerio ou admin.
               </Text>
             </View>
           </View>
@@ -187,13 +169,11 @@ export default function CreateScheduleScreen() {
           selectedMinistryId={selectedMinistryId}
           selectedEvent={selectedEvent}
           selectedMinistry={selectedMinistry}
-          notes={notes}
           isLoadingMinistries={isLoadingMinistries}
           isLoadingSchedule={isSaving}
           scheduleId={null}
           onSelectEvent={setSelectedEventId}
           onSelectMinistry={setSelectedMinistryId}
-          onChangeNotes={setNotes}
           onSubmit={handleCreateSchedule}
           formatDateTime={formatDateTime}
         />

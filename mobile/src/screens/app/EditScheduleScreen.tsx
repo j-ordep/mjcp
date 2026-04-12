@@ -35,11 +35,16 @@ import { useMinistryStore } from "../../stores/useMinistryStore";
 import { useScheduleStore } from "../../stores/useScheduleStore";
 import { formatDateTime } from "../../utils/formatDate";
 import {
+  getParticipationStatusLabel,
   getOwnAssignments,
   getOwnRoleLabel,
-  hasPendingAssignments,
+  hasConfirmableAssignments,
 } from "../../utils/scheduleParticipation";
-import { buildAssignmentWarningsMessage } from "../../utils/scheduleRules";
+import {
+  buildAssignmentWarningsMessage,
+  isEventDateReadOnly,
+} from "../../utils/scheduleRules";
+import { getAssignmentStatusLabel } from "../../utils/statusLabels";
 
 type EditScheduleRoute = {
   key: string;
@@ -159,8 +164,23 @@ export default function EditScheduleScreen() {
     [assignments, session?.user?.id],
   );
   const hasMyAssignments = myAssignments.length > 0;
-  const hasPendingOwnAssignments = hasPendingAssignments(myAssignments);
+  const hasPendingOwnAssignments = hasConfirmableAssignments(myAssignments);
+  const participationStatusLabel = getParticipationStatusLabel(myAssignments);
   const myRoleLabel = getOwnRoleLabel(myAssignments);
+  const canManageSchedule = !!details && (
+    isAdmin ||
+    userMinistries.some(
+      (ministry) => ministry.id === details.ministry_id && ministry.is_leader,
+    )
+  );
+  const isOwnParticipationReadOnly = details
+    ? isEventDateReadOnly(details.event.start_at)
+    : false;
+  const ownParticipationHint = isOwnParticipationReadOnly
+    ? "Escala encerrada. Nao e mais possivel confirmar ou solicitar troca."
+    : pendingOwnSwapRequestId
+      ? "Troca pendente para esta escala."
+      : undefined;
 
   useEffect(() => {
     const loadPendingOwnSwapRequest = async () => {
@@ -196,6 +216,11 @@ export default function EditScheduleScreen() {
   }, []);
 
   const handleAddAssignment = async () => {
+    if (!canManageSchedule) {
+      Alert.alert("Sem permissao", "Somente admin ou lider deste ministerio pode editar a equipe.");
+      return;
+    }
+
     if (!details || !selectedMemberId || !selectedRoleId) {
       Alert.alert("Campos obrigatórios", "Selecione membro e função para adicionar.");
       return;
@@ -258,6 +283,11 @@ export default function EditScheduleScreen() {
   };
 
   const handleRemoveAssignment = async (assignmentId: string) => {
+    if (!canManageSchedule) {
+      Alert.alert("Sem permissao", "Somente admin ou lider deste ministerio pode editar a equipe.");
+      return;
+    }
+
     if (!details) return;
 
     Alert.alert("Remover da escala", "Deseja remover este membro da escala?", [
@@ -287,6 +317,11 @@ export default function EditScheduleScreen() {
   };
 
   const handleDeleteSchedule = () => {
+    if (!canManageSchedule) {
+      Alert.alert("Sem permissao", "Somente admin ou lider deste ministerio pode excluir a escala.");
+      return;
+    }
+
     if (!details) return;
 
     Alert.alert(
@@ -311,7 +346,7 @@ export default function EditScheduleScreen() {
             Alert.alert("Escala excluida", "A escala foi removida com sucesso.", [
               {
                 text: "OK",
-                onPress: () => navigation.navigate("MySchedulesScreen"),
+                onPress: () => navigation.navigate("ScheduleScreen"),
               },
             ]);
           },
@@ -341,7 +376,6 @@ export default function EditScheduleScreen() {
     }
 
     await refreshHub();
-    Alert.alert("Presenca confirmada", "Sua participacao nesta escala foi confirmada.");
   };
 
   const openSwapModal = () => {
@@ -389,13 +423,19 @@ export default function EditScheduleScreen() {
       setSelectedSwapAssignmentId(null);
       setSwapReason("");
       setPendingOwnSwapRequestId(data?.id ?? null);
-      Alert.alert("Solicitacao enviada", "Sua solicitacao de troca foi registrada.");
+      setAssignments((current) =>
+        current.map((assignment) =>
+          assignment.id === selectedSwapAssignmentId
+            ? { ...assignment, status: "pending" }
+            : assignment,
+        ),
+      );
     };
 
   if (isLoading || !details) {
     return (
       <SafeAreaView className="flex-1 bg-white" edges={["top", "left", "right"]}>
-        <HeaderSecondary title="Editar Escala" onBack={() => navigation.goBack()} />
+        <HeaderSecondary title="Escala" onBack={() => navigation.goBack()} />
         <View className="flex-1 items-center justify-center px-6">
           <Text style={{ color: "#6b7280" }}>Carregando...</Text>
         </View>
@@ -406,7 +446,7 @@ export default function EditScheduleScreen() {
   return (
     <SafeAreaView className="flex-1 bg-white" edges={["top", "left", "right"]}>
       <HeaderSecondary
-        title="Editar Escala"
+        title="Escala"
         onBack={() => navigation.goBack()}
       />
 
@@ -451,45 +491,36 @@ export default function EditScheduleScreen() {
                 Funcao: {myRoleLabel}
               </Text>
               <Text style={{ color: "#6b7280", marginBottom: 12 }}>
-                Status: {hasPendingOwnAssignments ? "Pendente" : "Confirmado"}
+                Status: {participationStatusLabel}
               </Text>
 
               <View style={{ flexDirection: "row", gap: 10 }}>
                 <View style={{ flex: 1 }}>
                   <DefaultButton
                     variant={pendingOwnSwapRequestId ? "destructive" : "outline"}
+                    disabled={isOwnParticipationReadOnly}
                     onPress={() => {
                       if (!pendingOwnSwapRequestId) {
                         openSwapModal();
                         return;
                       }
 
-                      Alert.alert(
-                        "Cancelar troca",
-                        "Deseja cancelar sua solicitacao pendente desta escala?",
-                        [
-                          { text: "Voltar", style: "cancel" },
-                          {
-                            text: "Cancelar troca",
-                            style: "destructive",
-                            onPress: async () => {
-                              const { error } = await cancelOwnSwapRequest(
-                                pendingOwnSwapRequestId,
-                              );
-                              if (error) {
-                                Alert.alert("Nao foi possivel cancelar", error);
-                                return;
-                              }
+                      void (async () => {
+                        const { error } = await cancelOwnSwapRequest(
+                          pendingOwnSwapRequestId,
+                        );
+                        if (error) {
+                          Alert.alert("Nao foi possivel cancelar", error);
+                          return;
+                        }
 
-                              setPendingOwnSwapRequestId(null);
-                              Alert.alert(
-                                "Solicitacao cancelada",
-                                "Sua solicitacao pendente foi cancelada.",
-                              );
-                            },
-                          },
-                        ],
-                      );
+                        setPendingOwnSwapRequestId(null);
+                        const assignmentsResult = await getScheduleAssignmentsDetailed(details.id);
+                        if (!assignmentsResult.error) {
+                          setAssignments(assignmentsResult.data ?? []);
+                        }
+                        await refreshHub();
+                      })();
                     }}
                   >
                     {pendingOwnSwapRequestId ? "Cancelar troca" : "Preciso trocar"}
@@ -500,66 +531,76 @@ export default function EditScheduleScreen() {
                     variant="primary"
                     onPress={handleConfirmOwnPresence}
                     isLoading={isConfirmingPresence}
-                    disabled={!hasPendingOwnAssignments}
+                    disabled={isOwnParticipationReadOnly || !hasPendingOwnAssignments}
                   >
                     {hasPendingOwnAssignments ? "Confirmar presenca" : "Presenca confirmada"}
                   </DefaultButton>
                 </View>
               </View>
+
+              {ownParticipationHint ? (
+                <Text style={{ color: "#6b7280", fontSize: 13, marginTop: 10 }}>
+                  {ownParticipationHint}
+                </Text>
+              ) : null}
             </View>
           ) : null}
 
           <Text style={{ fontWeight: "700", fontSize: 17, marginBottom: 12 }}>
-            Montagem da equipe
+            {canManageSchedule ? "Montagem da equipe" : "Equipe da escala"}
           </Text>
 
-          <TouchableOpacity
-            onPress={() => setIsAssignmentModalVisible(true)}
-            activeOpacity={0.85}
-            style={{
-              backgroundColor: "#111827",
-              borderRadius: 20,
-              padding: 16,
-              marginBottom: 12,
-            }}
-          >
-            <Text
-              style={{
-                color: "#fff",
-                fontWeight: "700",
-                fontSize: 16,
-                marginBottom: 4,
-                textAlign: "center",
-              }}
-            >
-              Adicionar membro
-            </Text>
-          </TouchableOpacity>
+          {canManageSchedule ? (
+            <>
+              <TouchableOpacity
+                onPress={() => setIsAssignmentModalVisible(true)}
+                activeOpacity={0.85}
+                style={{
+                  backgroundColor: "#111827",
+                  borderRadius: 20,
+                  padding: 16,
+                  marginBottom: 12,
+                }}
+              >
+                <Text
+                  style={{
+                    color: "#fff",
+                    fontWeight: "700",
+                    fontSize: 16,
+                    marginBottom: 4,
+                    textAlign: "center",
+                  }}
+                >
+                  Adicionar membro
+                </Text>
+              </TouchableOpacity>
 
-          <TouchableOpacity
-            onPress={() =>
-              navigation.navigate("ManageMinistryMembers", {
-                ministryId: details.ministry_id,
-              })
-            }
-            activeOpacity={0.85}
-            style={{
-              backgroundColor: "#f1f5f9",
-              borderRadius: 18,
-              padding: 14,
-              marginBottom: 8,
-              borderWidth: 1,
-              borderColor: "#dbe3ec",
-            }}
-          >
-            <Text style={{ fontWeight: "700", marginBottom: 4 }}>
-              Gerenciar membros do ministério
-            </Text>
-            <Text style={{ color: "#6b7280" }}>
-              Atualize capacidades e participação do ministério antes de montar
-              a equipe.
-            </Text>
-          </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() =>
+                  navigation.navigate("ManageMinistryMembers", {
+                    ministryId: details.ministry_id,
+                  })
+                }
+                activeOpacity={0.85}
+                style={{
+                  backgroundColor: "#f1f5f9",
+                  borderRadius: 18,
+                  padding: 14,
+                  marginBottom: 8,
+                  borderWidth: 1,
+                  borderColor: "#dbe3ec",
+                }}
+              >
+                <Text style={{ fontWeight: "700", marginBottom: 4 }}>
+                  Gerenciar membros do ministério
+                </Text>
+                <Text style={{ color: "#6b7280" }}>
+                  Atualize capacidades e participação do ministério antes de montar
+                  a equipe.
+                </Text>
+              </TouchableOpacity>
+            </>
+          ) : null}
 
           <View style={{ flexDirection: "row", gap: 10, marginBottom: 16 }}>
             <View
@@ -614,12 +655,16 @@ export default function EditScheduleScreen() {
               <Text style={{ fontWeight: "600", marginBottom: 4 }}>
                 Nenhum membro escalado ainda
               </Text>
-              <Text style={{ color: "#6b7280", marginBottom: 14 }}>
-                Use o fluxo de adição para começar a montar a equipe.
-              </Text>
-              <DefaultButton onPress={() => setIsAssignmentModalVisible(true)}>
-                Adicionar primeiro membro
-              </DefaultButton>
+              {canManageSchedule ? (
+                <>
+                  <Text style={{ color: "#6b7280", marginBottom: 14 }}>
+                    Use o fluxo de adição para começar a montar a equipe.
+                  </Text>
+                  <DefaultButton onPress={() => setIsAssignmentModalVisible(true)}>
+                    Adicionar primeiro membro
+                  </DefaultButton>
+                </>
+              ) : null}
             </View>
           ) : (
             assignments.map((assignment) => (
@@ -646,24 +691,26 @@ export default function EditScheduleScreen() {
                   <Text
                     style={{ color: "#6b7280", marginTop: 2, fontSize: 12 }}
                   >
-                    Status: {assignment.status}
+                    Status: {getAssignmentStatusLabel(assignment.status)}
                   </Text>
                 </View>
-                <TouchableOpacity
-                  disabled={removingAssignmentId === assignment.id}
-                  onPress={() => handleRemoveAssignment(assignment.id)}
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 20,
-                    backgroundColor: "#fff1f2",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    opacity: removingAssignmentId === assignment.id ? 0.5 : 1,
-                  }}
-                >
-                  <Trash2 size={18} color="#be123c" />
-                </TouchableOpacity>
+                {canManageSchedule ? (
+                  <TouchableOpacity
+                    disabled={removingAssignmentId === assignment.id}
+                    onPress={() => handleRemoveAssignment(assignment.id)}
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 20,
+                      backgroundColor: "#fff1f2",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      opacity: removingAssignmentId === assignment.id ? 0.5 : 1,
+                    }}
+                  >
+                    <Trash2 size={18} color="#be123c" />
+                  </TouchableOpacity>
+                ) : null}
               </View>
             ))
           )}
@@ -693,55 +740,58 @@ export default function EditScheduleScreen() {
             eventLocation={details.event.location}
             ministryName={details.ministry.name}
           />
-
-          <TouchableOpacity
-            onPress={handleDeleteSchedule}
-            disabled={isDeletingSchedule}
-            activeOpacity={0.85}
-            style={{
-              marginTop: 12,
-              borderRadius: 18,
-              padding: 14,
-              borderWidth: 1,
-              borderColor: "#fecdd3",
-              backgroundColor: "#fff1f2",
-              opacity: isDeletingSchedule ? 0.6 : 1,
-            }}
-          >
-            <Text
+          {canManageSchedule ? (
+            <TouchableOpacity
+              onPress={handleDeleteSchedule}
+              disabled={isDeletingSchedule}
+              activeOpacity={0.85}
               style={{
-                color: "#be123c",
-                fontWeight: "700",
-                textAlign: "center",
+                marginTop: 12,
+                borderRadius: 18,
+                padding: 14,
+                borderWidth: 1,
+                borderColor: "#fecdd3",
+                backgroundColor: "#fff1f2",
+                opacity: isDeletingSchedule ? 0.6 : 1,
               }}
             >
-              Excluir escala
-            </Text>
-          </TouchableOpacity>
+              <Text
+                style={{
+                  color: "#be123c",
+                  fontWeight: "700",
+                  textAlign: "center",
+                }}
+              >
+                Excluir escala
+              </Text>
+            </TouchableOpacity>
+          ) : null}
         </View>
       </ScrollView>
 
-      <AssignmentPickerModal
-        visible={isAssignmentModalVisible}
-        eventTitle={details.event.title}
-        ministryName={details.ministry.name}
-        memberSearch={memberSearch}
-        filteredMembers={filteredMembers}
-        roles={roles}
-        selectedMemberId={selectedMemberId}
-        selectedRoleId={selectedRoleId}
-        selectedMemberName={selectedMember?.full_name}
-        selectedRoleName={selectedRole?.name}
-        selectedMemberCapabilityRoleIds={
-          selectedMember?.capability_role_ids ?? []
-        }
-        isSaving={isSavingAssignment}
-        onClose={() => setIsAssignmentModalVisible(false)}
-        onSearchChange={setMemberSearch}
-        onSelectMember={setSelectedMemberId}
-        onSelectRole={setSelectedRoleId}
-        onSubmit={handleAddAssignment}
-      />
+      {canManageSchedule ? (
+        <AssignmentPickerModal
+          visible={isAssignmentModalVisible}
+          eventTitle={details.event.title}
+          ministryName={details.ministry.name}
+          memberSearch={memberSearch}
+          filteredMembers={filteredMembers}
+          roles={roles}
+          selectedMemberId={selectedMemberId}
+          selectedRoleId={selectedRoleId}
+          selectedMemberName={selectedMember?.full_name}
+          selectedRoleName={selectedRole?.name}
+          selectedMemberCapabilityRoleIds={
+            selectedMember?.capability_role_ids ?? []
+          }
+          isSaving={isSavingAssignment}
+          onClose={() => setIsAssignmentModalVisible(false)}
+          onSearchChange={setMemberSearch}
+          onSelectMember={setSelectedMemberId}
+          onSelectRole={setSelectedRoleId}
+          onSubmit={handleAddAssignment}
+        />
+      ) : null}
 
       <RequestSwapModal
         visible={isSwapModalVisible}

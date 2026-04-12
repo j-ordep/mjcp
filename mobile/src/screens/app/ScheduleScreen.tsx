@@ -1,6 +1,6 @@
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Plus, Search } from "lucide-react-native";
+import { ArrowRight, Plus, RefreshCcw, Search } from "lucide-react-native";
 import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -32,13 +32,15 @@ import { useMinistryStore } from "../../stores/useMinistryStore";
 import { useScheduleStore } from "../../stores/useScheduleStore";
 import { formatDateTime } from "../../utils/formatDate";
 import {
+  getParticipationStatusLabel,
   getOwnRoleLabel,
-  hasPendingAssignments,
+  hasConfirmableAssignments,
 } from "../../utils/scheduleParticipation";
+import { isEventDateReadOnly } from "../../utils/scheduleRules";
 
 type Filter = "current" | "past";
 
-export default function MySchedulesScreen() {
+export default function ScheduleScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [activeFilter, setActiveFilter] = useState<Filter>("current");
@@ -120,7 +122,7 @@ export default function MySchedulesScreen() {
 
   const filters: { key: Filter; label: string }[] = useMemo(
     () => [
-      { key: "current", label: "Próximas" },
+      { key: "current", label: "Proximas" },
       { key: "past", label: "Anteriores" },
     ],
     [],
@@ -204,12 +206,21 @@ export default function MySchedulesScreen() {
           ? getOwnRoleLabel(item.my_assignments)
           : undefined;
       const showOwnActions = item.my_assignments.length > 0;
-      const hasPendingOwnAssignments = hasPendingAssignments(item.my_assignments);
+      const hasPendingOwnAssignments = hasConfirmableAssignments(item.my_assignments);
+      const participationStatusLabel = getParticipationStatusLabel(item.my_assignments);
+      const isReadOnly = isEventDateReadOnly(item.event.start_at);
       const pendingOwnSwapRequestId =
         item.my_assignments
           .map((assignment) => pendingSwapRequestByAssignmentId[assignment.id])
           .find(Boolean) ?? null;
       const hasPendingOwnSwapRequest = !!pendingOwnSwapRequestId;
+      const confirmDisabled = isReadOnly || !hasPendingOwnAssignments;
+      const swapDisabled = isReadOnly;
+      const actionHint = isReadOnly
+        ? "Escala encerrada. Nao e mais possivel confirmar ou solicitar troca."
+        : hasPendingOwnSwapRequest
+          ? "Troca pendente para esta escala."
+          : undefined;
 
       return (
         <EventCard
@@ -222,50 +233,42 @@ export default function MySchedulesScreen() {
           showActions={showOwnActions}
           swapLabel={hasPendingOwnSwapRequest ? "Cancelar troca" : "Preciso trocar"}
           swapVariant={hasPendingOwnSwapRequest ? "destructive" : "outline"}
+          confirmLabel={hasPendingOwnAssignments ? "Confirmar presenca" : "Presenca confirmada"}
+          confirmDisabled={confirmDisabled}
+          swapDisabled={swapDisabled}
+          actionHint={actionHint}
+          participationStatusLabel={participationStatusLabel}
           onDetails={() => {
-            if (item.can_manage) {
-              navigation.navigate("EditSchedule", {
-                scheduleId: item.id,
-              });
-              return;
-            }
-
-            navigation.navigate("EventDetails", {
-              event: item.event,
+            navigation.navigate("EditSchedule", {
+              scheduleId: item.id,
             });
           }}
           onSwap={() => {
             if (hasPendingOwnSwapRequest && pendingOwnSwapRequestId) {
-              Alert.alert(
-                "Cancelar troca",
-                "Deseja cancelar sua solicitacao pendente desta escala?",
-                [
-                  { text: "Voltar", style: "cancel" },
-                  {
-                    text: "Cancelar troca",
-                    style: "destructive",
-                    onPress: async () => {
-                      const { error } = await cancelOwnSwapRequest(pendingOwnSwapRequestId);
-                      if (error) {
-                        Alert.alert("Nao foi possivel cancelar", error);
-                        return;
-                      }
+              void (async () => {
+                const { error } = await cancelOwnSwapRequest(pendingOwnSwapRequestId);
+                if (error) {
+                  Alert.alert("Nao foi possivel cancelar", error);
+                  return;
+                }
 
-                      setPendingSwapRequestByAssignmentId((current) => {
-                        const next = { ...current };
-                        for (const assignment of item.my_assignments) {
-                          delete next[assignment.id];
-                        }
-                        return next;
-                      });
-                      Alert.alert(
-                        "Solicitacao cancelada",
-                        "Sua solicitacao pendente foi cancelada.",
-                      );
-                    },
-                  },
-                ],
-              );
+                setPendingSwapRequestByAssignmentId((current) => {
+                  const next = { ...current };
+                  for (const assignment of item.my_assignments) {
+                    delete next[assignment.id];
+                  }
+                  return next;
+                });
+
+                if (session?.user?.id) {
+                  await fetchScheduleCards({
+                    userId: session.user.id,
+                    isAdmin,
+                    leaderMinistryIds,
+                    forceRefresh: true,
+                  });
+                }
+              })();
               return;
             }
 
@@ -290,10 +293,6 @@ export default function MySchedulesScreen() {
               leaderMinistryIds,
               forceRefresh: true,
             });
-            Alert.alert(
-              "Presenca confirmada",
-              "Sua participacao nesta escala foi confirmada.",
-            );
           }}
         />
       );
@@ -318,7 +317,7 @@ export default function MySchedulesScreen() {
       <View className="items-center justify-center py-16 px-10">
         <Text style={{ color: "#888", fontSize: 16, textAlign: "center" }}>
           {viewMode === "manageable"
-            ? "Nenhuma escala gerenciável encontrada."
+            ? "Nenhuma escala gerenciavel encontrada."
             : "Nenhuma escala pessoal encontrada."}
         </Text>
       </View>
@@ -328,25 +327,58 @@ export default function MySchedulesScreen() {
   return (
     <SafeAreaView className="flex-1 bg-white" edges={["top", "left", "right"]}>
       <HeaderSecondary
-        title="Minhas Escalas"
+        title="Escalas"
         onBack={() => navigation.goBack()}
         rightIcon={canCreate ? <Plus size={22} color="#000" /> : undefined}
         onRightPress={() => navigation.navigate("CreateSchedule")}
       />
 
       <View className="px-5">
-        <View className="mb-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3">
-          <Text style={{ fontWeight: "700", color: "#111827", marginBottom: 4 }}>
-            {viewMode === "manageable"
-              ? "Hub operacional de escalas"
-              : "Minhas participações"}
-          </Text>
-          <Text style={{ color: "#6b7280" }}>
-            {viewMode === "manageable"
-              ? "Abra uma escala para editar contexto, equipe e assignments."
-              : "Acompanhe onde você está escalado e use os atalhos do seu card."}
-          </Text>
-        </View>
+        <TouchableOpacity
+          onPress={() => navigation.navigate("SwapRequests")}
+          activeOpacity={0.85}
+          style={{
+            marginBottom: 14,
+            borderRadius: 20,
+            padding: 16,
+            backgroundColor: "#eef6ff",
+            borderWidth: 1,
+            borderColor: "#bfdbfe",
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 12,
+            }}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 12, flex: 1 }}>
+              <View
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  backgroundColor: "#dbeafe",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <RefreshCcw size={18} color="#1d4ed8" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontWeight: "700", color: "#111827", marginBottom: 4 }}>
+                  Trocas de escala
+                </Text>
+                <Text style={{ color: "#475569" }}>
+                  Acompanhe as solicitações de trocas
+                </Text>
+              </View>
+            </View>
+            <ArrowRight size={18} color="#1d4ed8" />
+          </View>
+        </TouchableOpacity>
 
         <View className="flex-row items-center bg-gray-100 rounded-xl border border-gray-200 px-3 mb-4">
           <Search size={18} color="#888" />
@@ -451,10 +483,14 @@ export default function MySchedulesScreen() {
               [selectedSwapAssignmentId]: data.id,
             };
           });
-          Alert.alert(
-            "Solicitacao enviada",
-            "Sua solicitacao de troca foi registrada.",
-          );
+          if (session?.user?.id) {
+            await fetchScheduleCards({
+              userId: session.user.id,
+              isAdmin,
+              leaderMinistryIds,
+              forceRefresh: true,
+            });
+          }
         }}
       />
     </SafeAreaView>

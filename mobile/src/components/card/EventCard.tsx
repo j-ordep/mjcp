@@ -16,6 +16,11 @@ interface EventCardProps {
   showActions?: boolean;
   swapLabel?: string;
   swapVariant?: 'outline' | 'destructive';
+  confirmLabel?: string;
+  confirmDisabled?: boolean;
+  swapDisabled?: boolean;
+  actionHint?: string;
+  participationStatusLabel?: string;
 }
 
 export default function EventCard(props: EventCardProps) {
@@ -72,20 +77,42 @@ export default function EventCard(props: EventCardProps) {
             )}
           </View>
         )}
+
+        {props.participationStatusLabel ? (
+          <Text style={{ color: "#6b7280", fontSize: 13, marginTop: 10 }}>
+            Status da participacao: {props.participationStatusLabel}
+          </Text>
+        ) : null}
       </Card.Content>
 
       {props.showActions && (
-        <View className="flex-row gap-3 px-4 pb-4">
-          <View className="flex-1">
-            <DefaultButton variant={props.swapVariant ?? "outline"} onPress={props.onSwap}>
-              {props.swapLabel ?? "Preciso trocar"}
-            </DefaultButton>
-          </View>
+        <View className="px-4 pb-4">
+          {props.actionHint ? (
+            <Text style={{ color: "#6b7280", fontSize: 13, marginBottom: 10 }}>
+              {props.actionHint}
+            </Text>
+          ) : null}
 
-          <View className="flex-1">
-            <DefaultButton variant="primary" onPress={props.onConfirm}>
-              Confirmar
-            </DefaultButton>
+          <View className="flex-row gap-3">
+            <View className="flex-1">
+              <DefaultButton
+                variant={props.swapVariant ?? "outline"}
+                onPress={props.onSwap}
+                disabled={props.swapDisabled}
+              >
+              {props.swapLabel ?? "Preciso trocar"}
+              </DefaultButton>
+            </View>
+
+            <View className="flex-1">
+              <DefaultButton
+                variant="primary"
+                onPress={props.onConfirm}
+                disabled={props.confirmDisabled}
+              >
+                {props.confirmLabel ?? "Confirmar"}
+              </DefaultButton>
+            </View>
           </View>
         </View>
       )}

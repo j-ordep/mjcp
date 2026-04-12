@@ -15,6 +15,7 @@ import {
 } from "../../services/scheduleService";
 import { useAuthStore } from "../../stores/useAuthStore";
 import { formatDateTime } from "../../utils/formatDate";
+import { getSwapRequestStatusLabel } from "../../utils/statusLabels";
 
 type Filter = "available" | "mine";
 
@@ -96,30 +97,18 @@ export default function SwapRequestsScreen() {
   };
 
   const handleCancel = (item: SwapRequestReviewItem) => {
-    Alert.alert(
-      "Cancelar solicitação",
-      "Deseja cancelar esta solicitação de troca?",
-      [
-        { text: "Voltar", style: "cancel" },
-        {
-          text: "Cancelar solicitação",
-          style: "destructive",
-          onPress: async () => {
-            setIsActingId(item.id);
-            const { error } = await cancelOwnSwapRequest(item.id);
-            setIsActingId(null);
+    void (async () => {
+      setIsActingId(item.id);
+      const { error } = await cancelOwnSwapRequest(item.id);
+      setIsActingId(null);
 
-            if (error) {
-              Alert.alert("Erro", error);
-              return;
-            }
+      if (error) {
+        Alert.alert("Erro", error);
+        return;
+      }
 
-            await loadRequests();
-            Alert.alert("Solicitação cancelada", "Sua solicitação foi cancelada.");
-          },
-        },
-      ],
-    );
+      await loadRequests();
+    })();
   };
 
   return (
@@ -259,10 +248,9 @@ export default function SwapRequestsScreen() {
                               ? "#4b5563"
                               : "#9a3412",
                       fontWeight: "700",
-                      textTransform: "capitalize",
                     }}
                   >
-                    {item.status}
+                    {getSwapRequestStatusLabel(item.status)}
                   </Text>
                 </View>
               </View>

@@ -1,9 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  getParticipationStatusLabel,
   getOwnAssignments,
   getOwnRoleLabel,
-  hasPendingAssignments,
+  hasConfirmableAssignments,
   type ScheduleParticipationLike,
 } from "../src/utils/scheduleParticipation";
 
@@ -44,16 +45,54 @@ test("getOwnAssignments returns an empty list when there is no user id", () => {
   assert.deepEqual(result, []);
 });
 
-test("hasPendingAssignments returns true when any assignment is not confirmed", () => {
-  const result = hasPendingAssignments(getOwnAssignments(assignments, "user-1"));
+test("hasConfirmableAssignments returns true when any assignment is pending", () => {
+  const result = hasConfirmableAssignments(getOwnAssignments(assignments, "user-1"));
 
   assert.equal(result, true);
 });
 
-test("hasPendingAssignments returns false when all assignments are confirmed", () => {
+test("hasConfirmableAssignments returns false when all assignments are confirmed", () => {
   const confirmedOnly = getOwnAssignments(assignments, "user-2");
 
-  assert.equal(hasPendingAssignments(confirmedOnly), false);
+  assert.equal(hasConfirmableAssignments(confirmedOnly), false);
+});
+
+test("hasConfirmableAssignments ignores swapped and declined assignments", () => {
+  const nonConfirmableAssignments: ScheduleParticipationLike[] = [
+    {
+      id: "a4",
+      user_id: "user-3",
+      status: "swapped",
+      role_name: "Guitarra",
+    },
+    {
+      id: "a5",
+      user_id: "user-3",
+      status: "declined",
+      role_name: "Back vocal",
+    },
+  ];
+
+  assert.equal(hasConfirmableAssignments(nonConfirmableAssignments), false);
+});
+
+test("getParticipationStatusLabel returns Pendente when there is any pending assignment", () => {
+  const result = getParticipationStatusLabel(getOwnAssignments(assignments, "user-1"));
+
+  assert.equal(result, "Pendente");
+});
+
+test("getParticipationStatusLabel returns Trocado when all assignments were swapped", () => {
+  const result = getParticipationStatusLabel([
+    {
+      id: "a6",
+      user_id: "user-4",
+      status: "swapped",
+      role_name: "Baixo",
+    },
+  ]);
+
+  assert.equal(result, "Trocado");
 });
 
 test("getOwnRoleLabel joins role names in display order", () => {

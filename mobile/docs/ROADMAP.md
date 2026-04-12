@@ -1,191 +1,135 @@
 # MJCP Mobile - Roadmap de Features
 
-> Checklist de tudo que precisa ser feito para o app sair do protótipo e ir para produção.
-> Marque com `[x]` conforme for concluindo.
+Data de reconciliacao: 2026-04-10 (America/Sao_Paulo)
+
+> Este roadmap foi reconciliado com o estado atual do codigo em `src/` e das migrations em `supabase/migrations/`.
+> Quando houver divergencia entre este arquivo e o codigo, codigo + migrations continuam sendo a verdade atual.
 
 ---
 
-## 🔴 Crítico — Infraestrutura
+## Estado Atual
 
-### Backend & API
+### Ja implementado no codigo
 
-- [ ] Backend (Supabase)
-- [ ] Configurar client HTTP (axios / fetch wrapper)
-- [ ] Definir modelos/tipos TypeScript para entidades (User, Event, Room, Notification)
-- [ ] Implementar tratamento de erros global (interceptors, retry, timeout)
+- Autenticacao Supabase parcial, com `authService`, `useAuthStore` e fluxo autenticado no app
+- Store global com Zustand para auth, eventos, ministerios e escalas
+- Criacao de escala separada da montagem da equipe
+- Tela dedicada de editar escala
+- Adicao e remocao de membros na escala
+- Confirmacao de presenca do proprio usuario
+- Solicitacao de troca, cancelamento da propria troca e aceite pela primeira pessoa elegivel
+- Tela dedicada para acompanhar trocas (`SwapRequestsScreen`)
+- Gestao de membros do ministerio e capabilities
+- Integridade e RLS para lider/admin no dominio principal de escalas
 
-### Autenticação
+### Implementado parcialmente
 
-- [ ] Integrar autenticação real (email/senha)
-- [ ] Fluxo de login com token (JWT / session)
-- [ ] Persistência de sessão (AsyncStorage / SecureStore)
-- [ ] Reativar telas Login e SignUp no navigator
-- [ ] Proteção de rotas (redirecionar para login se não autenticado)
-- [ ] Fluxo de "Esqueci minha senha"
-- [ ] Validação real de formulários (email, senha forte, campos obrigatórios)
+- `EventDetailsScreen` ja mostra equipe, status e acoes quando o usuario esta escalado, e a UX basica entre `ScheduleScreen`, `EditScheduleScreen` e `EventDetailsScreen` foi alinhada para:
+  - desabilitar confirmacao quando nao ha mais assignment confirmavel
+  - refletir troca pendente com hint consistente
+  - bloquear confirmacao/troca em contexto somente leitura
+  - ainda resta um gap de UX para o caso de multiplas escalas do mesmo usuario no mesmo evento
+- `EditScheduleScreen` agora tambem serve como tela unificada da escala para membro:
+  - o membro abre a mesma tela que admin/lider a partir de `ScheduleScreen`
+  - as acoes administrativas ficam ocultas quando ele nao pode gerenciar a escala
+- Edicao de dados basicos da escala nao deve expor observacoes, `notes` ou `note`; trocar evento ou ministerio nao esta exposto
+- Tipagem de banco existe em `src/types/database.types.ts`, mas ainda merece revisao de cobertura
+- Suite de testes unitarios existe, mas hoje cobre principalmente utils e mapeamentos, nao o service layer principal
 
-### Estado Global
+### Ainda pendente
 
-- [ ] Escolher lib de estado (Zustand / Context API / Redux Toolkit)
-- [ ] Store de usuário autenticado
-- [ ] Store de eventos
-- [ ] Store de salas
-- [ ] Store de notificações
-
----
-
-## 🟡 Alto — Telas & Features Incompletas
-
-### HomeScreen
-
-- [ ] Buscar eventos do usuário via API
-- [ ] Ação "Confirmar presença" integrada com backend
-- [ ] Ação "Solicitar troca" integrada com backend
-- [ ] Pull-to-refresh na lista de eventos
-- [ ] Loading skeleton enquanto carrega
-- [ ] Estado vazio (sem eventos)
-
-### EventsScreen
-
-- [x] Layout da tela com lista de todos os eventos
-- [x] Filtros (Todos, Próximos, Passados)
-- [x] Busca/pesquisa de eventos
-- [x] Paginação / infinite scroll com FlatList
-- [x] Navegação para EventDetails ao clicar
-- [ ] Card simples para eventos onde usuário NÃO está escalado (título, descrição, data, local)
-- [ ] Card completo para eventos onde usuário ESTÁ escalado (departamento, função, botões de ação)
-- [ ] Diferenciar visualização com base nos dados da API
-
-### EventDetailsScreen
-
-- [ ] Buscar detalhes do evento via API
-- [ ] Visualização simples para eventos sem escala (apenas info geral)
-- [ ] Visualização completa para eventos com escala (equipe, status, ações)
-- [ ] Lista real de membros escalados
-- [ ] Ação "Confirmar presença" funcional
-- [ ] Ação "Preciso trocar" funcional (enviar solicitação)
-- [ ] Atualização em tempo real do status da equipe
-
-### MusicScreen
-
-- [x] Definir funcionalidade (setlist, catálogo de músicas com tom/BPM)
-- [x] Layout da tela
-- [x] Catálogo de músicas com categorias (Louvor, Adoração, Infantil)
-- [x] Busca de músicas por título ou artista
-- [x] Card de próximo setlist vinculado a evento
-- [ ] Tela de cifra/letra individual
-- [ ] Criar/editar setlists
-
-### RoomsScreen
-
-- [ ] Buscar salas disponíveis via API por data/horário
-- [ ] Calendário de seleção de data funcional
-- [ ] Ação "Reservar" integrada com backend
-- [ ] Ação "Ver detalhes" integrada (navigation ou modal)
-- [ ] Feedback visual ao reservar (loading, success, error)
-
-### BlockDatesScreen
-
-- [ ] Salvar datas bloqueadas no backend
-- [ ] Carregar datas já bloqueadas ao abrir
-- [ ] Botão voltar funcional (onBack)
-- [ ] Feedback de sucesso/erro ao bloquear
-
-### ProfileScreen
-
-- [ ] Buscar dados do perfil via API
-- [ ] Atividades recentes reais
-- [ ] Ação "Sair" (logout real — limpar token, redirecionar)
-- [ ] Ação "Compartilhar perfil" funcional
-- [ ] Ação "Configurar notificações" funcional
-
-### EditProfileScreen
-
-- [ ] Salvar alterações no backend
-- [ ] Upload de foto de perfil (câmera / galeria)
-- [ ] Validação de campos (email, telefone)
-- [ ] Feedback de sucesso ao salvar
+- Aplicar no Supabase remoto a migration que conecta notificacoes operacionais de swap
+- Aplicar no Supabase remoto as migrations locais de hotfix:
+  - `20260412000111_fix_schedule_rls_recursion.sql`
+  - `20260412000112_reset_assignment_confirmation_on_swap_request.sql`
+- Pull-to-refresh e estados de loading/error mais consistentes
+- Refinar o caso de multiplas escalas do mesmo usuario no mesmo evento
+- Cobertura de testes do `scheduleService` e `ministryService`
+- Fluxo de declinio de assignment, caso o produto confirme essa necessidade
 
 ---
 
-## 🟢 Médio — UX & Polimento
+## P0 - Fluxo principal de escalas
 
-### Notificações
-
-- [ ] Notificações reais (push notifications com Expo Notifications)
-- [ ] Lista de notificações via API
-- [ ] Marcar notificação como lida
-- [ ] Badge de contagem no ícone de notificação
-- [ ] Notificação ao ser escalado
-- [ ] Notificação ao receber solicitação de troca
-
-### UX Geral
-
-- [ ] Loading states em todas as telas (skeleton / spinner)
-- [ ] Pull-to-refresh onde aplicável
-- [ ] Tratamento de erro amigável (tela de erro, retry)
-- [ ] Estado vazio em listas (ilustração + texto)
-- [ ] Toast/Snackbar para feedback de ações
-- [ ] Suporte a tema escuro (darkTheme já existe base)
-- [ ] Animações de transição entre telas
-- [ ] Haptic feedback em ações importantes
-
-### Formulários
-
-- [ ] Validação com lib (Yup / Zod + React Hook Form)
-- [ ] Máscaras de input (telefone, data)
-- [ ] Feedback visual de campo inválido
+- [x] Criar escala por `(evento, ministerio)` com validacao de editabilidade
+- [x] Separar criacao da escala da montagem da equipe
+- [x] Abrir tela dedicada para editar escala
+- [x] Adicionar membro na escala com validacao de capability e warnings de conflito/indisponibilidade
+- [x] Remover membro da escala com confirmacao explicita
+- [x] Excluir escala com confirmacao explicita
+- [ ] Fechar revisao final do comportamento de historico/somente leitura no dia do evento ou depois dele em todos os fluxos
 
 ---
 
-## 🔵 Baixo — Nice to Have
+## P1 - Interacoes do membro
 
-### Features Adicionais
+- [x] Confirmar presenca em `ScheduleScreen`
+- [x] Confirmar presenca em `EditScheduleScreen`
+- [x] Confirmar presenca em `EventDetailsScreen`
+- [x] Padronizar bloqueios e desabilitacoes dessas acoes entre as tres telas
+- [x] Remover alerts nativos de sucesso de confirmacao e troca
+- [x] Abrir a tela nova de escala tambem para membro, com modo somente leitura administrativa
 
-- [ ] Histórico de eventos passados
-- [ ] Calendário mensal com eventos marcados
-- [ ] Chat/mensagens entre membros
-- [ ] Configurações do app (idioma, tema, notificações)
-- [ ] Onboarding/tutorial primeiro acesso
-- [ ] Suporte offline (cache local)
-
-### Integração YouTube
-
-- [ ] Exibir vídeos do canal da igreja (YouTube Data API v3)
-- [ ] Vincular vídeos a eventos (transmissões ao vivo e gravações)
-- [ ] Player inline ou abrir no app do YouTube
-- [ ] Seção/aba de vídeos (feed recente do canal)
-- [ ] Filtro por evento / categoria
-- [ ] Notificação quando uma live começa
-
-### DevOps & Qualidade
-
-- [ ] Configurar ESLint + Prettier
-- [ ] Testes unitários (Jest + React Native Testing Library)
-- [ ] Testes E2E (Detox / Maestro)
-- [ ] CI/CD (EAS Build + EAS Submit)
-- [ ] Monitoramento de crashes (Sentry / Bugsnag)
-- [ ] Analytics (Expo Analytics / Firebase Analytics)
-- [ ] Versionamento semântico
-
-### Performance
-
-- [ ] Lazy loading de telas (React.lazy ou dynamic imports)
-- [ ] Otimização de listas (FlashList ao invés de FlatList)
-- [ ] Cache de imagens (expo-image)
-- [ ] Memoização de componentes pesados
+- [x] Criar solicitacao de troca
+- [x] Cancelar solicitacao de troca propria
+- [x] Aceitar troca como membro elegivel
+- [x] Listar trocas disponiveis e trocas proprias
+- [x] Ao solicitar troca, resetar assignment confirmado para `pending`
+- [~] Conectar notificacoes e revisar UX final do fluxo
 
 ---
 
-## Próximos Passos Sugeridos (Ordem)
+## P1 - Modos de visualizacao de evento e escala
 
-1. **Definir e configurar backend** (Supabase recomendado para MVP rápido)
-2. **Implementar autenticação real** (login, signup, persistência de sessão)
-3. **Adicionar gerenciamento de estado** (Zustand — leve e simples)
-4. **Integrar HomeScreen com dados reais** (primeiro fluxo completo)
-5. **Implementar EventsScreen** (tela stub)
-6. **Implementar MusicScreen** (tela stub)
-7. **Completar ações** (confirmar, trocar, reservar, salvar perfil)
-8. **Notificações push**
-9. **Polimento de UX** (loading, erros, estados vazios)
-10. **Testes e CI/CD**
+- [x] `ScheduleScreen` como hub operacional de escalas
+- [x] `EditScheduleScreen` mistura contexto de gestor e, quando aplicavel, bloco "Minha participacao"
+- [~] `EventDetailsScreen` ja possui modo expandido para usuario escalado e foi alinhada nos estados basicos, mas ainda precisa melhorar o caso de multiplas escalas no mesmo evento
+- [ ] Consolidar um shape/payload de backend menos fragmentado para cards e detalhes
+
+---
+
+## P1 - Qualidade e arquitetura
+
+- [x] Service layer para regras do dominio principal
+- [x] RLS para admin, leader e member no fluxo de escalas
+- [x] Migrations para endurecimento de integridade e fluxo de swap
+- [~] Tipagem do banco presente, mas ainda passivel de revisao
+- [~] Testes automatizados iniciais existentes
+- [ ] Cobrir `scheduleService` com testes
+- [ ] Cobrir `ministryService` com testes
+
+---
+
+## P2 - Notificacoes
+
+- [ ] Notificar novo assignment criado
+- [~] Notificar criacao de swap request
+- [~] Notificar membros elegiveis para assumir troca
+- [~] Notificar lider responsavel pela escala
+- [~] Notificar quando a troca for assumida
+- [~] Notificar quando a troca for cancelada
+  - Estado atual confirmado no codigo:
+    - migration local preparada para gerar notificacoes de `swap_request` no backend
+    - `NotificationsModal` agora consome a inbox real no app
+  - Pendencia real:
+    - aplicar a migration no projeto Supabase remoto
+    - fechar badge/realtime/push em rodada futura
+
+---
+
+## P2 - Outras frentes do produto
+
+- [ ] Queries reais de disponibilidade de salas
+- [ ] Tela de musica individual
+- [ ] Setlist por evento
+- [ ] Padronizacao de loading/error/empty states
+- [ ] Definir estrategia de historico/retencao de escalas antigas
+
+---
+
+## Proximos passos sugeridos
+
+1. Fechar a regra de somente leitura para confirmacao de presenca em eventos/escala historicos.
+2. Padronizar UX do usuario escalado entre `ScheduleScreen`, `EditScheduleScreen` e `EventDetailsScreen`.
+3. Implementar notificacoes in-app do fluxo de trocas e escalas, com geracao no backend e inbox real no app.
+4. Aumentar cobertura de testes no service layer.

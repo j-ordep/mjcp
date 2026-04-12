@@ -4,6 +4,7 @@ import {
   buildAssignmentWarningsMessage,
   countAssignmentsByStatus,
   isEventDateEditable,
+  isEventDateReadOnly,
   rangesOverlap,
   toISODateString,
 } from "../src/utils/scheduleRules";
@@ -33,6 +34,20 @@ test("isEventDateEditable allows editing on the same calendar day", () => {
 test("isEventDateEditable blocks editing after the event day has passed", () => {
   const now = new Date("2026-04-10T10:00:00.000Z");
   const result = isEventDateEditable("2026-04-09T22:00:00.000Z", now);
+
+  assert.equal(result, false);
+});
+
+test("isEventDateReadOnly blocks actions on the event day", () => {
+  const now = new Date("2026-04-10T10:00:00.000Z");
+  const result = isEventDateReadOnly("2026-04-10T22:00:00.000Z", now);
+
+  assert.equal(result, true);
+});
+
+test("isEventDateReadOnly allows actions before the event day", () => {
+  const now = new Date("2026-04-10T10:00:00.000Z");
+  const result = isEventDateReadOnly("2026-04-11T22:00:00.000Z", now);
 
   assert.equal(result, false);
 });

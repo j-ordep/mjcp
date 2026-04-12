@@ -3,6 +3,7 @@ import type { AssignmentStatus, TableRow } from '../types/database.types';
 import {
   countAssignmentsByStatus,
   isEventDateEditable,
+  isEventDateReadOnly,
   rangesOverlap,
   toISODateString,
 } from "../utils/scheduleRules";
@@ -217,7 +218,6 @@ interface UpcomingAllScheduleRow {
 
 interface ScheduleCardManageableRow {
   id: string;
-  notes: string | null;
   created_at: string;
   ministry_id: string;
   event_id: string;
@@ -280,7 +280,6 @@ interface ScheduleCardMemberRow {
   schedules:
     | {
         id: string;
-        notes: string | null;
         created_at: string;
         event_id: string;
         ministry_id: string;
@@ -318,7 +317,6 @@ interface ScheduleCardMemberRow {
       }
     | {
         id: string;
-        notes: string | null;
         created_at: string;
         event_id: string;
         ministry_id: string;
@@ -361,7 +359,6 @@ interface ScheduleDetailsRow {
   id: string;
   event_id: string;
   ministry_id: string;
-  notes: string | null;
   created_at: string;
   events:
     | {
@@ -820,7 +817,6 @@ export async function getManageableScheduleCards(
       .from('schedules')
       .select(`
         id,
-        notes,
         created_at,
         ministry_id,
         event_id,
@@ -865,7 +861,6 @@ export async function getManageableScheduleCards(
 
         acc.push({
           id: row.id,
-          notes: row.notes,
           created_at: row.created_at,
           event: {
             id: event.id,
@@ -915,7 +910,6 @@ export async function getUserScheduleCards(userId: string) {
         ),
         schedules!inner (
           id,
-          notes,
           created_at,
           event_id,
           ministry_id,
@@ -953,7 +947,6 @@ export async function getUserScheduleCards(userId: string) {
       if (!grouped.has(schedule.id)) {
         grouped.set(schedule.id, {
           id: schedule.id,
-          notes: schedule.notes,
           created_at: schedule.created_at,
           event: {
             id: event.id,
@@ -997,7 +990,6 @@ export async function getScheduleDetails(scheduleId: string) {
         id,
         event_id,
         ministry_id,
-        notes,
         created_at,
         events!inner (
           id,
@@ -1031,7 +1023,6 @@ export async function getScheduleDetails(scheduleId: string) {
         id: data.id,
         event_id: data.event_id,
         ministry_id: data.ministry_id,
-        notes: data.notes,
         created_at: data.created_at,
         event: {
           id: event.id,
@@ -1050,37 +1041,6 @@ export async function getScheduleDetails(scheduleId: string) {
       },
       error: null,
     };
-  } catch (error: unknown) {
-    return { data: null, error: getErrorMessage(error) };
-  }
-}
-
-export async function updateSchedule(input: {
-  scheduleId: string;
-  notes?: string | null;
-}) {
-  try {
-    const scheduleCtx = await getScheduleContext(input.scheduleId);
-    if (scheduleCtx.error || !scheduleCtx.data || !scheduleCtx.data.event) {
-      throw new Error(scheduleCtx.error ?? 'Escala nao encontrada.');
-    }
-
-    if (!isEventDateEditable(scheduleCtx.data.event.start_at)) {
-      throw new Error('Evento/escala nao e mais editavel apos o dia do evento.');
-    }
-
-    const { data, error } = await supabase
-      .from('schedules')
-      .update({
-        notes: input.notes ?? null,
-      })
-      .eq('id', input.scheduleId)
-      .select('id,event_id,ministry_id,notes,created_at')
-      .single();
-
-    if (error) throw error;
-
-    return { data, error: null };
   } catch (error: unknown) {
     return { data: null, error: getErrorMessage(error) };
   }
@@ -1135,6 +1095,10 @@ export async function confirmMyAssignmentsForSchedule(input: {
       throw new Error(scheduleCtx.error ?? "Escala nao encontrada.");
     }
 
+    if (isEventDateReadOnly(scheduleCtx.data.event.start_at)) {
+      throw new Error("A escala nao permite confirmar presenca no dia do evento ou depois dele.");
+    }
+
     const { error } = await supabase
       .from("schedule_assignments")
       .update({
@@ -1142,7 +1106,8 @@ export async function confirmMyAssignmentsForSchedule(input: {
         confirmed_at: new Date().toISOString(),
       })
       .eq("schedule_id", input.scheduleId)
-      .eq("user_id", input.userId);
+      .eq("user_id", input.userId)
+      .eq("status", "pending");
 
     if (error) throw error;
 
@@ -1684,7 +1649,6 @@ export interface ScheduleCardAssignmentSummary {
 
 export interface ScheduleCard {
   id: string;
-  notes: string | null;
   created_at: string;
   event: {
     id: string;
@@ -1751,7 +1715,6 @@ export interface ScheduleDetails {
   id: string;
   event_id: string;
   ministry_id: string;
-  notes: string | null;
   created_at: string;
   event: {
     id: string;
@@ -1772,7 +1735,6 @@ export interface ScheduleDetails {
 export async function createScheduleValidated(input: {
   eventId: string;
   ministryId: string;
-  notes?: string | null;
 }) {
   try {
     const editability = await isEventEditableById(input.eventId);
@@ -1788,7 +1750,6 @@ export async function createScheduleValidated(input: {
           {
             event_id: input.eventId,
             ministry_id: input.ministryId,
-            notes: input.notes ?? null,
           },
         ],
         { onConflict: 'event_id,ministry_id' },
@@ -1948,7 +1909,7 @@ export async function getScheduleByEventAndMinistry(eventId: string, ministryId:
   try {
     const { data, error } = await supabase
       .from('schedules')
-      .select('id,event_id,ministry_id,notes,created_at')
+      .select('id,event_id,ministry_id,created_at')
       .eq('event_id', eventId)
       .eq('ministry_id', ministryId)
       .maybeSingle();

@@ -54,9 +54,6 @@ export default function ScheduleTeamSection({
         </View>
         <View style={{ flex: 1 }}>
           <Text style={{ fontWeight: "700", fontSize: 17 }}>Montagem da equipe</Text>
-          <Text style={{ color: "#6b7280" }}>
-            Abra um fluxo separado para adicionar pessoas e definir suas funcoes.
-          </Text>
         </View>
       </View>
 
@@ -75,30 +72,9 @@ export default function ScheduleTeamSection({
           <Text style={{ fontWeight: "600", marginBottom: 4 }}>
             Crie a escala para liberar a montagem da equipe
           </Text>
-          <Text style={{ color: "#6b7280" }}>
-            Depois disso voce podera abrir um modal para adicionar membro + funcao.
-          </Text>
         </View>
       ) : (
         <>
-          <View
-            style={{
-              backgroundColor: "#fff8eb",
-              borderRadius: 18,
-              padding: 14,
-              marginBottom: 14,
-              borderWidth: 1,
-              borderColor: "#fde68a",
-            }}
-          >
-            <Text style={{ color: "#92400e", fontWeight: "700", marginBottom: 4 }}>
-              Escala pronta para montagem
-            </Text>
-            <Text style={{ color: "#92400e" }}>
-              O contexto ja foi criado. Agora monte a equipe sem perder o foco da tela principal.
-            </Text>
-          </View>
-
           <TouchableOpacity
             onPress={onOpenAddMember}
             activeOpacity={0.85}
@@ -125,11 +101,8 @@ export default function ScheduleTeamSection({
                   <Plus size={18} color="#fff" />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: "#fff", fontWeight: "700", fontSize: 16, marginBottom: 4 }}>
-                    Abrir fluxo de adicao
-                  </Text>
-                  <Text style={{ color: "rgba(255,255,255,0.72)" }}>
-                    Adicione membro + funcao em um modal dedicado.
+                  <Text style={{ color: "#fff", fontWeight: "700", fontSize: 16 }}>
+                    Adicionar membro
                   </Text>
                 </View>
               </View>
@@ -149,10 +122,7 @@ export default function ScheduleTeamSection({
               borderColor: "#eef2f7",
             }}
           >
-            <Text style={{ fontWeight: "700", marginBottom: 4 }}>Gerenciar membros do ministerio</Text>
-            <Text style={{ color: "#6b7280" }}>
-              Adicione usuarios ao ministerio e configure as capacidades deles antes de escalar.
-            </Text>
+            <Text style={{ fontWeight: "700" }}>Gerenciar membros do ministerio</Text>
           </TouchableOpacity>
 
           <View style={{ flexDirection: "row", gap: 10, marginBottom: 16 }}>
@@ -189,10 +159,7 @@ export default function ScheduleTeamSection({
               }}
             >
               <Text style={{ fontWeight: "600", marginBottom: 4 }}>Nenhum membro escalado ainda</Text>
-              <Text style={{ color: "#6b7280", marginBottom: 14 }}>
-                O modal vai ajudar voce a adicionar membros com mais contexto e menos ruido visual.
-              </Text>
-              <DefaultButton onPress={onOpenAddMember}>Adicionar primeiro membro</DefaultButton>
+              <DefaultButton onPress={onOpenAddMember}>Adicionar membro</DefaultButton>
             </View>
           ) : (
             assignments.map((assignment) => (
