@@ -4,7 +4,6 @@ import { countAssignmentsByStatus } from "./scheduleRules";
 
 export interface ScheduleCardLike {
   id: string;
-  notes: string | null;
   created_at: string;
   event: {
     id: string;
@@ -33,7 +32,6 @@ export interface ScheduleCardLike {
 
 export interface ManageableScheduleCardRowLike {
   id: string;
-  notes: string | null;
   created_at: string;
   events:
     | {
@@ -81,7 +79,6 @@ export interface UserScheduleCardRowLike {
   schedules:
     | {
         id: string;
-        notes: string | null;
         created_at: string;
         events:
           | {
@@ -117,7 +114,6 @@ export interface UserScheduleCardRowLike {
       }
     | {
         id: string;
-        notes: string | null;
         created_at: string;
         events:
           | {
@@ -171,7 +167,6 @@ export function mapManageableScheduleCards(
 
       acc.push({
         id: row.id,
-        notes: row.notes,
         created_at: row.created_at,
         event: {
           id: event.id,
@@ -215,7 +210,6 @@ export function mapUserScheduleCards(rows: UserScheduleCardRowLike[]): ScheduleC
     if (!grouped.has(schedule.id)) {
       grouped.set(schedule.id, {
         id: schedule.id,
-        notes: schedule.notes,
         created_at: schedule.created_at,
         event: {
           id: event.id,

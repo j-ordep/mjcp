@@ -10,7 +10,8 @@ Separar a criacao de escala da edicao operacional, reduzir a sobrecarga visual d
 
 - `CreateScheduleScreen` passou a cuidar apenas da criacao do contexto da escala.
 - `EditScheduleScreen` foi criada como tela dedicada para montagem da equipe.
-- `MySchedulesScreen` passou a abrir `EditSchedule` para escalas gerenciaveis.
+- `ScheduleScreen` passou a abrir `EditSchedule` para escalas gerenciaveis.
+- `ScheduleScreen` agora abre `EditSchedule` para qualquer escala do usuario, com modo de tela ajustado por permissao.
 - O store de escalas foi ajustado para trabalhar com cards por `schedule`, em vez de uma lista achatada por assignment.
 - O service de escalas ganhou leituras e operacoes para:
   - listar escalas gerenciaveis
@@ -47,6 +48,7 @@ Separar a criacao de escala da edicao operacional, reduzir a sobrecarga visual d
 - O card de `Minhas Escalas` foi ajustado para priorizar a funcao do usuario.
 - A remocao de membro da escala ja pede confirmacao explicita antes de excluir.
 - A exclusao da escala ainda nao existe na UI.
+- A exclusao da escala ja existe para quem pode gerenciar.
 - A atualizacao do contexto da escala ainda nao esta conectada na UI, embora exista funcao de update no service.
 
 ## Pendencias e proximos pensamentos

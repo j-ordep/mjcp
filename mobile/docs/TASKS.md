@@ -26,6 +26,9 @@ Objetivo imediato: sair do prototipo e fechar o fluxo principal de "Criacao de E
     - Admin continua com acesso total
     - Lider tem acesso somente por ministerio (via `is_ministry_leader(...)`)
     - Membro nao consegue inserir/alterar `schedules` ou `schedule_assignments` de outros
+  - Atualizacao em 2026-04-12:
+    - hotfix adicional registrado em `20260412000111_fix_schedule_rls_recursion.sql`
+    - a janela temporal de editabilidade em `schedules` e `schedule_assignments` deve valer apenas para `INSERT` / `UPDATE` / `DELETE`, nunca para `SELECT`
 
 - [x] Permitir que lider gerencie ministry_members e ministry_member_roles apenas do proprio ministerio
   - Necessario para tela separada de gestao de membros/capacidades
@@ -59,7 +62,8 @@ Decisao atualizada em 2026-04-07:
 - separar claramente `criacao da escala` de `montagem da equipe`
 - `CreateScheduleScreen` deve cuidar apenas do Step 1: contexto da escala
 - a montagem da equipe deixa de acontecer na mesma tela da criacao
-- depois de salvar a escala, o usuario volta para `MySchedulesScreen`
+- depois de salvar a escala, o usuario volta para `ScheduleScreen`
+  - atualizado: depois de salvar a escala, o usuario volta para `ScheduleScreen`
 - ao tocar em um card de escala, abrir uma nova tela de `Editar Escala`
 - essa nova tela concentra:
   - edicao dos dados da escala
@@ -72,7 +76,7 @@ Decisao atualizada em 2026-04-07:
   - membro apenas visualiza e confirma a propria participacao
 
 - [x] Refatorar o fluxo para separar criacao de escala e montagem da equipe
-  - `MySchedulesScreen` continua como ponto de entrada da operacao
+  - `ScheduleScreen` continua como ponto de entrada da operacao
   - CTA `Criar Escala` abre apenas o Step 1
   - ao salvar, voltar para a lista de escalas
   - ao tocar em uma escala, abrir nova tela/modal de `Editar Escala`
@@ -84,11 +88,13 @@ Decisao atualizada em 2026-04-07:
     - adicionar assignments
     - remover assignments
     - respeitar permissao por ministerio
-  - pendente para fechar o escopo originalmente desejado:
-    - editar dados basicos da escala
     - excluir escala com confirmacao explicita do usuario
+  - Regra explicita:
+    - nao colocar observacoes, `notes` ou `note` em nenhum lugar da escala
+  - pendente para fechar o escopo originalmente desejado:
+    - permitir alterar evento e/ou ministerio, caso esse passe a ser um requisito de produto
 
-- [x] Revisar `MySchedulesScreen` para servir melhor como hub operacional de escalas
+- [x] Revisar `ScheduleScreen` para servir melhor como hub operacional de escalas
   - lista de cards de escala
   - acao de criar escala
   - acao de abrir escala existente
@@ -108,7 +114,7 @@ Decisao atualizada em 2026-04-07:
       - Lider: apenas ministerios onde `ministry_members.is_leader = true`
     - Criar `schedules` (1 por (event_id, ministry_id))
     - Nao adicionar `schedule_assignments` nesta tela
-    - Ao salvar, voltar para `MySchedulesScreen`
+    - Ao salvar, voltar para `ScheduleScreen`
     - Montagem da equipe acontece apenas na tela de `Editar Escala`
     - Mostrar warnings (nao bloquear) para:
       - nao se aplicam nesta tela apos a separacao do fluxo; warnings de indisponibilidade/conflito ficam na adicao de assignments na tela de edicao
@@ -116,7 +122,7 @@ Decisao atualizada em 2026-04-07:
 - [x] Implementar service de "criar escala" com validacoes
   - Arquivo: `src/services/scheduleService.ts`
   - Funcoes hoje confirmadas no codigo:
-    - `createSchedule({ eventId, ministryId, notes? })`
+    - `createSchedule({ eventId, ministryId })`
     - `upsertScheduleAssignment({ scheduleId, userId, roleId })`
     - `removeScheduleAssignment(assignmentId)`
     - `checkBlockedDates(userId, dateRange)`
@@ -124,9 +130,8 @@ Decisao atualizada em 2026-04-07:
     - `getManageableScheduleCards(...)`
     - `getUserScheduleCards(...)`
     - `getScheduleDetails(scheduleId)`
-  - Pendente para a proxima rodada:
-    - ligar `updateSchedule(...)` na UI de `Editar Escala`
-    - implementar `deleteSchedule(...)` com confirmacao explicita
+  - Ja implementado no codigo:
+    - `deleteSchedule(...)` com confirmacao explicita em `EditScheduleScreen`
 
 - [x] Fechar regra "lider de uma area cria escala para a area dele"
   - Backend (RLS/RPC) deve ser a fonte de verdade (nao depender do app para bloquear).
@@ -143,14 +148,17 @@ Decisao atualizada em 2026-04-07:
 - [x] Confirmar presenca (membro e lider escalado)
   - Estado atual confirmado no codigo:
     - `EditScheduleScreen` ja permite confirmar a propria participacao no nivel da `schedule`
-    - `MySchedulesScreen` ja permite confirmar a propria participacao quando o card possui `my_assignments`
+    - `ScheduleScreen` ja permite confirmar a propria participacao quando o card possui `my_assignments`
     - `EventDetailsScreen` ja permite confirmar a propria participacao
     - a confirmacao acontece no nivel correto do dominio: `schedule_assignments`
   - Regras:
     - so o dono do assignment pode confirmar (policy ja existe para UPDATE own)
     - para a UX atual, confirmar a escala deve confirmar os assignments do proprio usuario naquela `schedule`
+  - Ajuste de UX em 2026-04-12:
+    - remover alerts nativos de sucesso apos confirmar presenca
+    - o feedback principal passa a ser a atualizacao imediata do CTA e do status na propria tela
 
-- [ ] Solicitar troca (membro)
+- [~] Solicitar troca (membro)
   - Decisao atualizada em 2026-04-10:
     - lider nao aprova swap
     - lider apenas recebe notificacao e pode agir manualmente na escala se quiser
@@ -168,9 +176,12 @@ Decisao atualizada em 2026-04-07:
       - confirmar presenca
   - `swap_requests` ja existe no banco
   - Estado atual confirmado no codigo:
-    - `MySchedulesScreen` ja consegue abrir o fluxo minimo e criar `swap_requests`
+    - `ScheduleScreen` ja consegue abrir o fluxo minimo e criar `swap_requests`
     - `EditScheduleScreen` ja consegue abrir o fluxo minimo e criar `swap_requests`
     - `EventDetailsScreen` ja consegue abrir o fluxo minimo e criar `swap_requests`
+    - `SwapRequestsScreen` ja lista trocas disponiveis e proprias, com aceite/cancelamento
+    - o aceite da troca ja usa a regra de "primeira pessoa elegivel"
+    - cancelamento de solicitacao propria ja esta implementado
   - Definir UX minima:
     - usuario escolhe a propria funcao/assignment e informa motivo opcional
     - se o usuario ja tiver uma solicitacao pendente naquela escala:
@@ -185,20 +196,29 @@ Decisao atualizada em 2026-04-07:
     - permitir aceite pela primeira pessoa elegivel
     - garantir concorrencia segura no aceite ("first write wins")
   - Pendente nesta rodada:
-    - notificacoes ainda nao foram conectadas
     - remover/ajustar qualquer fluxo que trate lider como aprovador
   - Preparado no repo e pendente de aplicar no Supabase:
     - migration para impedir criacao/aceite/cancelamento de swap no dia do evento ou depois dele
+    - migration para corrigir recursao de RLS entre `events` e `schedules`
+    - migration para voltar assignment confirmado para `pending` quando a troca for aberta
 
-- [ ] Revisar experiencia do usuario escalado
+- [~] Revisar experiencia do usuario escalado
   - Lider escalado deve manter os dois contextos:
     - contexto de gerenciador da escala
     - contexto de participante da escala
   - `EditScheduleScreen` ja comecou a refletir isso com bloco de "Minha participacao"
-  - ainda falta revisar consistencia entre:
-    - `MySchedulesScreen`
-    - `EventDetailsScreen`
-    - `EditScheduleScreen`
+  - Estado atual confirmado no codigo:
+    - `ScheduleScreen`, `EditScheduleScreen` e `EventDetailsScreen` agora usam o mesmo criterio para:
+      - desabilitar `Confirmar presenca` quando nao existe assignment confirmavel
+      - mostrar `Presenca confirmada` quando nao ha mais pendencia confirmavel
+      - exibir hint de troca pendente
+      - bloquear confirmacao/troca em estado somente leitura no dia do evento ou depois dele
+      - comunicar status da participacao de forma explicita
+      - remover alerts nativos de sucesso de confirmacao e troca
+    - `ScheduleScreen` agora abre `EditScheduleScreen` tambem para membro
+    - `EditScheduleScreen` esconde acoes administrativas quando o usuario nao pode gerenciar a escala
+  - Gap restante mais relevante:
+    - `EventDetailsScreen` ainda agrega de forma fraca o caso em que o usuario participa de mais de uma escala no mesmo evento
 
 ---
 
@@ -209,12 +229,12 @@ Contexto: o mesmo evento deve aparecer "simples" para quem nao esta escalado e "
 Decisao registrada em 2026-04-05:
 - Direcao preferida atual:
   - `EventsScreen` permanece como card informativo de eventos
-  - botoes de acao (`Confirmar`, `Preciso trocar`) ficam apenas nos cards de escala do usuario (`MySchedulesScreen`) e/ou em `EventDetailsScreen` quando ele estiver escalado
+  - botoes de acao (`Confirmar`, `Preciso trocar`) ficam apenas nos cards de escala do usuario (`ScheduleScreen`) e/ou em `EventDetailsScreen` quando ele estiver escalado
   - motivo: separa descoberta de eventos de acao operacional sobre a escala, reduz ruido visual e evita duplicar a mesma acao em duas listas
 - Alternativa mantida documentada para reavaliacao futura:
   - `EventsScreen` pode exibir card enriquecido com acoes quando `is_assigned = true`
   - nesse modelo, o mesmo card mistura informacao de evento e acao de escala no feed geral
-  - essa opcao pode ser reconsiderada se houver evidencias de que os usuarios usam mais a lista geral de eventos do que `MySchedulesScreen`
+  - essa opcao pode ser reconsiderada se houver evidencias de que os usuarios usam mais a lista geral de eventos do que `ScheduleScreen`
 
 - [ ] Padronizar payload do backend para renderizacao de cards
   - Em vez de logica fragmentada, criar DTO/shape:
@@ -232,10 +252,16 @@ Decisao registrada em 2026-04-05:
   - Direcao preferida atual:
     - se `is_assigned = false`: card simples, apenas informativo
     - se `is_assigned = true`: card informativo enriquecido com `my_ministry` e `my_role`, sem botoes de acao
-    - acoes continuam em `MySchedulesScreen` e `EventDetailsScreen`
+    - acoes continuam em `ScheduleScreen` e `EventDetailsScreen`
   - Caminho alternativo documentado:
     - se `is_assigned = true`: card completo com `my_ministry`, `my_role` e botoes `Confirmar` / `Preciso trocar`
-    - exigir cuidado para nao duplicar acoes ja presentes em `MySchedulesScreen` e `EventDetailsScreen`
+    - exigir cuidado para nao duplicar acoes ja presentes em `ScheduleScreen` e `EventDetailsScreen`
+
+## Decisao de fluxo registrada em 2026-04-12
+
+- `ScheduleScreen` e o hub principal do dominio de escalas.
+- O acesso principal a `SwapRequestsScreen` deve acontecer por um card de navegacao dentro de `ScheduleScreen`.
+- O card da Home para trocas fica inativo nesta rodada e deixa de ser entrada primaria do fluxo.
     - exigir definicao clara de prioridade entre telas para evitar estados inconsistentes e refresh duplicado
 
 ---
@@ -280,19 +306,77 @@ Decisao registrada em 2026-04-05:
 
 - [ ] Criar notificacao ao:
   - novo assignment criado
-  - swap request criado/atualizado
-  - swap request criado para:
+  - [~] swap request criado/atualizado
+  - [~] swap request criado para:
     - membros elegiveis do mesmo ministerio e mesma funcao
     - lider responsavel pela escala
-  - acompanhamento operacional do lider:
+  - [~] acompanhamento operacional do lider:
     - quando o pedido for criado
     - quando alguem assumir a troca
     - quando o pedido for cancelado
   - reserva de sala criada/cancelada
   - (opcional) confirmacao/declinio
 
+  - Estado atual confirmado no codigo:
+    - existe migration local para emitir notificacoes de swap no backend:
+      - `created`
+      - `accepted`
+      - `cancelled`
+    - existe `notificationService` para:
+      - listar notificacoes
+      - marcar uma como lida
+      - marcar todas como lidas
+    - `NotificationsModal` agora usa a tabela `notifications`
+
+  - PENDENTE DE DEFINICAO:
+    - copy final de titulo/corpo por tipo
+    - se elegiveis devem receber notificacao de encerramento quando outra pessoa assumir a vaga
+
+  - Pendencia operacional:
+    - aplicar no Supabase remoto as migrations locais ainda pendentes:
+      - `20260412000110_add_swap_request_notifications.sql`
+      - `20260412000111_fix_schedule_rls_recursion.sql`
+      - `20260412000112_reset_assignment_confirmation_on_swap_request.sql`
+
 - [ ] Integrar realtime para notificar (opcional)
-  - `notifications` ja tem tabela + modal no app
+  - `notifications` ja tem tabela + modal real no app
+
+### Plano tecnico recomendado para notificacoes de swap
+
+- Confirmado no codigo:
+  - a tabela `notifications` ja existe no banco
+  - o fluxo de swap ja identifica corretamente:
+    - lideres do ministerio como interessados operacionais
+    - membros elegiveis do mesmo ministerio e mesma funcao/capability
+  - usuarios comuns nao devem inserir direto em `notifications`; a geracao precisa acontecer por mecanismo privilegiado no backend
+
+- Implementacao recomendada por etapas:
+  1. Criar funcao SQL `SECURITY DEFINER` para inserir notificacoes de forma segura.
+  2. Padronizar `notifications.type = 'swap_request'` com `data` contendo:
+     - `swap_request_id`
+     - `schedule_id`
+     - `event_id`
+     - `ministry_id`
+     - `role_id`
+     - `assignment_id`
+     - `actor_user_id`
+     - `action` (`created`, `accepted`, `cancelled`)
+  3. Disparar no backend ao criar swap:
+     - para lider(es) do ministerio da escala
+     - para membros elegiveis da mesma funcao/capability
+  4. Disparar no backend ao aceitar swap:
+     - para o solicitante
+     - para lider(es) do ministerio
+     - opcionalmente para elegiveis remanescentes, avisando que a vaga foi preenchida
+  5. Disparar no backend ao cancelar swap:
+     - para lider(es) do ministerio
+     - opcionalmente para elegiveis impactados
+  6. Substituir o mock de `NotificationsModal` por leitura real da tabela `notifications`, com ordenacao por `created_at desc`, marcacao de leitura e navegacao contextual
+
+- PENDENTE DE DEFINICAO:
+  - texto final de titulo/corpo por tipo de notificacao
+  - se notificacoes de encerramento devem ir tambem para todos os elegiveis
+  - se o lider recebe uma notificacao por swap ou agregacoes futuras
 
 ---
 
@@ -328,9 +412,9 @@ Decisao registrada em 2026-04-05:
 - [x] Lider/admin cria schedule para (evento, ministerio)
 - [x] Lider/admin adiciona assignments (membro + role)
 - [x] Lider/admin remove assignments com confirmacao explicita do usuario
-- [ ] Lider/admin atualiza dados basicos da escala
-- [ ] Lider/admin exclui escala com confirmacao explicita do usuario
+- [x] Lider/admin atualiza dados basicos da escala
+- [x] Lider/admin exclui escala com confirmacao explicita do usuario
 - [ ] Membro ve evento no modo "escalado"
 - [x] Membro confirma presenca
-- [ ] (Opcional) Membro solicita troca
+- [~] (Opcional) Membro solicita troca
 

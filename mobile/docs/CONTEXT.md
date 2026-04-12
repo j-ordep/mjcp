@@ -1,197 +1,147 @@
 # MJCP Mobile - Contexto do Projeto
 
-## O que é
+Data de reconciliacao: 2026-04-10 (America/Sao_Paulo)
 
-Aplicativo mobile para **gestão de escalas e eventos de uma igreja/ministério**. Permite que membros visualizem seus próximos eventos, confirmem presença, solicitem trocas, bloqueiem datas de indisponibilidade, reservem salas e gerenciem seus perfis.
+## O que e
 
-O nome do projeto é **MJCP** (sigla do ministério/igreja).
+Aplicativo mobile para gestao de igreja/ministerio com foco em:
 
----
+- eventos
+- escalas
+- membros e capabilities por ministerio
+- confirmacao de presenca
+- trocas de assignment
+- indisponibilidades
+- reservas de sala
 
-## Stack Tecnológica
-
-| Tecnologia                         | Versão   | Uso                                                                  |
-| ---------------------------------- | -------- | -------------------------------------------------------------------- |
-| **React Native**                   | 0.81.5   | Framework mobile                                                     |
-| **Expo**                           | ~54.0.30 | Toolchain e build (SDK 54, New Architecture habilitada)              |
-| **TypeScript**                     | ~5.9.2   | Tipagem estática                                                     |
-| **React Navigation**               | 7.x      | Navegação (Native Stack + Bottom Tabs)                               |
-| **NativeWind**                     | 4.2.1    | TailwindCSS para React Native                                        |
-| **TailwindCSS**                    | 3.4.x    | Classes utilitárias de estilo                                        |
-| **React Native Paper**             | 5.14.5   | Componentes Material Design 3 (tema, Avatar, Portal, Modal, Divider) |
-| **Lucide React Native**            | 0.554.0  | Ícones vetoriais                                                     |
-| **React Native Calendars**         | 1.1313.0 | Calendário interativo (seleção de datas, intervalos)                 |
-| **React Native Reanimated**        | ~4.1.1   | Animações nativas                                                    |
-| **React Native Screens**           | ~4.16.0  | Navegação nativa otimizada                                           |
-| **React Native Safe Area Context** | ~5.6.0   | Margens seguras de tela                                              |
+O dominio principal hoje e o fluxo de escalas.
 
 ---
 
-## Arquitetura do Projeto
+## Stack tecnologica
 
-```
-mobile/
-├── App.tsx                    # Entry point: PaperProvider + AppNavigator
-├── index.ts                   # Registro do app Expo
-├── global.css                 # Tailwind base/components/utilities
-├── src/
-│   ├── navigation/
-│   │   └── AppNavigator.tsx   # Stack Navigator principal
-│   ├── screens/
-│   │   ├── app/               # Telas autenticadas
-│   │   │   ├── HomeScreen.tsx        # Dashboard hub
-│   │   │   ├── MySchedulesScreen.tsx  # Lista completa de escalas
-│   │   │   ├── EventsScreen.tsx
-│   │   │   ├── EventDetailsScreen.tsx
-│   │   │   ├── ProfileScreen.tsx
-│   │   │   ├── EditProfileScreen.tsx
-│   │   │   ├── BlockDatesScreen.tsx
-│   │   │   ├── MusicScreen.tsx
-│   │   │   └── RoomsScreen.tsx
-│   │   └── auth/              # Telas de autenticação
-│   │       ├── LoginScreen.tsx
-│   │       └── SignUpScreen.tsx
-│   ├── components/
-│   │   ├── TabNavigator.tsx   # Bottom tabs (Home, Escalas, Rooms, Music, Profile)
-│   │   ├── ProfileAvatar.tsx  # Avatar + nome reutilizável
-│   │   ├── button/
-│   │   │   └── DefaultButton.tsx   # Botão primary/outline
-│   │   ├── card/
-│   │   │   ├── ActivityCard.tsx    # Card de atividade recente
-│   │   │   ├── EventCard.tsx       # Card de evento com ações
-│   │   │   ├── EventInfoCard.tsx   # Card detalhado de evento
-│   │   │   ├── MemberCard.tsx      # Card de membro da equipe
-│   │   │   ├── MiniCard.tsx        # Card quadrado com ícone
-│   │   │   ├── ScheduleSummaryCard.tsx # Card compacto para resumo
-│   │   │   ├── YoutubeCarousel.tsx  # Carrossel de vídeos do YouTube
-│   │   │   ├── RoomCard.tsx        # Card de sala (status, reserva)
-│   │   │   └── TeamStatusCard.tsx  # Card de confirmados/pendentes
-│   │   ├── Header/
-│   │   │   ├── HeaderPrimary.tsx   # Header com notificação e avatar
-│   │   │   ├── HeaderSecondary.tsx # Header com voltar e título
-│   │   │   └── ProfileHeader.tsx   # Header do perfil (voltar + menu)
-│   │   ├── input/
-│   │   │   └── Input.tsx           # Input com label e forwardRef
-│   │   └── utils/
-│   │       ├── BottomSheet.tsx         # Sheet deslizante (PanResponder + Animated)
-│   │       ├── BottomSheetMenu.tsx     # Menu de opções do perfil
-│   │       ├── CalendarModal.tsx       # Modal de calendário (single/range)
-│   │       └── NotificationsModal.tsx  # Modal de notificações
-│   └── theme/
-│       └── theme.ts           # Temas light/dark (Material Design 3)
-└── docs/                      # Documentacao e contexto do projeto
-```
+| Tecnologia | Versao | Uso |
+| --- | --- | --- |
+| React Native | 0.81.5 | App mobile |
+| Expo | ~54.0.30 | Toolchain e build |
+| TypeScript | ~5.9.2 | Tipagem |
+| React Navigation | 7.x | Stack + tabs |
+| Zustand | 5.x | Estado global |
+| Supabase JS | 2.99.3 | Auth, banco e RLS |
+| React Native Paper | 5.14.5 | Componentes visuais |
+| NativeWind | 4.2.1 | Estilizacao |
+| Lucide React Native | 0.554.0 | Icones |
 
 ---
 
-## Navegação
+## Estado atual do codigo
 
-### Stack Principal (AppNavigator)
+### Confirmado no codigo
 
-- `Main` → TabNavigator (5 abas)
-- `EventDetails` → Detalhes de um evento
-- `EventsScreen` → Todos os eventos da igreja
-- `MySchedulesScreen` → Escalas do usuário
-- `BlockDatesScreen` → Bloquear datas
-- `Profile` → Perfil do usuário
-- `EditProfile` → Editar perfil
+- O app nao esta mais em estado de UI puramente mockada para o dominio principal.
+- Existe autenticacao Supabase parcial no projeto.
+- Existe integracao real com Supabase para eventos, ministerios, membros, escalas, assignments e trocas.
+- O app agora possui leitura real da inbox de notificacoes pela tabela `notifications`:
+  - `NotificationsModal` deixou de ser mockado
+  - existe `notificationService` para listar e marcar notificacoes como lidas
+- O fluxo de criacao de escala foi separado da montagem da equipe:
+  - `CreateScheduleScreen` cria o contexto da escala
+  - `EditScheduleScreen` faz a montagem da equipe e operacao da escala
+  - `ScheduleScreen` funciona como hub principal do dominio de escalas
+- Ao tocar em uma escala a partir de `ScheduleScreen`, admin, lider e membro agora abrem a mesma tela `EditScheduleScreen`:
+  - admin/lider entram em modo gerencial
+  - membro entra em modo de acompanhamento da propria participacao, sem acoes administrativas
+- O fluxo de troca ja existe do banco ate a UI:
+  - criar solicitacao
+  - cancelar solicitacao propria
+  - aceitar troca como primeira pessoa elegivel
+  - acompanhar trocas em `SwapRequestsScreen`
 
-> Login e SignUp estão comentados no navigator (não estão no fluxo atual).
+### PENDENTE DE DEFINICAO
 
-### Tab Navigator
+- Estrategia final de notificacoes operacionais do fluxo de escalas e trocas
+- Estrategia futura de retencao/limpeza de escalas antigas
 
-| Aba     | Tela               | Ícone    |
-| ------- | ------------------ | -------- |
-| Início  | HomeScreen         | Home     |
-| Escalas | MySchedulesScreen  | Calendar |
-| Salas   | RoomsScreen        | DoorOpen |
-| Músicas | MusicScreen        | Music    |
-| Perfil  | ProfileScreen      | User     |
+### INFORMACAO INSUFICIENTE
 
----
-
-## Tema e Design
-
-- **Design System**: Material Design 3 via React Native Paper
-- **Cores principais**:
-  - Primary: `#000000` (preto)
-  - Secondary: `#ffae00` (amarelo destaque)
-  - Tertiary: `#10b981` (verde)
-  - Error: `#ef4444` (vermelho)
-  - Background: `#ffffff`
-  - Texto principal: `#111827` (gray-900)
-  - Texto secundário: `#6b7280` (gray-500)
-- **Estilização**: Mistura de NativeWind (classes Tailwind) e StyleSheet inline
-- **Ícones**: Lucide React Native
+- Estrategia oficial de testes automatizados em execucao no CI
 
 ---
 
-## Regras de Negócio — Eventos
+## Fluxo principal atual
 
-Existem **2 tipos de evento** no sistema, e a visualização muda conforme o papel do usuário naquele evento:
+### Escalas
 
-### 1. Evento público (igreja/congregação)
-Eventos gerais da igreja (cultos, conferências, encontros). Todo membro pode ver.
+1. Lider/admin cria uma escala para um `(evento, ministerio)`.
+2. Depois disso, a equipe e montada na tela de editar escala.
+3. O lider adiciona membros respeitando:
+   - membership no ministerio
+   - capability da role
+   - warnings de conflito/indisponibilidade
+4. O proprio usuario pode confirmar sua participacao.
+5. O proprio usuario pode solicitar troca do proprio assignment.
+6. Outra pessoa elegivel pode aceitar a troca.
 
-**Visualização padrão** — quando o usuário **NÃO está escalado**:
-- Título
-- Descrição
-- Data e horário
-- Local
+### Trocas
 
-É um card simples, apenas informativo. Sem ações de confirmar/trocar.
+O modelo atual e:
 
-### 2. Evento com escala (voluntários/ministério)
-O mesmo evento pode ter uma **escala de voluntários** vinculada (banda, louvor, mídia, recepção, etc). Quando o usuário **ESTÁ escalado** para aquele evento, a visualização é expandida:
-
-**Visualização detalhada** — quando o usuário **está escalado**:
-- Título
-- Descrição
-- Data e horário
-- Local
-- **Departamento** (ex: Ministério de Música)
-- **Função do usuário** (ex: Tecladista, Backing Vocal)
-- **Botões de ação**: "Confirmar presença" e "Preciso trocar"
-- Ao abrir detalhes: **lista completa da equipe escalada** (nome, função, foto, status confirmado/pendente)
-- **Contagem de confirmados/pendentes** (TeamStatusCard)
-- Informações de ensaio vinculadas
-
-### Resumo visual
-
-| Situação | Card na lista | Tela de detalhes |
-|---|---|---|
-| Não escalado | Card simples (título, data, local, descrição) | Informações gerais do evento |
-| Escalado | Card completo com departamento, função e botões | Equipe escalada, status, ações de confirmar/trocar |
-
-> **Nota**: Um mesmo evento pode aparecer como "simples" para um usuário e "completo" para outro, dependendo se está na escala ou não. A diferenciação acontece no frontend com base nos dados retornados pela API (se o evento contém dados de escala para o usuário logado).
+- o lider nao aprova a troca
+- a primeira pessoa elegivel que aceitar assume o assignment
+- no banco ja existem regras para:
+  - evitar mais de uma solicitacao pendente invalida
+  - garantir elegibilidade
+  - impedir criacao/aceite/cancelamento no dia do evento ou depois dele
 
 ---
 
-## Estado Atual do Desenvolvimento
+## Papeis
 
-O app está na fase de **protótipo/UI**. Todas as telas usam dados mockados (hardcoded) e nenhuma ação real é executada — os handlers apenas exibem `Alert.alert()`.
+### `admin`
 
-### O que funciona (UI)
+- gerencia tudo
 
-- Tela Home com lista de eventos e navegação
-- Tela de Detalhes do Evento com membros da equipe
-- Tela de Bloqueio de Datas com calendário interativo
-- Tela de Salas com filtro de horário e cards de status
-- Tela de Perfil com menu bottom-sheet
-- Tela de Editar Perfil com campos
-- Login e Cadastro (com validação básica mock)
-- Modal de notificações e calendário
-- Bottom sheet com gestos
+### `leader`
 
-### O que NÃO funciona / não existe
+- gerencia escalas, assignments e membros do proprio ministerio
 
-- Nenhuma integração com backend/API (supabase)
-- Nenhuma autenticação real
-- Nenhuma persistência de dados
-- Telas `EventsScreen` e `MusicScreen` são stubs vazios
-- Ações (confirmar, trocar, reservar, salvar) são apenas alerts
-- Sem gerenciamento de estado global (Context/Redux/Zustand)
-- Sem tratamento de erros
-- Sem loading states
-- Sem pull-to-refresh
-- Sem testes
+### `member`
+
+- interage apenas com o que e dele, especialmente:
+  - confirmar presenca
+  - solicitar troca
+  - cancelar a propria troca
+  - aceitar troca quando elegivel
+
+---
+
+## Telas principais do dominio de escalas
+
+- `src/screens/app/CreateScheduleScreen.tsx`
+  - cria o contexto da escala
+- `src/screens/app/EditScheduleScreen.tsx`
+  - operacao da escala, equipe, contexto e participacao do proprio usuario
+- `src/screens/app/ScheduleScreen.tsx`
+  - hub operacional de escalas e participacoes
+- `src/screens/app/EventDetailsScreen.tsx`
+  - visao do evento; se o usuario estiver escalado, mostra acoes e equipe
+- `src/screens/app/SwapRequestsScreen.tsx`
+  - acompanhamento de trocas disponiveis e proprias
+- `src/screens/app/ManageMinistryMembersScreen.tsx`
+  - base operacional para membership e capabilities
+
+---
+
+## Observacoes importantes
+
+- A verdade atual do dominio esta nas migrations e no service layer.
+- `docs/TASKS.md` e `docs/ROADMAP.md` servem como mapa de trabalho, nao como fonte primaria.
+- A UX do modal de adicionar membro foi alinhada ao padrao do modal central de troca; o fluxo nao usa mais visual de bottom sheet nesse ponto.
+- O backend de notificacoes de swap foi preparado em migration nova e depende de aplicacao no projeto Supabase para produzir notificacoes reais.
+- Nao colocar observacoes, `notes` ou `note` em nenhum lugar da escala.
+- O acesso primario ao fluxo de trocas deve sair de `ScheduleScreen`, nao da Home.
+- A confirmacao de presenca e a solicitacao/cancelamento de troca nao usam mais alerts nativos de sucesso; o feedback principal agora e o proprio estado da interface.
+- O banco continua persistindo enums em ingles por compatibilidade de schema, mas a UI deve exibir status em pt-BR.
+- Existem duas migrations novas locais que precisam ser aplicadas no Supabase remoto para alinhar o ambiente:
+  - `20260412000111_fix_schedule_rls_recursion.sql`
+  - `20260412000112_reset_assignment_confirmation_on_swap_request.sql`

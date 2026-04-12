@@ -1,9 +1,8 @@
 import { CalendarDays } from "lucide-react-native";
 import { TouchableOpacity, View } from "react-native";
-import { Text, TextInput } from "react-native-paper";
-import type { Ministry } from "../../types/models";
+import { Text } from "react-native-paper";
 import type { UserMinistry } from "../../services/ministryService";
-import type { Event } from "../../types/models";
+import type { Event, Ministry } from "../../types/models";
 import DefaultButton from "../button/DefaultButton";
 import ScheduleSummaryCard from "./ScheduleSummaryCard";
 
@@ -16,13 +15,11 @@ interface ScheduleContextSectionProps {
   selectedMinistryId: string | null;
   selectedEvent?: Event;
   selectedMinistry?: ManageableMinistry;
-  notes: string;
   isLoadingMinistries: boolean;
   isLoadingSchedule: boolean;
   scheduleId: string | null;
   onSelectEvent: (eventId: string) => void;
   onSelectMinistry: (ministryId: string) => void;
-  onChangeNotes: (value: string) => void;
   onSubmit: () => void;
   formatDateTime: (value: string) => string;
 }
@@ -34,13 +31,11 @@ export default function ScheduleContextSection({
   selectedMinistryId,
   selectedEvent,
   selectedMinistry,
-  notes,
   isLoadingMinistries,
   isLoadingSchedule,
   scheduleId,
   onSelectEvent,
   onSelectMinistry,
-  onChangeNotes,
   onSubmit,
   formatDateTime,
 }: ScheduleContextSectionProps) {
@@ -161,18 +156,6 @@ export default function ScheduleContextSection({
           })
         )}
       </View>
-
-      <TextInput
-        mode="outlined"
-        label="Observacoes da escala (opcional)"
-        value={notes}
-        onChangeText={onChangeNotes}
-        multiline
-        numberOfLines={4}
-        style={{ marginBottom: 18, backgroundColor: "#fff" }}
-        activeOutlineColor="#111827"
-        outlineColor="#d1d5db"
-      />
 
       {selectedEvent || selectedMinistry ? (
         <ScheduleSummaryCard

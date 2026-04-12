@@ -16,7 +16,7 @@ import EditProfile from "../screens/app/EditProfileScreen";
 import EventDetailsScreen from "../screens/app/EventDetailsScreen";
 import EventsScreen from "../screens/app/EventsScreen";
 import ManageMinistryMembersScreen from "../screens/app/ManageMinistryMembersScreen";
-import MySchedulesScreen from "../screens/app/MySchedulesScreen";
+import ScheduleScreen from "../screens/app/ScheduleScreen";
 import ProfileScreen from "../screens/app/ProfileScreen";
 import SwapRequestsScreen from "../screens/app/SwapRequestsScreen";
 import SignInScreen from "../screens/auth/SignInScreen";
@@ -39,7 +39,7 @@ export type RootStackParamList = {
   Profile: undefined;
   EditProfile: undefined;
   BlockDatesScreen: undefined;
-  MySchedulesScreen: undefined;
+  ScheduleScreen: undefined;
   CreateEvent:
     | {
         mode?: "edit";
@@ -165,8 +165,8 @@ export default function AppNavigator() {
               component={BlockDatesScreen}
             />
             <Stack.Screen
-              name="MySchedulesScreen"
-              component={MySchedulesScreen}
+              name="ScheduleScreen"
+              component={ScheduleScreen}
             />
             <Stack.Screen name="Profile" component={ProfileScreen} />
             <Stack.Screen name="EditProfile" component={EditProfile} />

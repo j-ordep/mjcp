@@ -51,7 +51,6 @@ export interface Schedule {
   id: string
   event_id: string
   ministry_id: string
-  notes: string | null
   created_at: string
 }
 

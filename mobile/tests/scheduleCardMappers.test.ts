@@ -11,7 +11,6 @@ test("mapManageableScheduleCards builds manageable cards and filters my assignme
     [
       {
         id: "schedule-2",
-        notes: null,
         created_at: "2026-04-09T00:00:00.000Z",
         events: {
           id: "event-2",
@@ -43,7 +42,6 @@ test("mapManageableScheduleCards builds manageable cards and filters my assignme
       },
       {
         id: "schedule-1",
-        notes: null,
         created_at: "2026-04-08T00:00:00.000Z",
         events: {
           id: "event-1",
@@ -90,7 +88,6 @@ test("mapUserScheduleCards groups multiple assignments from the same schedule", 
       ministry_roles: { name: "Vocal" },
       schedules: {
         id: "schedule-1",
-        notes: null,
         created_at: "2026-04-08T00:00:00.000Z",
         events: {
           id: "event-1",
@@ -117,7 +114,6 @@ test("mapUserScheduleCards groups multiple assignments from the same schedule", 
       ministry_roles: { name: "Violão" },
       schedules: {
         id: "schedule-1",
-        notes: null,
         created_at: "2026-04-08T00:00:00.000Z",
         events: {
           id: "event-1",
@@ -151,7 +147,6 @@ test("compareScheduleCardsByDate sorts cards by event start date", () => {
   const result = compareScheduleCardsByDate(
     {
       id: "b",
-      notes: null,
       created_at: "",
       event: {
         id: "event-b",
@@ -167,7 +162,6 @@ test("compareScheduleCardsByDate sorts cards by event start date", () => {
     },
     {
       id: "a",
-      notes: null,
       created_at: "",
       event: {
         id: "event-a",

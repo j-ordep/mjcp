@@ -51,11 +51,11 @@ export default function HomeScreen() {
         {/* 4 MiniCards — grid 2x2 */}
         <View className="flex-row gap-3 mb-2">
           <MiniCard
-            title="Minhas Escalas"
+            title="Escalas"
             textColor="#fff"
             backgroundColor="#000000"
             icon={<Calendar color="#fff" size={22} />}
-            onPress={() => navigation.navigate("MySchedulesScreen")}
+            onPress={() => navigation.navigate("ScheduleScreen")}
           />
           <MiniCard
             title="Eventos da Igreja"
@@ -70,9 +70,9 @@ export default function HomeScreen() {
             onPress={() => navigation.navigate("BlockDatesScreen")}
           />
           <MiniCard
-            title="Solicitar Troca"
+            title="Trocas"
             icon={<RefreshCw size={22} />}
-            onPress={() => navigation.navigate("SwapRequests")}
+            disabled
           />
         </View>
 
@@ -82,7 +82,7 @@ export default function HomeScreen() {
             Próxima Escala
           </Text>
           <TouchableOpacity
-            onPress={() => navigation.navigate("MySchedulesScreen")}
+            onPress={() => navigation.navigate("ScheduleScreen")}
           >
             <Text style={{ fontSize: 13, color: "#888" }}>Ver todas →</Text>
           </TouchableOpacity>

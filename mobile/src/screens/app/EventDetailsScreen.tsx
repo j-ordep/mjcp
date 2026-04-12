@@ -22,6 +22,11 @@ import {
 } from "../../services/scheduleService";
 import { useAuthStore } from "../../stores/useAuthStore";
 import { formatDateShort, formatTime } from "../../utils/formatDate";
+import {
+  getParticipationStatusLabel,
+  hasConfirmableAssignments,
+} from "../../utils/scheduleParticipation";
+import { isEventDateReadOnly } from "../../utils/scheduleRules";
 
 export default function EventDetailsScreen({
   route,
@@ -65,6 +70,16 @@ export default function EventDetailsScreen({
     null;
   const isAssigned = myAssignments.length > 0;
   const myScheduleIds = Array.from(new Set(myAssignments.map((assignment) => assignment.schedule_id)));
+  const hasPendingOwnAssignments = hasConfirmableAssignments(
+    myAssignments.map((assignment) => ({
+      id: assignment.id,
+      user_id: assignment.user_id,
+      role_id: assignment.role_id,
+      role_name: assignment.ministry_roles?.[0]?.name ?? "Funcao",
+      status: assignment.status,
+    })),
+  );
+  const participationStatusLabel = getParticipationStatusLabel(myAssignments);
   const myRole = myAssignments
     .map((assignment) => assignment.ministry_roles?.[0]?.name)
     .filter(Boolean)
@@ -72,6 +87,12 @@ export default function EventDetailsScreen({
   const myMinistry = selectedOwnAssignment?.ministry_roles?.[0]?.ministries?.[0]?.name;
   const confirmedCount = assignments.filter((assignment) => assignment.status === "confirmed").length;
   const totalCount = assignments.length;
+  const isOwnParticipationReadOnly = isEventDateReadOnly(event.start_at);
+  const ownParticipationHint = isOwnParticipationReadOnly
+    ? "Escala encerrada. Nao e mais possivel confirmar ou solicitar troca."
+    : pendingOwnSwapRequestId
+      ? "Troca pendente para esta escala."
+      : undefined;
 
   useEffect(() => {
     if (!selectedOwnAssignmentId && myAssignments.length > 0) {
@@ -140,7 +161,6 @@ export default function EventDetailsScreen({
     }
 
     await fetchAssignments();
-    Alert.alert("Presenca confirmada", "Sua participacao nesta escala foi confirmada.");
   };
 
   const handleOpenSwapModal = () => {
@@ -184,7 +204,13 @@ export default function EventDetailsScreen({
 
     setIsSwapModalVisible(false);
     setPendingOwnSwapRequestId(data?.id ?? null);
-    Alert.alert("Solicitacao enviada", "Sua solicitacao de troca foi registrada.");
+    setAssignments((current) =>
+      current.map((assignment) =>
+        assignment.id === selectedOwnAssignment.id
+          ? { ...assignment, status: "pending" }
+          : assignment,
+      ),
+    );
   };
 
   return (
@@ -286,57 +312,57 @@ export default function EventDetailsScreen({
         )}
 
         {isAssigned ? (
-          <View style={{ flexDirection: "row", gap: 12, marginBottom: 24 }}>
-            <View style={{ flex: 1 }}>
-              <DefaultButton
-                variant={pendingOwnSwapRequestId ? "destructive" : "outline"}
-                onPress={() => {
-                  if (!pendingOwnSwapRequestId) {
-                    handleOpenSwapModal();
-                    return;
-                  }
+          <>
+            <Text style={{ color: "#6b7280", fontSize: 13, marginBottom: 10 }}>
+              Status da participacao: {participationStatusLabel}
+            </Text>
 
-                  Alert.alert(
-                    "Cancelar troca",
-                    "Deseja cancelar sua solicitacao pendente desta escala?",
-                    [
-                      { text: "Voltar", style: "cancel" },
-                      {
-                        text: "Cancelar troca",
-                        style: "destructive",
-                        onPress: async () => {
-                          const { error } = await cancelOwnSwapRequest(
-                            pendingOwnSwapRequestId,
-                          );
-                          if (error) {
-                            Alert.alert("Nao foi possivel cancelar", error);
-                            return;
-                          }
+            <View style={{ flexDirection: "row", gap: 12, marginBottom: 24 }}>
+              <View style={{ flex: 1 }}>
+                <DefaultButton
+                  variant={pendingOwnSwapRequestId ? "destructive" : "outline"}
+                  disabled={isOwnParticipationReadOnly}
+                  onPress={() => {
+                    if (!pendingOwnSwapRequestId) {
+                      handleOpenSwapModal();
+                      return;
+                    }
 
-                          setPendingOwnSwapRequestId(null);
-                          Alert.alert(
-                            "Solicitacao cancelada",
-                            "Sua solicitacao pendente foi cancelada.",
-                          );
-                        },
-                      },
-                    ],
-                  );
-                }}
-              >
-                {pendingOwnSwapRequestId ? "Cancelar troca" : "Preciso trocar"}
-              </DefaultButton>
+                    void (async () => {
+                      const { error } = await cancelOwnSwapRequest(
+                        pendingOwnSwapRequestId,
+                      );
+                      if (error) {
+                        Alert.alert("Nao foi possivel cancelar", error);
+                        return;
+                      }
+
+                      setPendingOwnSwapRequestId(null);
+                      await fetchAssignments();
+                    })();
+                  }}
+                >
+                  {pendingOwnSwapRequestId ? "Cancelar troca" : "Preciso trocar"}
+                </DefaultButton>
+              </View>
+              <View style={{ flex: 1 }}>
+                <DefaultButton
+                  variant="primary"
+                  onPress={handleConfirmPresence}
+                  isLoading={isConfirmingPresence}
+                  disabled={isOwnParticipationReadOnly || !hasPendingOwnAssignments}
+                >
+                  {hasPendingOwnAssignments ? "Confirmar presenca" : "Presenca confirmada"}
+                </DefaultButton>
+              </View>
             </View>
-            <View style={{ flex: 1 }}>
-              <DefaultButton
-                variant="primary"
-                onPress={handleConfirmPresence}
-                isLoading={isConfirmingPresence}
-              >
-                Confirmar presenca
-              </DefaultButton>
-            </View>
-          </View>
+
+            {ownParticipationHint ? (
+              <Text style={{ color: "#6b7280", fontSize: 13, marginBottom: 24 }}>
+                {ownParticipationHint}
+              </Text>
+            ) : null}
+          </>
         ) : null}
       </ScrollView>
 

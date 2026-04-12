@@ -1,256 +1,160 @@
-# Modelo de Escalas, Roles e Detecção de Conflitos
+# Modelo de Escalas, Capabilities, Assignments e Trocas
 
-> [!IMPORTANT]
-> **Princípio**: Regras de negócio vivem na camada de serviços (`src/services/`), nunca no banco de dados.  
-> SQL functions/triggers somente em último caso (ver `system_design.md` seção 2).
+Data de reconciliacao: 2026-04-10 (America/Sao_Paulo)
 
----
-
-## 1. Dois conceitos distintos: Capability vs Assignment
-
-| Conceito | O que é | Onde vive | Quem gerencia |
-|---|---|---|---|
-| **Capability** | O que o membro *sabe fazer* | `ministry_member_roles` | Líder do ministério |
-| **Assignment** | O que o membro *vai fazer* num evento | `schedule_assignments` | Líder ao montar a escala |
-
-### Exemplo concreto
-
-João participa de 3 ministérios:
-
-```
-Capabilities (estáticas):
-  Louvor:     Guitarra, Baixo, Back Vocal
-  Mídia:      Fotografia
-  Diaconato:  Portaria, Porta do Templo
-
-Assignments (por evento):
-  Domingo 23/03 10h → Louvor → Guitarra
-  Quarta  26/03 19h → Mídia  → Fotografia
-  Quinta  27/03 19h → Louvor → Baixo
-```
-
-As capabilities são **o catálogo** do que o líder pode escolher ao escalar. O assignment é **a escolha feita** para um evento específico.
+> Este documento foi alinhado ao estado atual do codigo e das migrations.
+> Para estrutura, constraints e RLS, a fonte primaria continua sendo `supabase/migrations/*.sql`.
 
 ---
 
-## 2. Modelo de dados
+## 1. Capability vs Assignment
 
-### Fluxo de relacionamento
+| Conceito | O que e | Onde vive | Quem gerencia |
+| --- | --- | --- | --- |
+| Capability | O que o membro sabe fazer | `ministry_member_roles` | Lider/admin do ministerio |
+| Assignment | O que o membro fara em um evento | `schedule_assignments` | Lider/admin ao montar a escala |
 
-```mermaid
-erDiagram
-    profiles ||--o{ ministry_members : "pertence a"
-    ministries ||--o{ ministry_members : "tem"
-    ministries ||--o{ ministry_roles : "define roles"
+Resumo pratico:
 
-    ministry_members ||--o{ ministry_member_roles : "sabe fazer"
-    ministry_roles ||--o{ ministry_member_roles : "habilita"
-
-    events ||--o{ schedules : "tem"
-    schedules }o--|| ministries : "de"
-    schedules ||--o{ schedule_assignments : "escala"
-
-    profiles ||--o{ schedule_assignments : "escalado em"
-    ministry_roles ||--o{ schedule_assignments : "com role"
-```
-
-### Tabelas envolvidas
-
-#### `ministry_members` — membership (pertence ao ministério)
-
-```sql
-CREATE TABLE public.ministry_members (
-  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  ministry_id UUID NOT NULL REFERENCES ministries(id) ON DELETE CASCADE,
-  user_id     UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  is_leader   BOOLEAN NOT NULL DEFAULT false,
-  joined_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
-  UNIQUE(ministry_id, user_id)  -- um membro pertence UMA vez a cada ministério
-);
-```
-
-> **Sem `role_id` aqui.** A membership é apenas "João faz parte do Louvor". As roles ficam na tabela abaixo.
-
-#### `ministry_member_roles` — capabilities (sabe exercer)
-
-```sql
-CREATE TABLE public.ministry_member_roles (
-  id        UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  member_id UUID NOT NULL REFERENCES ministry_members(id) ON DELETE CASCADE,
-  role_id   UUID NOT NULL REFERENCES ministry_roles(id) ON DELETE CASCADE,
-  UNIQUE(member_id, role_id)  -- não duplica capability
-);
-```
-
-Exemplo de dados:
-```
-member: (João, Louvor) → roles: Guitarra, Baixo, Back Vocal
-member: (João, Mídia)  → roles: Fotografia
-```
-
-#### `schedule_assignments` — assignment (escalado para um evento)
-
-```sql
-CREATE TABLE public.schedule_assignments (
-  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  schedule_id  UUID NOT NULL REFERENCES schedules(id) ON DELETE CASCADE,
-  user_id      UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  role_id      UUID NOT NULL REFERENCES ministry_roles(id),
-  status       TEXT NOT NULL DEFAULT 'pending'
-               CHECK (status IN ('pending', 'confirmed', 'declined', 'swapped')),
-  confirmed_at TIMESTAMPTZ,
-  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
-  UNIQUE(schedule_id, user_id, role_id)  -- permite múltiplas roles no mesmo schedule
-);
-```
-
-> **UNIQUE mudou** de `(schedule_id, user_id)` para `(schedule_id, user_id, role_id)` — João pode tocar guitarra E fazer back vocal no mesmo culto.
+- capability e catalogo de aptidoes
+- assignment e a escolha feita para uma escala concreta
 
 ---
 
-## 3. Fluxo de escalação (passo a passo)
+## 2. Modelo atual
 
-```
-1. Admin cria Ministério (ex: Louvor)
-2. Admin/Líder cria Roles do ministério (Guitarra, Baixo, Vocal, etc.)
-3. Líder adiciona Membro ao ministério (ministry_members)
-4. Líder marca quais roles o membro sabe exercer (ministry_member_roles)
-5. Admin cria Evento (ex: Culto Domingo 10h)
-6. Líder cria Schedule do seu ministério para o evento (schedules)
-7. Líder escala membro com role específica (schedule_assignments)
-   │
-   └─ Service verifica ANTES de criar:
-      ├─ Membro tem capability para essa role? → rejeitar se não
-      ├─ Membro bloqueou essa data? → avisar líder
-      └─ Membro já está escalado em outro ministério nesse horário? → WARNING
-```
+### Membership
 
----
+`ministry_members` diz que o usuario pertence a um ministerio.
 
-## 4. Detecção de conflitos entre ministérios
+### Capability
 
-### O problema
+`ministry_member_roles` diz quais roles aquele membro consegue exercer naquele ministerio.
 
-Dois líderes de ministérios diferentes podem escalar o mesmo membro no mesmo horário sem saber:
+### Schedule
 
-```
-Líder do Louvor:  "João, guitarra no Domingo 10h"  ✅ criado
-Líder da Mídia:   "João, fotografia no Domingo 10h" ⚠️ CONFLITO
-```
+`schedules` representa o bloco de escala de um ministerio dentro de um evento.
 
-### A solução: soft block (warning, não bloqueio)
+### Assignment
 
-O conflito **NÃO impede** a escalação — é um **aviso** para o líder decidir. Existem casos legítimos:
-- Membro opera slides (Mídia) E participa do louvor no mesmo culto
-- Membro faz recepção antes do culto E toca durante o culto (horários se sobrepõem parcialmente)
+`schedule_assignments` representa a atribuicao real dentro da escala.
 
-### Implementação no service layer
+O modelo atual permite:
 
-```ts
-// src/services/scheduleService.ts
-
-async function checkSchedulingConflicts(
-  userId: string,
-  eventId: string
-): Promise<ConflictWarning[]> {
-  // 1. Busca dados do evento onde está sendo escalado
-  const event = await getEvent(eventId);
-
-  // 2. Busca TODAS as assignments ativas do user
-  const { data: assignments } = await supabase
-    .from('schedule_assignments')
-    .select(`
-      id, status,
-      role:ministry_roles(name),
-      schedule:schedules(
-        ministry:ministries(name),
-        event:events(id, title, start_at, end_at)
-      )
-    `)
-    .eq('user_id', userId)
-    .neq('status', 'declined');
-
-  // 3. Filtra por sobreposição de horário
-  return assignments
-    .filter(a => {
-      const e = a.schedule.event;
-      return e.id !== eventId
-        && e.start_at < event.end_at
-        && e.end_at > event.start_at;
-    })
-    .map(a => ({
-      eventTitle: a.schedule.event.title,
-      ministry: a.schedule.ministry.name,
-      role: a.role.name,
-      startAt: a.schedule.event.start_at,
-      endAt: a.schedule.event.end_at,
-    }));
-}
-
-// Uso pelo líder:
-async function assignMember(scheduleId, userId, roleId) {
-  // Verifica capability
-  const hasCapability = await checkCapability(userId, roleId);
-  if (!hasCapability) throw new Error('Membro não tem essa função');
-
-  // Verifica blocked dates
-  const blockedDates = await checkBlockedDates(userId, eventDate);
-
-  // Verifica conflitos
-  const conflicts = await checkSchedulingConflicts(userId, eventId);
-
-  return {
-    blockedDates,
-    conflicts,
-    // Front-end mostra warnings e pede confirmação do líder
-  };
-}
-```
-
-### UX esperada
-
-Quando o líder tenta escalar e há conflito:
-
-```
-┌─────────────────────────────────────────┐
-│  ⚠️ Aviso de conflito                   │
-│                                         │
-│  João já está escalado em:              │
-│  📋 Louvor → Guitarra                   │
-│     Culto Domingo, 10:00 - 12:00       │
-│                                         │
-│  Deseja escalar mesmo assim?            │
-│                                         │
-│  [ Cancelar ]        [ Escalar Mesmo ]  │
-└─────────────────────────────────────────┘
-```
+- o mesmo membro em mais de um ministerio
+- o mesmo membro com mais de uma capability no mesmo ministerio
+- o mesmo membro com mais de uma role na mesma escala, desde que a combinacao `(schedule_id, user_id, role_id)` seja unica
 
 ---
 
-## 5. Cada ministério tem roles completamente diferentes
+## 3. Fluxo atual de criacao e montagem
 
-A tabela `ministry_roles` já é genérica — cada ministério cadastra suas próprias roles:
-
-```
-Louvor:     Vocal, Back Vocal, Ministrar, Violão, Guitarra, Baixo, Bateria, Teclado
-Diaconato:  Portaria, Porta do Templo, Corredor, Estacionamento
-Mídia:      Câmera, Fotografia, Transmissão, Slides
-Infantil:   Professor, Auxiliar
-```
-
-Não existe um enum global. Se o ministério de Diaconato precisa de "Portaria", ele cria. Se o Louvor precisa de "Ministrar" (cantor principal), ele cria. Totalmente dinâmico.
+1. lider/admin cria a escala em `CreateScheduleScreen`
+2. depois abre `EditScheduleScreen`
+3. a equipe e montada com base em:
+   - membro pertence ao ministerio
+   - role pertence ao ministerio da escala
+   - membro tem capability para a role
+4. o sistema pode mostrar warnings de:
+   - indisponibilidade (`blocked_dates`)
+   - conflito de horario
+5. warnings nao bloqueiam por si so; o lider decide continuar ou nao
 
 ---
 
-## 6. Edge cases documentados
+## 4. Conflitos
 
-| Caso | Comportamento |
-|---|---|
-| Líder escala membro sem capability | Service rejeita — membro não tem essa role |
-| Líder escala membro em data bloqueada | Warning (soft block) — líder decide |
-| Membro escalado em 2 ministérios no mesmo horário | Warning (soft block) — líder decide |
-| Membro escalado com 2 roles no mesmo ministério/evento | Permitido (ex: guitarra + back vocal) |
-| Membro removido do ministério | CASCADE: remove capabilities E assignments pendentes |
-| Role deletada do ministério | CASCADE: remove de capabilities E assignments |
-| Membro declina assignment | Status muda para `declined`, líder é notificado |
-| Membro pede swap | `swap_requests` criada, líder procura substituto |
+O projeto hoje trata conflito como warning operacional, nao como bloqueio duro.
+
+### Confirmado no codigo
+
+- conflitos sao verificados no service layer
+- indisponibilidade tambem entra como warning
+- a validacao dura fica para:
+  - membership no ministerio
+  - role pertencente ao ministerio da escala
+  - capability para a role
+  - editabilidade temporal da escala/evento em fluxos sensiveis
+
+### PENDENTE DE DEFINICAO
+
+- politica final de produto para conflitos de horario:
+  - warning sempre
+  - ou bloqueio em casos especificos
+
+---
+
+## 5. Fluxo atual de troca
+
+O fluxo implementado hoje e:
+
+1. o proprio usuario cria a troca para um assignment seu
+2. se o assignment estava confirmado, ele volta imediatamente para pendente
+3. a solicitacao fica pendente
+4. membros elegiveis do mesmo ministerio e mesma role/capability podem visualizar a troca
+5. a primeira pessoa elegivel que aceitar assume a escala
+6. pedidos concorrentes remanescentes para aquele assignment sao cancelados
+7. o solicitante pode cancelar a propria troca enquanto ela estiver pendente
+
+### Regras confirmadas nas migrations
+
+- nao pode haver duplicacao invalida de pedido pendente
+- o solicitante nao pode aceitar a propria troca
+- a pessoa elegivel nao pode assumir uma role identica ja ocupada por ela na mesma escala
+- no dia do evento ou depois dele, a troca fica bloqueada para:
+  - criar
+  - aceitar
+  - cancelar
+- leitura de eventos e escalas continua dependente das policies base de visibilidade
+- a janela temporal de editabilidade vale apenas para mutacoes da escala e dos assignments
+
+### PENDENTE DE DEFINICAO
+
+- estrategia final de notificacoes para lider e elegiveis
+
+---
+
+## 6. Status de assignment
+
+Os status hoje aceitos no modelo sao:
+
+- `pending`
+- `confirmed`
+- `declined`
+- `swapped`
+
+### Confirmado no codigo
+
+- `confirmed` esta em uso nas telas e services
+- `swapped` existe no modelo
+- os valores persistidos no banco seguem em ingles por compatibilidade de schema, mas a UI deve exibir os status em pt-BR
+
+### INFORMACAO INSUFICIENTE
+
+- fluxo completo de `declined` ainda nao esta exposto de forma clara na UI principal
+
+---
+
+## 7. Telas relevantes do fluxo
+
+- `src/screens/app/CreateScheduleScreen.tsx`
+- `src/screens/app/EditScheduleScreen.tsx`
+- `src/screens/app/ScheduleScreen.tsx`
+- `src/screens/app/EventDetailsScreen.tsx`
+- `src/screens/app/SwapRequestsScreen.tsx`
+- `src/screens/app/ManageMinistryMembersScreen.tsx`
+
+---
+
+## 8. Pendencias reais do fluxo
+
+### Confirmado no backlog e no codigo
+
+- falta revisar a experiencia do usuario escalado entre telas
+- falta conectar notificacoes
+- falta ampliar testes do service layer
+
+### Divergencias que nao devem ser esquecidas
+
+- a regra de somente leitura em historico precisa continuar sendo auditada tela a tela
+- documentacao antiga que tratava troca como "lider aprova" nao representa mais o modelo atual
