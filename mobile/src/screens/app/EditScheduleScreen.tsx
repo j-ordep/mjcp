@@ -42,6 +42,7 @@ import {
 } from "../../utils/scheduleParticipation";
 import {
   buildAssignmentWarningsMessage,
+  isEventDateEditable,
   isEventDateReadOnly,
 } from "../../utils/scheduleRules";
 import { getAssignmentStatusLabel } from "../../utils/statusLabels";
@@ -176,6 +177,10 @@ export default function EditScheduleScreen() {
   const isOwnParticipationReadOnly = details
     ? isEventDateReadOnly(details.event.start_at)
     : false;
+  const isManageReadOnly = details
+    ? !isEventDateEditable(details.event.start_at)
+    : false;
+  const canManageScheduleActions = canManageSchedule && !isManageReadOnly;
   const ownParticipationHint = isOwnParticipationReadOnly
     ? "Escala encerrada. Nao e mais possivel confirmar ou solicitar troca."
     : pendingOwnSwapRequestId
@@ -218,6 +223,14 @@ export default function EditScheduleScreen() {
   const handleAddAssignment = async () => {
     if (!canManageSchedule) {
       Alert.alert("Sem permissao", "Somente admin ou lider deste ministerio pode editar a equipe.");
+      return;
+    }
+
+    if (isManageReadOnly) {
+      Alert.alert(
+        "Escala somente leitura",
+        "Nao e mais possivel alterar a equipe no dia do evento ou depois dele.",
+      );
       return;
     }
 
@@ -288,6 +301,14 @@ export default function EditScheduleScreen() {
       return;
     }
 
+    if (isManageReadOnly) {
+      Alert.alert(
+        "Escala somente leitura",
+        "Nao e mais possivel alterar a equipe no dia do evento ou depois dele.",
+      );
+      return;
+    }
+
     if (!details) return;
 
     Alert.alert("Remover da escala", "Deseja remover este membro da escala?", [
@@ -319,6 +340,14 @@ export default function EditScheduleScreen() {
   const handleDeleteSchedule = () => {
     if (!canManageSchedule) {
       Alert.alert("Sem permissao", "Somente admin ou lider deste ministerio pode excluir a escala.");
+      return;
+    }
+
+    if (isManageReadOnly) {
+      Alert.alert(
+        "Escala somente leitura",
+        "Nao e mais possivel excluir a escala no dia do evento ou depois dele.",
+      );
       return;
     }
 
@@ -473,6 +502,79 @@ export default function EditScheduleScreen() {
             marginBottom: 18,
           }}
         >
+          <Text style={{ fontWeight: "700", fontSize: 17, marginBottom: 12 }}>
+            Contexto da escala
+          </Text>
+
+          <ScheduleSummaryCard
+            eventTitle={details.event.title}
+            eventDate={formatDateTime(details.event.start_at)}
+            eventLocation={details.event.location}
+            ministryName={details.ministry.name}
+          />
+          {canManageSchedule ? (
+            <TouchableOpacity
+              onPress={handleDeleteSchedule}
+              disabled={!canManageScheduleActions || isDeletingSchedule}
+              activeOpacity={0.85}
+              style={{
+                marginTop: 12,
+                borderRadius: 18,
+                padding: 14,
+                borderWidth: 1,
+                borderColor: "#fecdd3",
+                backgroundColor: "#fff1f2",
+                opacity: !canManageScheduleActions || isDeletingSchedule ? 0.6 : 1,
+              }}
+            >
+              <Text
+                style={{
+                  color: "#be123c",
+                  fontWeight: "700",
+                  textAlign: "center",
+                }}
+              >
+                Excluir escala
+              </Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
+
+        <View
+          style={{
+            backgroundColor: "#fff",
+            borderRadius: 24,
+            padding: 18,
+            borderWidth: 1,
+            borderColor: "#eef2f7",
+            shadowColor: "#0f172a",
+            shadowOffset: { width: 0, height: 3 },
+            shadowOpacity: 0.05,
+            shadowRadius: 10,
+            elevation: 2,
+            marginBottom: 18,
+          }}
+        >
+          {canManageSchedule && isManageReadOnly ? (
+            <View
+              style={{
+                backgroundColor: "#fff7ed",
+                borderRadius: 18,
+                padding: 14,
+                borderWidth: 1,
+                borderColor: "#fdba74",
+                marginBottom: 14,
+              }}
+            >
+              <Text style={{ fontWeight: "700", color: "#9a3412", marginBottom: 4 }}>
+                Escala somente leitura
+              </Text>
+              <Text style={{ color: "#9a3412" }}>
+                No dia do evento e depois dele, a equipe fica bloqueada para alteracoes.
+              </Text>
+            </View>
+          ) : null}
+
           {hasMyAssignments ? (
             <View
               style={{
@@ -546,6 +648,16 @@ export default function EditScheduleScreen() {
             </View>
           ) : null}
 
+          {hasMyAssignments ? (
+            <View
+              style={{
+                height: 1,
+                backgroundColor: "#e5e7eb",
+                marginBottom: 16,
+              }}
+            />
+          ) : null}
+
           <Text style={{ fontWeight: "700", fontSize: 17, marginBottom: 12 }}>
             {canManageSchedule ? "Montagem da equipe" : "Equipe da escala"}
           </Text>
@@ -553,13 +665,18 @@ export default function EditScheduleScreen() {
           {canManageSchedule ? (
             <>
               <TouchableOpacity
-                onPress={() => setIsAssignmentModalVisible(true)}
+                onPress={() => {
+                  if (!canManageScheduleActions) return;
+                  setIsAssignmentModalVisible(true);
+                }}
+                disabled={!canManageScheduleActions}
                 activeOpacity={0.85}
                 style={{
                   backgroundColor: "#111827",
                   borderRadius: 20,
                   padding: 16,
                   marginBottom: 12,
+                  opacity: canManageScheduleActions ? 1 : 0.6,
                 }}
               >
                 <Text
@@ -592,10 +709,10 @@ export default function EditScheduleScreen() {
                 }}
               >
                 <Text style={{ fontWeight: "700", marginBottom: 4 }}>
-                  Gerenciar membros do ministÃ©rio
+                  Gerenciar membros do ministério
                 </Text>
                 <Text style={{ color: "#6b7280" }}>
-                  Atualize capacidades e participaÃ§Ã£o do ministÃ©rio antes de montar
+                  Atualize capacidades e participação do ministério antes de montar
                   a equipe.
                 </Text>
               </TouchableOpacity>
@@ -658,9 +775,12 @@ export default function EditScheduleScreen() {
               {canManageSchedule ? (
                 <>
                   <Text style={{ color: "#6b7280", marginBottom: 14 }}>
-                    Use o fluxo de adiÃ§Ã£o para comeÃ§ar a montar a equipe.
+                    Use o fluxo de adição para começar a montar a equipe.
                   </Text>
-                  <DefaultButton onPress={() => setIsAssignmentModalVisible(true)}>
+                  <DefaultButton
+                    onPress={() => setIsAssignmentModalVisible(true)}
+                    disabled={!canManageScheduleActions}
+                  >
                     Adicionar primeiro membro
                   </DefaultButton>
                 </>
@@ -696,7 +816,7 @@ export default function EditScheduleScreen() {
                 </View>
                 {canManageSchedule ? (
                   <TouchableOpacity
-                    disabled={removingAssignmentId === assignment.id}
+                    disabled={!canManageScheduleActions || removingAssignmentId === assignment.id}
                     onPress={() => handleRemoveAssignment(assignment.id)}
                     style={{
                       width: 40,
@@ -705,7 +825,10 @@ export default function EditScheduleScreen() {
                       backgroundColor: "#fff1f2",
                       alignItems: "center",
                       justifyContent: "center",
-                      opacity: removingAssignmentId === assignment.id ? 0.5 : 1,
+                      opacity:
+                        !canManageScheduleActions || removingAssignmentId === assignment.id
+                          ? 0.5
+                          : 1,
                     }}
                   >
                     <Trash2 size={18} color="#be123c" />
@@ -716,57 +839,6 @@ export default function EditScheduleScreen() {
           )}
         </View>
 
-        <View
-          style={{
-            backgroundColor: "#fff",
-            borderRadius: 24,
-            padding: 18,
-            borderWidth: 1,
-            borderColor: "#eef2f7",
-            shadowColor: "#0f172a",
-            shadowOffset: { width: 0, height: 3 },
-            shadowOpacity: 0.05,
-            shadowRadius: 10,
-            elevation: 2,
-          }}
-        >
-          <Text style={{ fontWeight: "700", fontSize: 17, marginBottom: 12 }}>
-            Contexto da escala
-          </Text>
-
-          <ScheduleSummaryCard
-            eventTitle={details.event.title}
-            eventDate={formatDateTime(details.event.start_at)}
-            eventLocation={details.event.location}
-            ministryName={details.ministry.name}
-          />
-          {canManageSchedule ? (
-            <TouchableOpacity
-              onPress={handleDeleteSchedule}
-              disabled={isDeletingSchedule}
-              activeOpacity={0.85}
-              style={{
-                marginTop: 12,
-                borderRadius: 18,
-                padding: 14,
-                borderWidth: 1,
-                borderColor: "#fecdd3",
-                backgroundColor: "#fff1f2",
-                opacity: isDeletingSchedule ? 0.6 : 1,
-              }}
-            >
-              <Text
-                style={{
-                  color: "#be123c",
-                  fontWeight: "700",
-                  textAlign: "center",
-                }}
-              >
-                Excluir escala
-              </Text>
-            </TouchableOpacity>
-          ) : null}
-        </View>
       </ScrollView>
 
       {canManageSchedule ? (
@@ -812,3 +884,5 @@ export default function EditScheduleScreen() {
     </SafeAreaView>
   );
 }
+
+

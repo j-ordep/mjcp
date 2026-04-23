@@ -29,7 +29,7 @@ export default function EventsScreen() {
   
   const { events, isLoadingEvents, fetchUpcomingEvents } = useEventStore();
   const { profile } = useAuthStore();
-  const isAdmin = profile?.role === 'admin';
+  const canManageEvents = profile?.role === "admin" || profile?.role === "leader";
 
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -112,8 +112,8 @@ export default function EventsScreen() {
       <HeaderSecondary
         title="Todos os Eventos"
         onBack={() => navigation.goBack()}
-        rightIcon={isAdmin ? <Plus size={22} color="#000" /> : undefined}
-        onRightPress={isAdmin ? () => navigation.navigate("CreateEvent") : undefined}
+        rightIcon={canManageEvents ? <Plus size={22} color="#000" /> : undefined}
+        onRightPress={canManageEvents ? () => navigation.navigate("CreateEvent") : undefined}
       />
 
       <View className="px-5">

@@ -2,11 +2,17 @@
 
 Data: 2026-04-05 (America/Sao_Paulo)
 
+Referencia rapida:
+- plano consolidado da proxima rodada: `docs/NEXT_STEPS_PLAN.md`
+- historico documental e registros de rodadas: `docs/history/README.md`
+- aplicacao remota no Supabase: `docs/SUPABASE_REMOTE_RUNBOOK.md`
+
 Objetivo imediato: sair do prototipo e fechar o fluxo principal de "Criacao de Escalas" com regra:
 - Admin pode criar/gerenciar tudo
 - Lider so cria/gerencia escalas da(s) sua(s) area(s)/ministerio(s)
 - Lider tambem pode se auto-escalar no proprio ministerio, desde que respeite as mesmas validacoes de membro/funcao da escala
 - Membro apenas visualiza e interage com o que for dele (confirmar/trocar)
+- Eventos sao apenas informativos; a operacao de escala nao deve depender da tela de evento
 - Datas nao podem ficar em branco em formularios; quando nao houver valor inicial, o padrao deve ser a data/hora atual do sistema no momento da criacao/carregamento do formulario, ja selecionada no campo
 
 ---
@@ -41,6 +47,15 @@ Objetivo imediato: sair do prototipo e fechar o fluxo principal de "Criacao de E
     - constraint com trigger/funcao (se necessario), ou
     - mover criacao de assignment para uma unica RPC (recomendado) que valida tudo no servidor
 
+- [x] Restringir confirmacao do proprio assignment no backend para antes do dia do evento
+  - Problema:
+    - o app ja bloqueava a acao no client, mas a policy de UPDATE do proprio assignment ainda podia ser usada fora do fluxo visual
+  - Atualizacao em 2026-04-13:
+    - nova migration local `20260413000113_restrict_member_assignment_status_updates.sql`
+    - a policy do proprio membro agora exige que o evento ainda esteja antes do dia atual
+  - Pendencia operacional:
+    - aplicar a migration nova no Supabase remoto
+
 - [ ] Validacoes de data no banco
   - [ ] `events`: `end_at` deve ser > `start_at` quando `end_at` nao for nulo
   - [ ] `room_reservations`: `end_at > start_at`
@@ -50,7 +65,11 @@ Objetivo imediato: sair do prototipo e fechar o fluxo principal de "Criacao de E
     - se o usuario nao informar `end_at`, o sistema deve preencher automaticamente `start_at + 3 horas`
 
 - [ ] Indices para performance basica
-  - [ ] `schedule_assignments (user_id, status)`
+  - [x] `schedule_assignments (user_id, status)`
+    - Atualizacao em 2026-04-13:
+      - nova migration local `20260413000114_add_schedule_assignment_status_index.sql`
+    - Pendencia operacional:
+      - aplicar a migration nova no Supabase remoto
   - [ ] `schedules (event_id, ministry_id)` (ja existe UNIQUE, mas pode precisar index explicito dependendo do Postgres/plano)
   - [ ] `events (start_at)` ja existe; avaliar `events (end_at)`
 
@@ -149,7 +168,6 @@ Decisao atualizada em 2026-04-07:
   - Estado atual confirmado no codigo:
     - `EditScheduleScreen` ja permite confirmar a propria participacao no nivel da `schedule`
     - `ScheduleScreen` ja permite confirmar a propria participacao quando o card possui `my_assignments`
-    - `EventDetailsScreen` ja permite confirmar a propria participacao
     - a confirmacao acontece no nivel correto do dominio: `schedule_assignments`
   - Regras:
     - so o dono do assignment pode confirmar (policy ja existe para UPDATE own)
@@ -178,7 +196,6 @@ Decisao atualizada em 2026-04-07:
   - Estado atual confirmado no codigo:
     - `ScheduleScreen` ja consegue abrir o fluxo minimo e criar `swap_requests`
     - `EditScheduleScreen` ja consegue abrir o fluxo minimo e criar `swap_requests`
-    - `EventDetailsScreen` ja consegue abrir o fluxo minimo e criar `swap_requests`
     - `SwapRequestsScreen` ja lista trocas disponiveis e proprias, com aceite/cancelamento
     - o aceite da troca ja usa a regra de "primeira pessoa elegivel"
     - cancelamento de solicitacao propria ja esta implementado
@@ -208,54 +225,51 @@ Decisao atualizada em 2026-04-07:
     - contexto de participante da escala
   - `EditScheduleScreen` ja comecou a refletir isso com bloco de "Minha participacao"
   - Estado atual confirmado no codigo:
-    - `ScheduleScreen`, `EditScheduleScreen` e `EventDetailsScreen` agora usam o mesmo criterio para:
-      - desabilitar `Confirmar presenca` quando nao existe assignment confirmavel
-      - mostrar `Presenca confirmada` quando nao ha mais pendencia confirmavel
-      - exibir hint de troca pendente
-      - bloquear confirmacao/troca em estado somente leitura no dia do evento ou depois dele
-      - comunicar status da participacao de forma explicita
-      - remover alerts nativos de sucesso de confirmacao e troca
+    - `ScheduleScreen` e `EditScheduleScreen` concentram confirmacao e troca
     - `ScheduleScreen` agora abre `EditScheduleScreen` tambem para membro
     - `EditScheduleScreen` esconde acoes administrativas quando o usuario nao pode gerenciar a escala
-  - Gap restante mais relevante:
-    - `EventDetailsScreen` ainda agrega de forma fraca o caso em que o usuario participa de mais de uma escala no mesmo evento
+  - Direcao registrada em 2026-04-13:
+    - `EventDetailsScreen` deve deixar de operar por escala e virar somente informativa
+    - equipe escalada, status de participacao, confirmacao e troca ficam fora da superficie de evento
+    - o caso de multiplas escalas do mesmo evento continua resolvido no dominio de escala, nao em evento
+  - Atualizacao em 2026-04-14:
+    - `ScheduleScreen`, `EditScheduleScreen` e `scheduleService` foram alinhados para tratar o dia do evento como historico/somente leitura para as acoes ja bloqueadas por regra
+    - a tela de edicao agora sinaliza explicitamente quando a escala esta somente leitura
+    - a visao gerencial voltou a enxergar historico de escalas sem depender de filtro por horario exato
+  - Atualizacao em 2026-04-23:
+    - o filtro `Proximas` na tela de escalas deve ordenar por `data do evento` em ordem crescente
+    - o filtro `Anteriores` na tela de escalas deve ordenar por `data do evento` em ordem decrescente, com a escala mais recente no topo
+    - a ordenacao do historico deve seguir a data em que a escala aconteceu, e nao a data de criacao do registro
 
 ---
 
-## P1 (Alto) - "Modos" de Cards (Evento vs Escala)
+## P1 (Alto) - Separacao entre Evento e Escala
 
-Contexto: o mesmo evento deve aparecer "simples" para quem nao esta escalado e "completo" para quem esta.
+Contexto: eventos sao informativos para todos; escala e o fluxo operacional de quem participa do ministerio/função.
 
-Decisao registrada em 2026-04-05:
-- Direcao preferida atual:
-  - `EventsScreen` permanece como card informativo de eventos
-  - botoes de acao (`Confirmar`, `Preciso trocar`) ficam apenas nos cards de escala do usuario (`ScheduleScreen`) e/ou em `EventDetailsScreen` quando ele estiver escalado
-  - motivo: separa descoberta de eventos de acao operacional sobre a escala, reduz ruido visual e evita duplicar a mesma acao em duas listas
-- Alternativa mantida documentada para reavaliacao futura:
-  - `EventsScreen` pode exibir card enriquecido com acoes quando `is_assigned = true`
-  - nesse modelo, o mesmo card mistura informacao de evento e acao de escala no feed geral
-  - essa opcao pode ser reconsiderada se houver evidencias de que os usuarios usam mais a lista geral de eventos do que `ScheduleScreen`
+- `EventsScreen` nao deve variar por assignment, papel, ministerio ou participacao.
+- `EventDetailsScreen` tambem deve permanecer informativa e nao deve carregar equipe, status, confirmacao ou troca.
 
 - [ ] Padronizar payload do backend para renderizacao de cards
   - Em vez de logica fragmentada, criar DTO/shape:
-    - `is_assigned`
-    - `my_role`
-    - `my_ministry`
-    - `team_counts` (confirmed/pending) quando aplicavel
-  - Mesmo na direcao preferida, esse payload continua util para enriquecer `EventsScreen` com estado "voce esta escalado" sem expor botoes de acao.
+    - `title`
+    - `start_at`
+    - `end_at`
+    - `location`
+    - `description`
+    - `cover_image` ou metadado equivalente, se existir
   - Observacao:
-    - a lista atual ja carrega `my_assignments`, mas ainda existe logica de contexto espalhada nas telas
-    - consolidar este payload ajuda especialmente no caso de lider que tambem esta escalado
+    - a lista atual ainda mistura contexto de evento e escala em alguns pontos
+    - consolidar um shape somente informativo ajuda a manter `EventsScreen` e a futura tela de detalhes de evento sem acao operacional
 
-- [ ] Implementar EventCard simples vs completo em `EventsScreen`
+- [ ] Implementar `EventCard` apenas informativo em `EventsScreen`
   - Hoje `EventsScreen` usa `EventCard` com `showActions={false}`
   - Direcao preferida atual:
-    - se `is_assigned = false`: card simples, apenas informativo
-    - se `is_assigned = true`: card informativo enriquecido com `my_ministry` e `my_role`, sem botoes de acao
-    - acoes continuam em `ScheduleScreen` e `EventDetailsScreen`
-  - Caminho alternativo documentado:
-    - se `is_assigned = true`: card completo com `my_ministry`, `my_role` e botoes `Confirmar` / `Preciso trocar`
-    - exigir cuidado para nao duplicar acoes ja presentes em `ScheduleScreen` e `EventDetailsScreen`
+    - card sempre igual para todos os usuarios
+    - nenhuma acao operacional de escala no card
+    - eventuais melhorias devem ficar restritas a metadados do evento, nao a participation state
+  - Futuro desejado:
+    - `EventDetailsScreen` exibe apenas local, data/hora, descricao e links/metadados do evento, como video do culto se houver
 
 ## Decisao de fluxo registrada em 2026-04-12
 
@@ -280,9 +294,18 @@ Decisao registrada em 2026-04-05:
     - suite inicial cobre `src/utils/scheduleParticipation.ts`
     - cobertura ampliada para `src/utils/scheduleRules.ts` com regras de contagem, editabilidade, overlap e warnings
     - cobertura ampliada para mapeamentos de `ministry` e `schedule cards`, reduzindo risco nas transformacoes do service layer
+    - cobertura ampliada para `src/utils/eventParticipation.ts`, protegendo o caso de multiplas escalas no mesmo evento
+    - cobertura ampliada para cenarios restantes de status em `src/utils/scheduleParticipation.ts` (`Sem participacao`, `Confirmado`, `Parcialmente confirmado`, `Recusado`)
+    - cobertura ampliada para `src/services/scheduleService.ts` com cenarios de:
+      - bloqueio de criacao de escala no dia do evento
+      - upsert de escala quando o evento ainda e editavel
+      - bloqueio de remocao de assignment em read-only
+    - cobertura ampliada para `src/services/ministryService.ts` com cenarios de:
+      - remocao de membro com exclusao previa de assignments
+      - persistencia de capabilities com lista vazia e com payload real
   - Proximos alvos naturais:
-    - `scheduleService`
-    - `ministryService`
+    - expandir `scheduleService` para warnings, cards e validacoes adicionais
+    - expandir `ministryService` para fluxos restantes
     - utilitarios de renderizacao/estado de escala
 
 - [~] Tipar navegacao e params
@@ -414,7 +437,7 @@ Decisao registrada em 2026-04-05:
 - [x] Lider/admin remove assignments com confirmacao explicita do usuario
 - [x] Lider/admin atualiza dados basicos da escala
 - [x] Lider/admin exclui escala com confirmacao explicita do usuario
-- [ ] Membro ve evento no modo "escalado"
+- [x] Membro ve evento apenas como informativo
 - [x] Membro confirma presenca
 - [~] (Opcional) Membro solicita troca
 

@@ -642,9 +642,86 @@ async function isEventEditableById(eventId: string): Promise<{ editable: boolean
 
     if (error) throw error;
 
-    return { editable: isEventDateEditable(data.start_at), error: null };
+    return { editable: !isEventDateReadOnly(data.start_at), error: null };
   } catch (error: unknown) {
     return { editable: false, error: getErrorMessage(error) };
+  }
+}
+
+async function getAssignmentScheduleContext(assignmentId: string): Promise<{
+  data: ScheduleContext | null;
+  error: string | null;
+}> {
+  try {
+    const { data, error } = await supabase
+      .from("schedule_assignments")
+      .select(`
+        id,
+        schedules!inner (
+          id,
+          ministry_id,
+          events!inner (
+            id,
+            start_at,
+            end_at
+          )
+        )
+      `)
+      .eq("id", assignmentId)
+      .single<{
+        id: string;
+        schedules:
+          | {
+              id: string;
+              ministry_id: string;
+              events:
+                | {
+                    id: string;
+                    start_at: string;
+                    end_at: string | null;
+                  }
+                | {
+                    id: string;
+                    start_at: string;
+                    end_at: string | null;
+                  }[];
+            }
+          | {
+              id: string;
+              ministry_id: string;
+              events:
+                | {
+                    id: string;
+                    start_at: string;
+                    end_at: string | null;
+                  }
+                | {
+                    id: string;
+                    start_at: string;
+                    end_at: string | null;
+                  }[];
+            }[];
+      }>();
+
+    if (error) throw error;
+
+    const schedule = firstRelation(data.schedules);
+    const event = schedule?.events ? firstRelation(schedule.events) : null;
+
+    if (!schedule || !event) {
+      throw new Error("Escala nao encontrada.");
+    }
+
+    return {
+      data: {
+        id: schedule.id,
+        ministry_id: schedule.ministry_id,
+        event,
+      },
+      error: null,
+    };
+  } catch (error: unknown) {
+    return { data: null, error: getErrorMessage(error) };
   }
 }
 
@@ -841,7 +918,6 @@ export async function getManageableScheduleCards(
           )
         )
       `)
-      .gte('events.start_at', new Date().toISOString())
       .order('created_at', { ascending: false });
 
     if (ministryIds && ministryIds.length > 0) {
@@ -1053,8 +1129,8 @@ export async function deleteSchedule(scheduleId: string) {
       throw new Error(scheduleCtx.error ?? "Escala nao encontrada.");
     }
 
-    if (!isEventDateEditable(scheduleCtx.data.event.start_at)) {
-      throw new Error("Evento/escala nao e mais editavel apos o dia do evento.");
+    if (isEventDateReadOnly(scheduleCtx.data.event.start_at)) {
+      throw new Error("Evento/escala nao e mais editavel no dia do evento ou depois dele.");
     }
 
     const { error } = await supabase
@@ -1072,6 +1148,15 @@ export async function deleteSchedule(scheduleId: string) {
 
 export async function removeScheduleAssignment(assignmentId: string) {
   try {
+    const assignmentCtx = await getAssignmentScheduleContext(assignmentId);
+    if (assignmentCtx.error || !assignmentCtx.data?.event) {
+      throw new Error(assignmentCtx.error ?? "Assignment nao encontrado.");
+    }
+
+    if (isEventDateReadOnly(assignmentCtx.data.event.start_at)) {
+      throw new Error("Nao e mais possivel alterar a equipe no dia do evento ou depois dele.");
+    }
+
     const { error } = await supabase
       .from('schedule_assignments')
       .delete()
@@ -1197,7 +1282,7 @@ export async function validateScheduleAssignmentIntegrity(
     };
   }
 
-  const isEventEditable = isEventDateEditable(scheduleCtx.data.event.start_at);
+  const isEventEditable = !isEventDateReadOnly(scheduleCtx.data.event.start_at);
   if (!isEventEditable) {
     return {
       isValid: false,
@@ -1205,7 +1290,7 @@ export async function validateScheduleAssignmentIntegrity(
       isRoleFromScheduleMinistry: false,
       isUserMemberOfScheduleMinistry: false,
       doesUserHaveCapability: false,
-      error: 'Evento/escala nao e mais editavel apos o dia do evento.',
+      error: 'Evento/escala nao e mais editavel no dia do evento ou depois dele.',
     };
   }
 
@@ -1740,7 +1825,7 @@ export async function createScheduleValidated(input: {
     const editability = await isEventEditableById(input.eventId);
     if (editability.error) throw new Error(editability.error);
     if (!editability.editable) {
-      throw new Error('Evento/escala nao e mais editavel apos o dia do evento.');
+      throw new Error('Evento/escala nao e mais editavel no dia do evento ou depois dele.');
     }
 
     const { data, error } = await supabase

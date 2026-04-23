@@ -9,7 +9,7 @@
     "web": "expo start --web",
     "test": "npm run test:unit",
     "test:build": "tsc -p tsconfig.test.json",
-    "test:unit": "npm run test:build && node .tests-dist/tests/scheduleParticipation.test.js && node .tests-dist/tests/scheduleRules.test.js && node .tests-dist/tests/ministryMappers.test.js && node .tests-dist/tests/scheduleCardMappers.test.js"
+    "test:unit": "npm run test:build && node .tests-dist/tests/eventDate.test.js && node .tests-dist/tests/statusLabels.test.js && node .tests-dist/tests/formatDate.test.js && node .tests-dist/tests/scheduleParticipation.test.js && node .tests-dist/tests/scheduleRules.test.js && node .tests-dist/tests/ministryMappers.test.js && node .tests-dist/tests/scheduleCardMappers.test.js && node .tests-dist/tests/scheduleService.test.js && node .tests-dist/tests/ministryService.test.js"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
@@ -18,8 +18,8 @@
     "@react-navigation/native": "^7.1.21",
     "@react-navigation/native-stack": "^7.8.0",
     "@supabase/supabase-js": "^2.99.3",
-    "babel-preset-expo": "~54.0.9",
-    "expo": "~54.0.30",
+    "babel-preset-expo": "~54.0.10",
+    "expo": "~54.0.33",
     "expo-secure-store": "~15.0.8",
     "expo-status-bar": "~3.0.9",
     "lucide-react-native": "^0.554.0",

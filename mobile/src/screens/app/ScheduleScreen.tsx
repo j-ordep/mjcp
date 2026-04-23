@@ -32,11 +32,14 @@ import { useMinistryStore } from "../../stores/useMinistryStore";
 import { useScheduleStore } from "../../stores/useScheduleStore";
 import { formatDateTime } from "../../utils/formatDate";
 import {
-  getParticipationStatusLabel,
   getOwnRoleLabel,
   hasConfirmableAssignments,
 } from "../../utils/scheduleParticipation";
-import { isEventDateReadOnly } from "../../utils/scheduleRules";
+import {
+  compareScheduleDatesByFilter,
+  isEventDateReadOnly,
+  matchesScheduleTimeFilter,
+} from "../../utils/scheduleRules";
 
 type Filter = "current" | "past";
 
@@ -104,20 +107,28 @@ export default function ScheduleScreen() {
   );
 
   const filteredSchedules = useMemo(() => {
-    const now = new Date().getTime();
     const normalizedSearch = search.trim().toLowerCase();
 
-    return scheduleCards.filter((schedule) => {
-      const eventTime = new Date(schedule.event.start_at).getTime();
-      const matchesFilter =
-        activeFilter === "current" ? eventTime >= now : eventTime < now;
-      const matchesSearch =
-        !normalizedSearch ||
-        schedule.event.title.toLowerCase().includes(normalizedSearch) ||
-        schedule.ministry.name.toLowerCase().includes(normalizedSearch);
+    return scheduleCards
+      .filter((schedule) => {
+        const matchesFilter = matchesScheduleTimeFilter(
+          schedule.event.start_at,
+          activeFilter,
+        );
+        const matchesSearch =
+          !normalizedSearch ||
+          schedule.event.title.toLowerCase().includes(normalizedSearch) ||
+          schedule.ministry.name.toLowerCase().includes(normalizedSearch);
 
-      return matchesFilter && matchesSearch;
-    });
+        return matchesFilter && matchesSearch;
+      })
+      .sort((left, right) =>
+        compareScheduleDatesByFilter(
+          left.event.start_at,
+          right.event.start_at,
+          activeFilter,
+        ),
+      );
   }, [activeFilter, scheduleCards, search]);
 
   const filters: { key: Filter; label: string }[] = useMemo(
@@ -207,7 +218,6 @@ export default function ScheduleScreen() {
           : undefined;
       const showOwnActions = item.my_assignments.length > 0;
       const hasPendingOwnAssignments = hasConfirmableAssignments(item.my_assignments);
-      const participationStatusLabel = getParticipationStatusLabel(item.my_assignments);
       const isReadOnly = isEventDateReadOnly(item.event.start_at);
       const pendingOwnSwapRequestId =
         item.my_assignments
@@ -237,7 +247,6 @@ export default function ScheduleScreen() {
           confirmDisabled={confirmDisabled}
           swapDisabled={swapDisabled}
           actionHint={actionHint}
-          participationStatusLabel={participationStatusLabel}
           onDetails={() => {
             navigation.navigate("EditSchedule", {
               scheduleId: item.id,
@@ -313,16 +322,57 @@ export default function ScheduleScreen() {
   const ListEmpty = useCallback(() => {
     if (isLoadingSchedules || isLoadingMinistries) return null;
 
+    const hasSearch = search.trim().length > 0;
+    const emptyMessage = hasSearch
+      ? "Nenhuma escala encontrada para a busca atual."
+      : activeFilter === "past"
+        ? viewMode === "manageable"
+          ? "Nenhuma escala anterior para os ministerios que voce gerencia."
+          : "Voce ainda nao possui escalas anteriores."
+        : viewMode === "manageable"
+          ? "Nenhuma proxima escala para os ministerios que voce gerencia."
+          : "Voce ainda nao possui proximas escalas.";
+
     return (
       <View className="items-center justify-center py-16 px-10">
         <Text style={{ color: "#888", fontSize: 16, textAlign: "center" }}>
-          {viewMode === "manageable"
-            ? "Nenhuma escala gerenciavel encontrada."
-            : "Nenhuma escala pessoal encontrada."}
+          {emptyMessage}
         </Text>
+        {hasSearch ? (
+          <TouchableOpacity
+            onPress={() => {
+              setSearch("");
+              setActiveFilter("current");
+            }}
+            style={{
+              marginTop: 14,
+              paddingHorizontal: 16,
+              paddingVertical: 10,
+              borderRadius: 999,
+              backgroundColor: "#111827",
+            }}
+          >
+            <Text style={{ color: "#fff", fontWeight: "700" }}>
+              Limpar busca e voltar para proximas
+            </Text>
+          </TouchableOpacity>
+        ) : activeFilter === "past" ? (
+          <TouchableOpacity
+            onPress={() => setActiveFilter("current")}
+            style={{
+              marginTop: 14,
+              paddingHorizontal: 16,
+              paddingVertical: 10,
+              borderRadius: 999,
+              backgroundColor: "#111827",
+            }}
+          >
+            <Text style={{ color: "#fff", fontWeight: "700" }}>Voltar para proximas</Text>
+          </TouchableOpacity>
+        ) : null}
       </View>
     );
-  }, [isLoadingMinistries, isLoadingSchedules, viewMode]);
+  }, [activeFilter, isLoadingMinistries, isLoadingSchedules, search, viewMode]);
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={["top", "left", "right"]}>
@@ -339,11 +389,11 @@ export default function ScheduleScreen() {
           activeOpacity={0.85}
           style={{
             marginBottom: 14,
-            borderRadius: 20,
-            padding: 16,
-            backgroundColor: "#eef6ff",
+            borderRadius: 18,
+            padding: 14,
+            backgroundColor: "#f8fafc",
             borderWidth: 1,
-            borderColor: "#bfdbfe",
+            borderColor: "#dbe3ec",
           }}
         >
           <View
@@ -357,15 +407,15 @@ export default function ScheduleScreen() {
             <View style={{ flexDirection: "row", alignItems: "center", gap: 12, flex: 1 }}>
               <View
                 style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 20,
-                  backgroundColor: "#dbeafe",
+                  width: 36,
+                  height: 36,
+                  borderRadius: 18,
+                  backgroundColor: "#e2e8f0",
                   alignItems: "center",
                   justifyContent: "center",
                 }}
               >
-                <RefreshCcw size={18} color="#1d4ed8" />
+                <RefreshCcw size={16} color="#334155" />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontWeight: "700", color: "#111827", marginBottom: 4 }}>
@@ -376,7 +426,7 @@ export default function ScheduleScreen() {
                 </Text>
               </View>
             </View>
-            <ArrowRight size={18} color="#1d4ed8" />
+            <ArrowRight size={16} color="#64748b" />
           </View>
         </TouchableOpacity>
 

@@ -144,6 +144,10 @@ Os status hoje aceitos no modelo sao:
 - `src/screens/app/SwapRequestsScreen.tsx`
 - `src/screens/app/ManageMinistryMembersScreen.tsx`
 
+Observacao:
+
+- `EventDetailsScreen` deve ser somente informativa; presenca, troca e equipe ficam no fluxo de escala
+
 ---
 
 ## 8. Pendencias reais do fluxo

@@ -6,7 +6,7 @@ import DefaultButton from "../button/DefaultButton";
 interface EventCardProps {
   title: string;
   date: string;
-  location?: string
+  location?: string;
   role?: string;
   department?: string;
   description?: string;
@@ -15,12 +15,11 @@ interface EventCardProps {
   onDetails?: () => void;
   showActions?: boolean;
   swapLabel?: string;
-  swapVariant?: 'outline' | 'destructive';
+  swapVariant?: "outline" | "destructive";
   confirmLabel?: string;
   confirmDisabled?: boolean;
   swapDisabled?: boolean;
   actionHint?: string;
-  participationStatusLabel?: string;
 }
 
 export default function EventCard(props: EventCardProps) {
@@ -38,7 +37,14 @@ export default function EventCard(props: EventCardProps) {
         <Text style={{ fontWeight: "bold", fontSize: 20, marginBottom: 6 }}>
           {props.title}
         </Text>
-        <Text style={{ color: "#000", fontWeight: "bold", fontSize: 16, marginBottom: 6 }}>
+        <Text
+          style={{
+            color: "#000",
+            fontWeight: "bold",
+            fontSize: 16,
+            marginBottom: 6,
+          }}
+        >
           {props.date}
         </Text>
         {props.location && (
@@ -47,16 +53,16 @@ export default function EventCard(props: EventCardProps) {
             <Text style={{ color: "#888", fontSize: 15 }}>{props.location}</Text>
           </View>
         )}
-        
+
         {props.description && (
-          <Text 
-            numberOfLines={2} 
+          <Text
+            numberOfLines={2}
             style={{ color: "#444", fontSize: 14, marginBottom: 12, lineHeight: 20 }}
           >
             {props.description}
           </Text>
         )}
-        
+
         {(props.department || props.role) && (
           <View className="flex-row gap-8 mt-1">
             {props.department && (
@@ -77,12 +83,6 @@ export default function EventCard(props: EventCardProps) {
             )}
           </View>
         )}
-
-        {props.participationStatusLabel ? (
-          <Text style={{ color: "#6b7280", fontSize: 13, marginTop: 10 }}>
-            Status da participacao: {props.participationStatusLabel}
-          </Text>
-        ) : null}
       </Card.Content>
 
       {props.showActions && (
@@ -100,7 +100,7 @@ export default function EventCard(props: EventCardProps) {
                 onPress={props.onSwap}
                 disabled={props.swapDisabled}
               >
-              {props.swapLabel ?? "Preciso trocar"}
+                {props.swapLabel ?? "Preciso trocar"}
               </DefaultButton>
             </View>
 

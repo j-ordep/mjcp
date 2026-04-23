@@ -82,6 +82,63 @@ test("getParticipationStatusLabel returns Pendente when there is any pending ass
   assert.equal(result, "Pendente");
 });
 
+test("getParticipationStatusLabel returns Sem participacao when there are no assignments", () => {
+  const result = getParticipationStatusLabel([]);
+
+  assert.equal(result, "Sem participacao");
+});
+
+test("getParticipationStatusLabel returns Confirmado when all assignments are confirmed", () => {
+  const result = getParticipationStatusLabel([
+    {
+      id: "a6",
+      user_id: "user-4",
+      status: "confirmed",
+      role_name: "Baixo",
+    },
+    {
+      id: "a7",
+      user_id: "user-4",
+      status: "confirmed",
+      role_name: "Bateria",
+    },
+  ]);
+
+  assert.equal(result, "Confirmado");
+});
+
+test("getParticipationStatusLabel returns Parcialmente confirmado when confirmed is mixed with other statuses", () => {
+  const result = getParticipationStatusLabel([
+    {
+      id: "a8",
+      user_id: "user-5",
+      status: "confirmed",
+      role_name: "Guitarra",
+    },
+    {
+      id: "a9",
+      user_id: "user-5",
+      status: "declined",
+      role_name: "Teclado",
+    },
+  ]);
+
+  assert.equal(result, "Parcialmente confirmado");
+});
+
+test("getParticipationStatusLabel returns Recusado when all assignments are declined", () => {
+  const result = getParticipationStatusLabel([
+    {
+      id: "a10",
+      user_id: "user-6",
+      status: "declined",
+      role_name: "Violino",
+    },
+  ]);
+
+  assert.equal(result, "Recusado");
+});
+
 test("getParticipationStatusLabel returns Trocado when all assignments were swapped", () => {
   const result = getParticipationStatusLabel([
     {
