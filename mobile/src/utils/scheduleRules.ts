@@ -1,6 +1,14 @@
 import type { AssignmentStatus } from "../types/database.types";
 import type { AssignmentWarning } from "../services/scheduleService";
 
+export type ScheduleTimeFilter = "current" | "past";
+
+function getScheduleDayTimestamp(startAtIso: string) {
+  const eventDate = new Date(startAtIso);
+  eventDate.setHours(0, 0, 0, 0);
+  return eventDate.getTime();
+}
+
 export function countAssignmentsByStatus(
   assignments: { status: AssignmentStatus }[] | null | undefined,
 ) {
@@ -19,20 +27,36 @@ export function isEventDateEditable(startAtIso: string, now = new Date()) {
   const today = new Date(now);
   today.setHours(0, 0, 0, 0);
 
-  const eventDate = new Date(startAtIso);
-  eventDate.setHours(0, 0, 0, 0);
-
-  return eventDate.getTime() >= today.getTime();
+  return getScheduleDayTimestamp(startAtIso) >= today.getTime();
 }
 
 export function isEventDateReadOnly(startAtIso: string, now = new Date()) {
   const today = new Date(now);
   today.setHours(0, 0, 0, 0);
 
-  const eventDate = new Date(startAtIso);
-  eventDate.setHours(0, 0, 0, 0);
+  return getScheduleDayTimestamp(startAtIso) <= today.getTime();
+}
 
-  return eventDate.getTime() <= today.getTime();
+export function matchesScheduleTimeFilter(
+  startAtIso: string,
+  filter: ScheduleTimeFilter,
+  now = new Date(),
+) {
+  const isReadOnly = isEventDateReadOnly(startAtIso, now);
+  return filter === "current" ? !isReadOnly : isReadOnly;
+}
+
+export function compareScheduleDatesByFilter(
+  leftStartAtIso: string,
+  rightStartAtIso: string,
+  filter: ScheduleTimeFilter,
+) {
+  const leftTimestamp = new Date(leftStartAtIso).getTime();
+  const rightTimestamp = new Date(rightStartAtIso).getTime();
+
+  return filter === "past"
+    ? rightTimestamp - leftTimestamp
+    : leftTimestamp - rightTimestamp;
 }
 
 export function toISODateString(dateIso: string) {

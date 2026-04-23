@@ -78,6 +78,56 @@ test("mapManageableScheduleCards builds manageable cards and filters my assignme
   assert.equal(result[1].can_manage, true);
 });
 
+test("mapManageableScheduleCards skips rows without joined event or ministry", () => {
+  const result = mapManageableScheduleCards(
+    [
+      {
+        id: "schedule-1",
+        created_at: "2026-04-08T00:00:00.000Z",
+        events: null,
+        ministries: {
+          id: "ministry-1",
+          name: "Louvor",
+        },
+        schedule_assignments: null,
+      },
+      {
+        id: "schedule-2",
+        created_at: "2026-04-09T00:00:00.000Z",
+        events: {
+          id: "event-1",
+          title: "Culto",
+          start_at: "2026-04-10T20:00:00.000Z",
+          location: "Templo",
+          description: null,
+        },
+        ministries: null,
+        schedule_assignments: null,
+      },
+      {
+        id: "schedule-3",
+        created_at: "2026-04-10T00:00:00.000Z",
+        events: {
+          id: "event-2",
+          title: "Ensaio",
+          start_at: "2026-04-11T20:00:00.000Z",
+          location: "Sala 1",
+          description: null,
+        },
+        ministries: {
+          id: "ministry-2",
+          name: "Midia",
+        },
+        schedule_assignments: null,
+      },
+    ],
+    "user-1",
+  );
+
+  assert.equal(result.length, 1);
+  assert.equal(result[0].id, "schedule-3");
+});
+
 test("mapUserScheduleCards groups multiple assignments from the same schedule", () => {
   const result = mapUserScheduleCards([
     {
@@ -141,6 +191,71 @@ test("mapUserScheduleCards groups multiple assignments from the same schedule", 
     ["Vocal", "Violão"],
   );
   assert.equal(result[0].can_manage, false);
+});
+
+test("mapUserScheduleCards skips rows missing schedule or role relations", () => {
+  const result = mapUserScheduleCards([
+    {
+      id: "assignment-1",
+      schedule_id: "schedule-1",
+      role_id: "role-1",
+      status: "pending",
+      ministry_roles: null,
+      schedules: null,
+    },
+    {
+      id: "assignment-2",
+      schedule_id: "schedule-2",
+      role_id: "role-2",
+      status: "confirmed",
+      ministry_roles: { name: "Violao" },
+      schedules: {
+        id: "schedule-2",
+        created_at: "2026-04-09T00:00:00.000Z",
+        events: {
+          id: "event-2",
+          title: "Culto tarde",
+          start_at: "2026-04-12T18:00:00.000Z",
+          location: "Templo",
+          description: null,
+        },
+        ministries: {
+          id: "ministry-1",
+          name: "Louvor",
+        },
+        schedule_assignments: [{ id: "assignment-2", status: "confirmed" }],
+      },
+    },
+    {
+      id: "assignment-3",
+      schedule_id: "schedule-1",
+      role_id: "role-3",
+      status: "pending",
+      ministry_roles: { name: "Vocal" },
+      schedules: {
+        id: "schedule-1",
+        created_at: "2026-04-08T00:00:00.000Z",
+        events: {
+          id: "event-1",
+          title: "Culto manhã",
+          start_at: "2026-04-11T18:00:00.000Z",
+          location: "Templo",
+          description: null,
+        },
+        ministries: {
+          id: "ministry-1",
+          name: "Louvor",
+        },
+        schedule_assignments: [{ id: "assignment-3", status: "pending" }],
+      },
+    },
+  ]);
+
+  assert.equal(result.length, 2);
+  assert.deepEqual(
+    result.map((item) => item.id),
+    ["schedule-1", "schedule-2"],
+  );
 });
 
 test("compareScheduleCardsByDate sorts cards by event start date", () => {

@@ -14,6 +14,12 @@ test("firstRelation returns the first item when the relation comes as an array",
   assert.deepEqual(result, { id: "a" });
 });
 
+test("firstRelation returns null for empty or missing values", () => {
+  assert.equal(firstRelation([]), null);
+  assert.equal(firstRelation(null), null);
+  assert.equal(firstRelation(undefined), null);
+});
+
 test("mapMinistryMemberWithCapabilities keeps member data and flattens capability roles", () => {
   const result = mapMinistryMemberWithCapabilities({
     id: "member-1",

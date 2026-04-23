@@ -48,6 +48,7 @@ O dominio principal hoje e o fluxo de escalas.
   - `CreateScheduleScreen` cria o contexto da escala
   - `EditScheduleScreen` faz a montagem da equipe e operacao da escala
   - `ScheduleScreen` funciona como hub principal do dominio de escalas
+- `EventDetailsScreen` e a futura tela de detalhe de evento devem ser somente informativas; presenca, troca e equipe escalada ficam no fluxo de escala
 - Ao tocar em uma escala a partir de `ScheduleScreen`, admin, lider e membro agora abrem a mesma tela `EditScheduleScreen`:
   - admin/lider entram em modo gerencial
   - membro entra em modo de acompanhamento da propria participacao, sem acoes administrativas
@@ -124,7 +125,9 @@ O modelo atual e:
 - `src/screens/app/ScheduleScreen.tsx`
   - hub operacional de escalas e participacoes
 - `src/screens/app/EventDetailsScreen.tsx`
-  - visao do evento; se o usuario estiver escalado, mostra acoes e equipe
+  - visao informativa do evento; nao deve concentrar acoes de escala
+- `src/screens/app/EventsScreen.tsx`
+  - listagem informativa de eventos, igual para todos os usuarios
 - `src/screens/app/SwapRequestsScreen.tsx`
   - acompanhamento de trocas disponiveis e proprias
 - `src/screens/app/ManageMinistryMembersScreen.tsx`
@@ -141,6 +144,7 @@ O modelo atual e:
 - Nao colocar observacoes, `notes` ou `note` em nenhum lugar da escala.
 - O acesso primario ao fluxo de trocas deve sair de `ScheduleScreen`, nao da Home.
 - A confirmacao de presenca e a solicitacao/cancelamento de troca nao usam mais alerts nativos de sucesso; o feedback principal agora e o proprio estado da interface.
+- Eventos permanecem apenas como superficie informativa; qualquer acao operacional fica restrita ao dominio de escala.
 - O banco continua persistindo enums em ingles por compatibilidade de schema, mas a UI deve exibir status em pt-BR.
 - Existem duas migrations novas locais que precisam ser aplicadas no Supabase remoto para alinhar o ambiente:
   - `20260412000111_fix_schedule_rls_recursion.sql`

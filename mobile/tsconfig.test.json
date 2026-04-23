@@ -12,6 +12,10 @@
     "types": ["node"]
   },
   "include": [
+    "src/lib/supabase.ts",
+    "src/services/**/*.ts",
+    "src/utils/eventDate.ts",
+    "src/utils/statusLabels.ts",
     "src/utils/ministryMappers.ts",
     "src/utils/scheduleCardMappers.ts",
     "src/utils/scheduleRules.ts",

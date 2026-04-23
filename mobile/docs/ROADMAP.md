@@ -24,11 +24,8 @@ Data de reconciliacao: 2026-04-10 (America/Sao_Paulo)
 
 ### Implementado parcialmente
 
-- `EventDetailsScreen` ja mostra equipe, status e acoes quando o usuario esta escalado, e a UX basica entre `ScheduleScreen`, `EditScheduleScreen` e `EventDetailsScreen` foi alinhada para:
-  - desabilitar confirmacao quando nao ha mais assignment confirmavel
-  - refletir troca pendente com hint consistente
-  - bloquear confirmacao/troca em contexto somente leitura
-  - ainda resta um gap de UX para o caso de multiplas escalas do mesmo usuario no mesmo evento
+- `EventDetailsScreen` ainda precisa ser reduzida para um papel puramente informativo, sem equipe, status, confirmacao ou troca
+- a UX basica entre `ScheduleScreen` e `EditScheduleScreen` segue como centro do fluxo operacional de escala
 - `EditScheduleScreen` agora tambem serve como tela unificada da escala para membro:
   - o membro abre a mesma tela que admin/lider a partir de `ScheduleScreen`
   - as acoes administrativas ficam ocultas quando ele nao pode gerenciar a escala
@@ -65,7 +62,7 @@ Data de reconciliacao: 2026-04-10 (America/Sao_Paulo)
 
 - [x] Confirmar presenca em `ScheduleScreen`
 - [x] Confirmar presenca em `EditScheduleScreen`
-- [x] Confirmar presenca em `EventDetailsScreen`
+- [ ] Remover confirmacao de presenca de `EventDetailsScreen`
 - [x] Padronizar bloqueios e desabilitacoes dessas acoes entre as tres telas
 - [x] Remover alerts nativos de sucesso de confirmacao e troca
 - [x] Abrir a tela nova de escala tambem para membro, com modo somente leitura administrativa
@@ -83,8 +80,9 @@ Data de reconciliacao: 2026-04-10 (America/Sao_Paulo)
 
 - [x] `ScheduleScreen` como hub operacional de escalas
 - [x] `EditScheduleScreen` mistura contexto de gestor e, quando aplicavel, bloco "Minha participacao"
-- [~] `EventDetailsScreen` ja possui modo expandido para usuario escalado e foi alinhada nos estados basicos, mas ainda precisa melhorar o caso de multiplas escalas no mesmo evento
-- [ ] Consolidar um shape/payload de backend menos fragmentado para cards e detalhes
+- [ ] `EventDetailsScreen` como tela apenas informativa do evento
+- [ ] `EventsScreen` sempre igual para todos os usuarios, sem botoes operacionais de escala
+- [ ] Consolidar um shape/payload de backend somente informativo para cards e detalhes de evento
 
 ---
 
@@ -129,7 +127,7 @@ Data de reconciliacao: 2026-04-10 (America/Sao_Paulo)
 
 ## Proximos passos sugeridos
 
-1. Fechar a regra de somente leitura para confirmacao de presenca em eventos/escala historicos.
-2. Padronizar UX do usuario escalado entre `ScheduleScreen`, `EditScheduleScreen` e `EventDetailsScreen`.
-3. Implementar notificacoes in-app do fluxo de trocas e escalas, com geracao no backend e inbox real no app.
-4. Aumentar cobertura de testes no service layer.
+1. Fechar a separacao visual e funcional entre evento informativo e escala operacional.
+2. Reduzir `EventDetailsScreen` para detalhes do evento sem acoes de escala.
+3. Padronizar UX do usuario escalado entre `ScheduleScreen` e `EditScheduleScreen`.
+4. Implementar notificacoes in-app do fluxo de trocas e escalas, com geracao no backend e inbox real no app.

@@ -48,7 +48,7 @@ Isso ja esta materializado nas migrations de endurecimento e no fluxo de swap.
 - `CreateScheduleScreen` e responsavel apenas por criar o contexto da escala.
 - `EditScheduleScreen` concentra operacao da escala.
 - `ScheduleScreen` funciona como hub operacional.
-- `EventDetailsScreen` continua relevante para o membro escalado, mas nao e o centro administrativo do fluxo.
+- `EventDetailsScreen` e `EventsScreen` sao superficies informativas do dominio de eventos e nao devem concentrar acoes de escala.
 
 ---
 
@@ -120,12 +120,13 @@ O banco ja participa ativamente desse fluxo via RPCs e validacoes.
 - confirma sua participacao
 - solicita/cancela sua troca
 - aceita troca quando elegivel
+- nao opera acoes de escala em telas de evento puramente informativas
 
 ---
 
 ## O que ainda falta fechar
 
-- refinamento do caso de multiplas escalas do mesmo usuario no mesmo evento
+- consolidacao final da separacao entre telas de evento e telas de escala
 - notificacoes operacionais
 - cobertura de testes no service layer
 - alinhamento final entre regra de historico/somente leitura e todos os pontos da UI
