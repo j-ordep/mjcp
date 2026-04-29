@@ -193,6 +193,7 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
 
   useEffect(() => {
     if (isPublic) {
+      setAudienceSearch('');
       setAudienceResults([]);
       return;
     }
@@ -553,12 +554,25 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
                 flexDirection: 'row',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                marginBottom: 20,
+                marginBottom: 8,
               }}
             >
               <Text style={{ fontSize: 16 }}>Evento público?</Text>
               <Switch value={isPublic} onValueChange={setIsPublic} color="#000" />
             </View>
+
+            <Text
+              style={{
+                fontSize: 13,
+                color: '#6b7280',
+                lineHeight: 18,
+                marginBottom: 20,
+              }}
+            >
+              {isPublic
+                ? 'Todos os membros visualizam este evento.'
+                : 'Apenas membros selecionados e administradores visualizam este evento.'}
+            </Text>
 
             {!isPublic && (
               <View

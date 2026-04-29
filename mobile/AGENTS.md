@@ -78,6 +78,30 @@
   - recomendar rotacao da credencial exposta
 - Seeds devem conter apenas dados ficticios e anonimizados.
 
+### 7.1) Regra adicional para futuro open source (obrigatorio)
+- Tratar todo arquivo do repositorio como potencialmente publico.
+- Antes de concluir mudancas, revisar se o diff introduziu:
+  - segredos
+  - PII
+  - ids internos sensiveis
+  - URLs privadas
+  - dumps, prints ou exemplos com dados reais
+  - artefatos locais/temporarios de ferramenta
+- Nunca commitar:
+  - `.env*`
+  - arquivos temporarios de CLI/SDK que possam conter contexto local ou tokens
+  - logs com payloads reais
+  - exports manuais do banco com dados de usuario
+  - capturas de tela com nomes, telefones, emails ou qualquer dado real
+- Em docs, testes, fixtures e migrations de exemplo:
+  - usar apenas dados ficticios, anonimizados ou placeholders
+  - nao copiar dados reais do Supabase, do dispositivo local ou de conversas com usuarios
+- Se houver qualquer duvida sobre exposicao publica de um dado:
+  - assumir que o dado nao deve ir para o repositorio ate validacao humana
+- Ao preparar commits, PRs ou documentacao:
+  - preferir referencias genericas e valores mascarados
+  - evitar caminhos locais, usuarios da maquina e metadados desnecessarios
+
 ## 8) Boas praticas de engenharia
 - DRY:
   - extrair logica compartilhada para services/stores, evitando duplicacao entre telas.

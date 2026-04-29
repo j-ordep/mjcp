@@ -162,7 +162,7 @@ Na raiz do projeto:
 ```powershell
 supabase --version
 supabase login
-supabase link --project-ref ifiksgchvjiuqhttazvv
+supabase link --project-ref YOUR_SUPABASE_PROJECT_REF
 supabase migration list
 ```
 
@@ -196,7 +196,7 @@ Observacao:
 Antes de confirmar a aplicacao:
 
 - conferir que o projeto linkado e o correto:
-  - `ifiksgchvjiuqhttazvv`
+  - `YOUR_SUPABASE_PROJECT_REF`
 - conferir que `20260404000104_harden_rls_and_integrity.sql` ja esta aplicada no remoto
 - conferir se o ambiente remoto ja possui a base anterior de swap:
   - `20260410000107_swap_request_acceptance_flow.sql`
