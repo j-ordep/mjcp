@@ -3,10 +3,8 @@ import type { AssignmentWarning } from "../services/scheduleService";
 
 export type ScheduleTimeFilter = "current" | "past";
 
-function getScheduleDayTimestamp(startAtIso: string) {
-  const eventDate = new Date(startAtIso);
-  eventDate.setHours(0, 0, 0, 0);
-  return eventDate.getTime();
+function getScheduleTimestamp(startAtIso: string) {
+  return new Date(startAtIso).getTime();
 }
 
 export function countAssignmentsByStatus(
@@ -24,17 +22,11 @@ export function countAssignmentsByStatus(
 }
 
 export function isEventDateEditable(startAtIso: string, now = new Date()) {
-  const today = new Date(now);
-  today.setHours(0, 0, 0, 0);
-
-  return getScheduleDayTimestamp(startAtIso) >= today.getTime();
+  return getScheduleTimestamp(startAtIso) > now.getTime();
 }
 
 export function isEventDateReadOnly(startAtIso: string, now = new Date()) {
-  const today = new Date(now);
-  today.setHours(0, 0, 0, 0);
-
-  return getScheduleDayTimestamp(startAtIso) <= today.getTime();
+  return getScheduleTimestamp(startAtIso) <= now.getTime();
 }
 
 export function matchesScheduleTimeFilter(

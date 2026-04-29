@@ -1,3 +1,5 @@
+import type { EventCategory } from "../utils/eventCategory";
+
 export interface UserProfile {
   id: string
   full_name: string
@@ -38,11 +40,13 @@ export interface MinistryMemberRole {
 export interface Event {
   id: string
   title: string
+  category: EventCategory
   description: string | null
   location: string | null
   start_at: string
   end_at: string | null
   is_public: boolean
+  visible_to_user_ids?: string[]
 }
 
 // ─── Schedules ────────────────────────────────────────────────────────

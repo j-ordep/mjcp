@@ -5,7 +5,73 @@ import {
   loadServiceModule,
 } from "./serviceTestHelpers";
 
-test("createScheduleValidated blocks creation on the event day", async () => {
+test("createScheduleValidated allows creation before event time on the same day", async () => {
+  const upsertCalls: unknown[] = [];
+  const supabaseMock = {
+    from(table: string) {
+      if (table === "events") {
+        return createQueryBuilder({
+          single: {
+            data: {
+              start_at: "2026-04-10T18:00:00.000Z",
+            },
+          },
+        });
+      }
+
+      if (table === "schedules") {
+        const builder = createQueryBuilder({
+          single: {
+            data: {
+              id: "schedule-1",
+              event_id: "event-1",
+              ministry_id: "ministry-1",
+            },
+          },
+        });
+        const originalUpsert = builder.upsert;
+        builder.upsert = (...args: unknown[]) => {
+          upsertCalls.push(args);
+          return originalUpsert(...args);
+        };
+        return builder;
+      }
+
+      throw new Error(`Unexpected table: ${table}`);
+    },
+  };
+
+  const realDate = Date;
+  global.Date = class extends Date {
+    constructor(value?: string | number | Date) {
+      super(value ?? "2026-04-10T09:00:00.000Z");
+    }
+
+    static now() {
+      return new realDate("2026-04-10T09:00:00.000Z").getTime();
+    }
+  } as DateConstructor;
+
+  const { createScheduleValidated } = loadServiceModule<{
+    createScheduleValidated: (input: {
+      eventId: string;
+      ministryId: string;
+    }) => Promise<{ data: { id: string } | null; error: string | null }>;
+  }>("../src/services/scheduleService", supabaseMock);
+
+  const result = await createScheduleValidated({
+    eventId: "event-1",
+    ministryId: "ministry-1",
+  });
+
+  global.Date = realDate;
+
+  assert.equal(result.error, null);
+  assert.equal(result.data?.id, "schedule-1");
+  assert.equal(upsertCalls.length, 1);
+});
+
+test("createScheduleValidated blocks creation at the exact event time", async () => {
   const fromCalls: string[] = [];
   const supabaseMock = {
     from(table: string) {
@@ -32,11 +98,11 @@ test("createScheduleValidated blocks creation on the event day", async () => {
   const realDate = Date;
   global.Date = class extends Date {
     constructor(value?: string | number | Date) {
-      super(value ?? "2026-04-10T09:00:00.000Z");
+      super(value ?? "2026-04-10T18:00:00.000Z");
     }
 
     static now() {
-      return new realDate("2026-04-10T09:00:00.000Z").getTime();
+      return new realDate("2026-04-10T18:00:00.000Z").getTime();
     }
   } as DateConstructor;
 
@@ -57,7 +123,7 @@ test("createScheduleValidated blocks creation on the event day", async () => {
   assert.equal(result.data, null);
   assert.equal(
     result.error,
-    "Evento/escala nao e mais editavel no dia do evento ou depois dele.",
+    "Evento/escala nao e mais editavel no horario do evento ou depois dele.",
   );
   assert.deepEqual(fromCalls, ["events"]);
 });
@@ -109,11 +175,11 @@ test("createScheduleValidated upserts schedule when the event is still editable"
   const realDate = Date;
   global.Date = class extends Date {
     constructor(value?: string | number | Date) {
-      super(value ?? "2026-04-10T09:00:00.000Z");
+      super(value ?? "2026-04-10T18:00:00.000Z");
     }
 
     static now() {
-      return new realDate("2026-04-10T09:00:00.000Z").getTime();
+      return new realDate("2026-04-10T18:00:00.000Z").getTime();
     }
   } as DateConstructor;
 
@@ -147,7 +213,66 @@ test("createScheduleValidated upserts schedule when the event is still editable"
   assert.deepEqual(selectCalls, [0]);
 });
 
-test("removeScheduleAssignment blocks removal on the event day", async () => {
+test("removeScheduleAssignment allows removal before event time on the same day", async () => {
+  const deleteCalls: unknown[] = [];
+  const supabaseMock = {
+    from(table: string) {
+      if (table === "schedule_assignments") {
+        const builder = createQueryBuilder({
+          single: {
+            data: {
+              id: "assignment-1",
+              schedules: {
+                id: "schedule-1",
+                ministry_id: "ministry-1",
+                events: {
+                  id: "event-1",
+                  start_at: "2026-04-10T18:00:00.000Z",
+                  end_at: null,
+                },
+              },
+            },
+          },
+        });
+        const originalDelete = builder.delete;
+        builder.delete = (...args: unknown[]) => {
+          deleteCalls.push(args);
+          return originalDelete(...args);
+        };
+
+        return builder;
+      }
+
+      throw new Error(`Unexpected table: ${table}`);
+    },
+  };
+
+  const realDate = Date;
+  global.Date = class extends Date {
+    constructor(value?: string | number | Date) {
+      super(value ?? "2026-04-10T09:00:00.000Z");
+    }
+
+    static now() {
+      return new realDate("2026-04-10T09:00:00.000Z").getTime();
+    }
+  } as DateConstructor;
+
+  const { removeScheduleAssignment } = loadServiceModule<{
+    removeScheduleAssignment: (
+      assignmentId: string,
+    ) => Promise<{ error: string | null }>;
+  }>("../src/services/scheduleService", supabaseMock);
+
+  const result = await removeScheduleAssignment("assignment-1");
+
+  global.Date = realDate;
+
+  assert.equal(result.error, null);
+  assert.equal(deleteCalls.length, 1);
+});
+
+test("removeScheduleAssignment blocks removal at the exact event time", async () => {
   const deleteCalls: number[] = [];
   const supabaseMock = {
     from(table: string) {
@@ -184,11 +309,11 @@ test("removeScheduleAssignment blocks removal on the event day", async () => {
   const realDate = Date;
   global.Date = class extends Date {
     constructor(value?: string | number | Date) {
-      super(value ?? "2026-04-10T09:00:00.000Z");
+      super(value ?? "2026-04-10T18:00:00.000Z");
     }
 
     static now() {
-      return new realDate("2026-04-10T09:00:00.000Z").getTime();
+      return new realDate("2026-04-10T18:00:00.000Z").getTime();
     }
   } as DateConstructor;
 
@@ -204,9 +329,184 @@ test("removeScheduleAssignment blocks removal on the event day", async () => {
 
   assert.equal(
     result.error,
-    "Nao e mais possivel alterar a equipe no dia do evento ou depois dele.",
+    "Nao e mais possivel alterar a equipe no horario do evento ou depois dele.",
   );
   assert.deepEqual(deleteCalls, []);
+});
+
+test("deleteSchedule allows deletion before event time on the same day", async () => {
+  const deleteCalls: unknown[] = [];
+  const supabaseMock = {
+    from(table: string) {
+      if (table === "schedules") {
+        const builder = createQueryBuilder({
+          single: {
+            data: {
+              id: "schedule-1",
+              ministry_id: "ministry-1",
+              events: {
+                id: "event-1",
+                start_at: "2026-04-10T18:00:00.000Z",
+                end_at: null,
+              },
+            },
+          },
+        });
+        const originalDelete = builder.delete;
+        builder.delete = (...args: unknown[]) => {
+          deleteCalls.push(args);
+          return originalDelete(...args);
+        };
+        return builder;
+      }
+
+      throw new Error(`Unexpected table: ${table}`);
+    },
+  };
+
+  const realDate = Date;
+  global.Date = class extends Date {
+    constructor(value?: string | number | Date) {
+      super(value ?? "2026-04-10T09:00:00.000Z");
+    }
+
+    static now() {
+      return new realDate("2026-04-10T09:00:00.000Z").getTime();
+    }
+  } as DateConstructor;
+
+  const { deleteSchedule } = loadServiceModule<{
+    deleteSchedule: (scheduleId: string) => Promise<{ error: string | null }>;
+  }>("../src/services/scheduleService", supabaseMock);
+
+  const result = await deleteSchedule("schedule-1");
+
+  global.Date = realDate;
+
+  assert.equal(result.error, null);
+  assert.equal(deleteCalls.length, 1);
+});
+
+test("deleteSchedule blocks deletion at the exact event time", async () => {
+  const deleteCalls: unknown[] = [];
+  const supabaseMock = {
+    from(table: string) {
+      if (table === "schedules") {
+        const builder = createQueryBuilder({
+          single: {
+            data: {
+              id: "schedule-1",
+              ministry_id: "ministry-1",
+              events: {
+                id: "event-1",
+                start_at: "2026-04-10T18:00:00.000Z",
+                end_at: null,
+              },
+            },
+          },
+        });
+        const originalDelete = builder.delete;
+        builder.delete = (...args: unknown[]) => {
+          deleteCalls.push(args);
+          return originalDelete(...args);
+        };
+        return builder;
+      }
+
+      throw new Error(`Unexpected table: ${table}`);
+    },
+  };
+
+  const realDate = Date;
+  global.Date = class extends Date {
+    constructor(value?: string | number | Date) {
+      super(value ?? "2026-04-10T18:00:00.000Z");
+    }
+
+    static now() {
+      return new realDate("2026-04-10T18:00:00.000Z").getTime();
+    }
+  } as DateConstructor;
+
+  const { deleteSchedule } = loadServiceModule<{
+    deleteSchedule: (scheduleId: string) => Promise<{ error: string | null }>;
+  }>("../src/services/scheduleService", supabaseMock);
+
+  const result = await deleteSchedule("schedule-1");
+
+  global.Date = realDate;
+
+  assert.equal(
+    result.error,
+    "Evento/escala nao e mais editavel no horario do evento ou depois dele.",
+  );
+  assert.deepEqual(deleteCalls, []);
+});
+
+test("confirmMyAssignmentsForSchedule blocks confirmation at the exact event time", async () => {
+  const updateCalls: unknown[] = [];
+  const supabaseMock = {
+    from(table: string) {
+      if (table === "schedules") {
+        return createQueryBuilder({
+          single: {
+            data: {
+              id: "schedule-1",
+              ministry_id: "ministry-1",
+              events: {
+                id: "event-1",
+                start_at: "2026-04-10T18:00:00.000Z",
+                end_at: null,
+              },
+            },
+          },
+        });
+      }
+
+      if (table === "schedule_assignments") {
+        const builder = createQueryBuilder();
+        const originalUpdate = builder.update;
+        builder.update = (...args: unknown[]) => {
+          updateCalls.push(args);
+          return originalUpdate(...args);
+        };
+        return builder;
+      }
+
+      throw new Error(`Unexpected table: ${table}`);
+    },
+  };
+
+  const realDate = Date;
+  global.Date = class extends Date {
+    constructor(value?: string | number | Date) {
+      super(value ?? "2026-04-10T18:00:00.000Z");
+    }
+
+    static now() {
+      return new realDate("2026-04-10T18:00:00.000Z").getTime();
+    }
+  } as DateConstructor;
+
+  const { confirmMyAssignmentsForSchedule } = loadServiceModule<{
+    confirmMyAssignmentsForSchedule: (input: {
+      scheduleId: string;
+      userId: string;
+    }) => Promise<{ error: string | null }>;
+  }>("../src/services/scheduleService", supabaseMock);
+
+  const result = await confirmMyAssignmentsForSchedule({
+    scheduleId: "schedule-1",
+    userId: "user-1",
+  });
+
+  global.Date = realDate;
+
+  assert.equal(
+    result.error,
+    "A escala nao permite confirmar presenca no horario do evento ou depois dele.",
+  );
+  assert.deepEqual(updateCalls, []);
 });
 
 test("validateScheduleAssignmentIntegrity rejects roles from another ministry", async () => {
@@ -506,6 +806,14 @@ test("validateScheduleAssignmentIntegrity returns valid when schedule, membershi
         });
       }
 
+      if (table === "schedule_assignments") {
+        return createQueryBuilder({
+          maybeSingle: {
+            data: null,
+          },
+        });
+      }
+
       throw new Error(`Unexpected table: ${table}`);
     },
   };
@@ -541,6 +849,98 @@ test("validateScheduleAssignmentIntegrity returns valid when schedule, membershi
     doesUserHaveCapability: true,
     error: null,
   });
+});
+
+test("validateScheduleAssignmentIntegrity rejects members already assigned in the schedule", async () => {
+  const realDate = Date;
+  global.Date = class extends Date {
+    constructor(value?: string | number | Date) {
+      super(value ?? "2026-04-10T09:00:00.000Z");
+    }
+
+    static now() {
+      return new realDate("2026-04-10T09:00:00.000Z").getTime();
+    }
+  } as DateConstructor;
+
+  const supabaseMock = {
+    from(table: string) {
+      if (table === "schedules") {
+        return createQueryBuilder({
+          single: {
+            data: {
+              id: "schedule-1",
+              ministry_id: "ministry-1",
+              events: {
+                id: "event-1",
+                start_at: "2026-04-11T18:00:00.000Z",
+                end_at: null,
+              },
+            },
+          },
+        });
+      }
+
+      if (table === "ministry_roles") {
+        return createQueryBuilder({
+          single: {
+            data: {
+              id: "role-2",
+              ministry_id: "ministry-1",
+            },
+          },
+        });
+      }
+
+      if (table === "ministry_members") {
+        return createQueryBuilder({
+          maybeSingle: {
+            data: { id: "member-1" },
+          },
+        });
+      }
+
+      if (table === "ministry_member_roles") {
+        return createQueryBuilder({
+          maybeSingle: {
+            data: { id: "capability-1" },
+          },
+        });
+      }
+
+      if (table === "schedule_assignments") {
+        return createQueryBuilder({
+          maybeSingle: {
+            data: { id: "assignment-1" },
+          },
+        });
+      }
+
+      throw new Error(`Unexpected table: ${table}`);
+    },
+  };
+
+  const { validateScheduleAssignmentIntegrity } = loadServiceModule<{
+    validateScheduleAssignmentIntegrity: (
+      scheduleId: string,
+      userId: string,
+      roleId: string,
+    ) => Promise<{
+      isValid: boolean;
+      error: string | null;
+    }>;
+  }>("../src/services/scheduleService", supabaseMock);
+
+  const result = await validateScheduleAssignmentIntegrity(
+    "schedule-1",
+    "user-1",
+    "role-2",
+  );
+
+  global.Date = realDate;
+
+  assert.equal(result.isValid, false);
+  assert.equal(result.error, "Membro ja esta escalado nesta escala.");
 });
 
 test("upsertScheduleAssignmentValidated does not upsert when integrity validation fails", async () => {
@@ -683,6 +1083,9 @@ test("upsertScheduleAssignmentValidated uses pending as the default status", asy
 
       if (table === "schedule_assignments") {
         const builder = createQueryBuilder({
+          maybeSingle: {
+            data: null,
+          },
           single: {
             data: {
               id: "assignment-1",

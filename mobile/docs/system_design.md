@@ -49,6 +49,8 @@ Isso ja esta materializado nas migrations de endurecimento e no fluxo de swap.
 - `EditScheduleScreen` concentra operacao da escala.
 - `ScheduleScreen` funciona como hub operacional.
 - `EventDetailsScreen` e `EventsScreen` sao superficies informativas do dominio de eventos e nao devem concentrar acoes de escala.
+- `EventsScreen` pode exibir proximos eventos e historico, mas sem variar por assignment, ministerio ou participacao.
+- `events.category` e metadado informativo do evento, usado para apresentacao minimalista e sem impacto em RLS/escala.
 
 ---
 
@@ -59,6 +61,7 @@ Isso ja esta materializado nas migrations de endurecimento e no fluxo de swap.
 - `schedules` representa o bloco de escala de um ministerio dentro de um evento.
 - Existe unicidade por `(event_id, ministry_id)`.
 - `schedule_assignments` representa o que o membro fara naquele evento.
+- Um membro nao deve ser escalado mais de uma vez na mesma escala.
 
 ### Capabilities
 
@@ -126,10 +129,9 @@ O banco ja participa ativamente desse fluxo via RPCs e validacoes.
 
 ## O que ainda falta fechar
 
-- consolidacao final da separacao entre telas de evento e telas de escala
 - notificacoes operacionais
 - cobertura de testes no service layer
-- alinhamento final entre regra de historico/somente leitura e todos os pontos da UI
+- permissao granular futura para criacao/edicao de eventos alem de `admin`
 
 ---
 

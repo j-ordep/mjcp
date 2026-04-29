@@ -93,7 +93,7 @@ export default function EditScheduleScreen() {
 
       const scheduleResult = await getScheduleDetails(route.params.scheduleId);
       if (scheduleResult.error || !scheduleResult.data) {
-        throw new Error(scheduleResult.error ?? "Escala não encontrada.");
+        throw new Error(scheduleResult.error ?? "Escala nao encontrada.");
       }
 
       const [rolesResult, membersResult, assignmentsResult] = await Promise.all([
@@ -113,7 +113,7 @@ export default function EditScheduleScreen() {
     } catch (error: any) {
       Alert.alert(
         "Erro",
-        error.message ?? "Não foi possível carregar a escala.",
+        error.message ?? "Nao foi possivel carregar a escala.",
         [{ text: "Voltar", onPress: () => navigation.goBack() }],
       );
     } finally {
@@ -157,6 +157,10 @@ export default function EditScheduleScreen() {
       member.full_name.toLowerCase().includes(memberSearch.trim().toLowerCase()),
     );
   }, [memberSearch, members]);
+  const assignedMemberIds = useMemo(
+    () => assignments.map((assignment) => assignment.user_id),
+    [assignments],
+  );
 
   const pendingCount = assignments.filter((assignment) => assignment.status === "pending").length;
   const confirmedCount = assignments.filter((assignment) => assignment.status === "confirmed").length;
@@ -182,7 +186,7 @@ export default function EditScheduleScreen() {
     : false;
   const canManageScheduleActions = canManageSchedule && !isManageReadOnly;
   const ownParticipationHint = isOwnParticipationReadOnly
-    ? "Escala encerrada. Nao e mais possivel confirmar ou solicitar troca."
+    ? "Escala encerrada. Nao e mais possivel confirmar, solicitar troca ou cancelar troca no horario do evento ou depois dele."
     : pendingOwnSwapRequestId
       ? "Troca pendente para esta escala."
       : undefined;
@@ -229,18 +233,18 @@ export default function EditScheduleScreen() {
     if (isManageReadOnly) {
       Alert.alert(
         "Escala somente leitura",
-        "Nao e mais possivel alterar a equipe no dia do evento ou depois dele.",
+        "Nao e mais possivel alterar a equipe no horario do evento ou depois dele.",
       );
       return;
     }
 
     if (!details || !selectedMemberId || !selectedRoleId) {
-      Alert.alert("Campos obrigatórios", "Selecione membro e função para adicionar.");
+      Alert.alert("Campos obrigatorios", "Selecione membro e funcao para adicionar.");
       return;
     }
 
     if (selectedMember && !selectedMember.capability_role_ids.includes(selectedRoleId)) {
-      Alert.alert("Capability obrigatória", "O usuário não possui capability para a função selecionada.");
+      Alert.alert("Capability obrigatoria", "O usuario nao possui capability para a funcao selecionada.");
       return;
     }
 
@@ -250,7 +254,7 @@ export default function EditScheduleScreen() {
     });
 
     if (warningsResult.error) {
-      Alert.alert("Não foi possível validar warnings", warningsResult.error);
+      Alert.alert("Nao foi possivel validar warnings", warningsResult.error);
       return;
     }
 
@@ -267,7 +271,7 @@ export default function EditScheduleScreen() {
       setIsSavingAssignment(false);
 
       if (error) {
-        Alert.alert("Não foi possível adicionar na escala", error);
+        Alert.alert("Nao foi possivel adicionar na escala", error);
         return;
       }
 
@@ -281,7 +285,6 @@ export default function EditScheduleScreen() {
       setSelectedRoleId(null);
       setMemberSearch("");
       setIsAssignmentModalVisible(false);
-      Alert.alert("Sucesso", "Membro adicionado na escala.");
     };
 
     if (warnings.length > 0) {
@@ -304,7 +307,7 @@ export default function EditScheduleScreen() {
     if (isManageReadOnly) {
       Alert.alert(
         "Escala somente leitura",
-        "Nao e mais possivel alterar a equipe no dia do evento ou depois dele.",
+        "Nao e mais possivel alterar a equipe no horario do evento ou depois dele.",
       );
       return;
     }
@@ -322,7 +325,7 @@ export default function EditScheduleScreen() {
           setRemovingAssignmentId(null);
 
           if (error) {
-            Alert.alert("Não foi possível remover", error);
+            Alert.alert("Nao foi possivel remover", error);
             return;
           }
 
@@ -346,7 +349,7 @@ export default function EditScheduleScreen() {
     if (isManageReadOnly) {
       Alert.alert(
         "Escala somente leitura",
-        "Nao e mais possivel excluir a escala no dia do evento ou depois dele.",
+        "Nao e mais possivel excluir a escala no horario do evento ou depois dele.",
       );
       return;
     }
@@ -570,7 +573,7 @@ export default function EditScheduleScreen() {
                 Escala somente leitura
               </Text>
               <Text style={{ color: "#9a3412" }}>
-                No dia do evento e depois dele, a equipe fica bloqueada para alteracoes.
+                No horario do evento e depois dele, a equipe fica bloqueada para alteracoes.
               </Text>
             </View>
           ) : null}
@@ -709,10 +712,10 @@ export default function EditScheduleScreen() {
                 }}
               >
                 <Text style={{ fontWeight: "700", marginBottom: 4 }}>
-                  Gerenciar membros do minist�rio
+                  Gerenciar membros do ministério
                 </Text>
                 <Text style={{ color: "#6b7280" }}>
-                  Atualize capacidades e participa��o do minist�rio antes de montar
+                  Atualize capacidades e participação do ministério antes de montar
                   a equipe.
                 </Text>
               </TouchableOpacity>
@@ -775,7 +778,7 @@ export default function EditScheduleScreen() {
               {canManageSchedule ? (
                 <>
                   <Text style={{ color: "#6b7280", marginBottom: 14 }}>
-                    Use o fluxo de adi��o para come�ar a montar a equipe.
+                    Use o fluxo de adição para começar a montar a equipe.
                   </Text>
                   <DefaultButton
                     onPress={() => setIsAssignmentModalVisible(true)}
@@ -848,6 +851,7 @@ export default function EditScheduleScreen() {
           ministryName={details.ministry.name}
           memberSearch={memberSearch}
           filteredMembers={filteredMembers}
+          assignedMemberIds={assignedMemberIds}
           roles={roles}
           selectedMemberId={selectedMemberId}
           selectedRoleId={selectedRoleId}
@@ -884,5 +888,6 @@ export default function EditScheduleScreen() {
     </SafeAreaView>
   );
 }
+
 
 

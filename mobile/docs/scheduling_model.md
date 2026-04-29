@@ -39,6 +39,12 @@ Resumo pratico:
 
 `schedule_assignments` representa a atribuicao real dentro da escala.
 
+Regra atual:
+- um membro pode aparecer no maximo uma vez por escala
+- a UI bloqueia o membro ja escalado no modal de adicao
+- o service valida antes de salvar
+- a migration `20260426000117_prevent_duplicate_member_schedule_assignments.sql` bloqueia novas duplicidades no banco
+
 O modelo atual permite:
 
 - o mesmo membro em mais de um ministerio
@@ -101,7 +107,7 @@ O fluxo implementado hoje e:
 - nao pode haver duplicacao invalida de pedido pendente
 - o solicitante nao pode aceitar a propria troca
 - a pessoa elegivel nao pode assumir uma role identica ja ocupada por ela na mesma escala
-- no dia do evento ou depois dele, a troca fica bloqueada para:
+- em `start_at` ou depois, a troca fica bloqueada para:
   - criar
   - aceitar
   - cancelar
@@ -160,5 +166,5 @@ Observacao:
 
 ### Divergencias que nao devem ser esquecidas
 
-- a regra de somente leitura em historico precisa continuar sendo auditada tela a tela
+- a regra de somente leitura em `start_at` precisa continuar sendo auditada tela a tela
 - documentacao antiga que tratava troca como "lider aprova" nao representa mais o modelo atual

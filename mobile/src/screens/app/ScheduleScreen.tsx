@@ -227,7 +227,7 @@ export default function ScheduleScreen() {
       const confirmDisabled = isReadOnly || !hasPendingOwnAssignments;
       const swapDisabled = isReadOnly;
       const actionHint = isReadOnly
-        ? "Escala encerrada. Nao e mais possivel confirmar ou solicitar troca."
+        ? "Escala encerrada. Nao e mais possivel confirmar ou solicitar troca no horario do evento ou depois dele."
         : hasPendingOwnSwapRequest
           ? "Troca pendente para esta escala."
           : undefined;

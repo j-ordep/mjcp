@@ -12,6 +12,7 @@ export type SwapRequestStatus = 'pending' | 'approved' | 'rejected' | 'cancelled
 export type NotificationType = 'schedule' | 'swap_request' | 'room' | 'general';
 export type SongCategory = 'louvor' | 'adoracao' | 'infantil' | 'outro';
 export type RoomReservationStatus = 'active' | 'cancelled';
+export type EventCategory = 'geral' | 'culto' | 'ensino' | 'jovens' | 'oração' | 'reunião' | 'especial';
 
 export interface Database {
   public: {
@@ -135,6 +136,7 @@ export interface Database {
         Row: {
           id: string;
           title: string;
+          category: EventCategory;
           description: string | null;
           location: string | null;
           start_at: string;
@@ -147,6 +149,7 @@ export interface Database {
         Insert: {
           id?: string;
           title: string;
+          category?: EventCategory;
           description?: string | null;
           location?: string | null;
           start_at: string;
@@ -159,6 +162,7 @@ export interface Database {
         Update: {
           id?: string;
           title?: string;
+          category?: EventCategory;
           description?: string | null;
           location?: string | null;
           start_at?: string;
@@ -167,6 +171,23 @@ export interface Database {
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
+        };
+      };
+      event_audiences: {
+        Row: {
+          event_id: string;
+          user_id: string;
+          created_at: string;
+        };
+        Insert: {
+          event_id: string;
+          user_id: string;
+          created_at?: string;
+        };
+        Update: {
+          event_id?: string;
+          user_id?: string;
+          created_at?: string;
         };
       };
       schedules: {

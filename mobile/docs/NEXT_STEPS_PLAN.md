@@ -48,8 +48,19 @@ O dominio mais maduro hoje e `escala`.
 **Confirmado no codigo**
 
 - `EventsScreen` e tela informativa
-- `EventDetailsScreen` deve permanecer informativa
-- criacao e edicao de evento continuam sendo privilegio de `leader` e `admin`
+- `EventDetailsScreen` e tela informativa
+- `EventsScreen` lista proximos eventos e historico real
+- `Proximos` ordena por `start_at` crescente
+- `Anteriores` ordena por `start_at` decrescente
+- criacao e edicao de evento ficam restritas a `admin` nesta fase
+- eventos possuem categoria informativa simples em `events.category`, com valores em portugues
+- eventos podem ser publicos ou privados; quando privados, a visibilidade passa por `event_audiences`
+- a UI de eventos segue o tema claro minimalista do app: preto, branco e cinzas
+
+**PENDENTE DE DEFINICAO**
+
+- desenhar permissao granular futura para criacao/edicao de eventos sem promover todo usuario autorizado a `admin`
+- definir metadados extras do detalhe de evento, como link de transmissao/video
 
 **Direcao validada**
 
@@ -67,11 +78,11 @@ O dominio mais maduro hoje e `escala`.
 - member atua apenas no que e dele
 - o filtro `Proximas` ordena escalas pela `data do evento` em ordem crescente
 - o filtro `Anteriores` ordena escalas pela `data do evento` em ordem decrescente, mantendo a escala que aconteceu mais recentemente no topo do historico
+- o backend agora bloqueia novo assignment duplicado do mesmo membro na mesma escala
 
-**Pontos ainda para fechar**
+**Pontos ainda para evoluir**
 
-- revisar todos os estados de historico e somente leitura no dia do evento ou depois
-- garantir consistencia de bloqueios entre tela, service e backend
+- confirmar no Supabase remoto que as migrations mais recentes de `start_at`, leitura informativa de eventos e bloqueio de duplicidade em escala foram aplicadas
 - ampliar cobertura de testes do service layer
 
 ### Trocas
@@ -113,13 +124,13 @@ O dominio mais maduro hoje e `escala`.
 ## P0 - Fechar o fluxo de escalas
 
 - [x] Revisar historico e somente leitura em todos os pontos centrais do fluxo de escala
-  - `ScheduleScreen`, `EditScheduleScreen` e `scheduleService` agora usam a mesma regra por dia-calendario
-  - a UX gerencial passou a sinalizar e bloquear alteracoes no dia do evento ou depois dele
+  - `ScheduleScreen`, `EditScheduleScreen` e `scheduleService` agora usam a mesma regra baseada em `start_at`
+  - a UX gerencial passou a sinalizar e bloquear alteracoes exatamente em `start_at` ou depois
 - [x] Validar que toda acao operacional continue fora do dominio de evento
   - `EventsScreen` e `EventDetailsScreen` seguem como superficies informativas, sem confirmar/trocar/status/equipe
 - [~] Cobrir `scheduleService` com testes unitarios
   - ja coberto nesta rodada:
-    - bloqueio de criacao no dia do evento
+    - bloqueio de criacao em `start_at` ou depois
     - criacao/upsert quando o evento ainda e editavel
     - bloqueio de remocao de assignment em read-only
   - ainda falta ampliar para cards, warnings e regras adicionais do service layer
@@ -131,12 +142,13 @@ O dominio mais maduro hoje e `escala`.
 
 ## P1 - Banco, integridade e ambiente
 
-1. Aplicar no Supabase remoto as migrations locais pendentes:
-   - `20260412000110_add_swap_request_notifications.sql`
-   - `20260412000111_fix_schedule_rls_recursion.sql`
-   - `20260412000112_reset_assignment_confirmation_on_swap_request.sql`
-   - `20260413000113_restrict_member_assignment_status_updates.sql`
-   - `20260413000114_add_schedule_assignment_status_index.sql`
+1. Confirmar no Supabase remoto as migrations mais recentes:
+   - `20260423000115_align_schedule_read_only_with_event_start_time.sql`
+   - `20260423000116_simplify_event_read_policy.sql`
+   - `20260426000117_prevent_duplicate_member_schedule_assignments.sql`
+   - `20260427000118_add_event_category.sql`
+   - `20260428000119_add_private_event_audiences.sql`
+   - migrations de notificacoes de swap, se ainda nao estiverem aplicadas no projeto remoto
 2. Implementar validacoes de data ainda pendentes no banco:
    - `events.end_at > start_at` quando `end_at` existir
    - `room_reservations.end_at > start_at`
@@ -148,7 +160,8 @@ O dominio mais maduro hoje e `escala`.
 
 1. Padronizar um payload/DTO informativo de evento para card e detalhe
 2. Garantir que `EventsScreen` nao varie por assignment, participacao, ministerio ou papel
-3. Manter em eventos apenas metadados de contexto como:
+3. Manter `EventsScreen` com proximos eventos e historico real, sem acoes operacionais de escala
+4. Manter em eventos apenas metadados de contexto como:
    - titulo
    - data/hora
    - local
@@ -175,7 +188,7 @@ O dominio mais maduro hoje e `escala`.
 ### Riscos principais
 
 - divergencia entre o que esta documentado e o que ja mudou no codigo
-- regras temporais funcionando no client, mas ainda nao refletidas 100% no ambiente remoto
+- regras temporais ja alinhadas em `start_at` no repo local, mas ainda dependentes de aplicacao completa no ambiente remoto
 - cobertura de testes ainda concentrada em utils e mapeadores, com pouco service layer
 
 ### Regras de trabalho para a proxima rodada

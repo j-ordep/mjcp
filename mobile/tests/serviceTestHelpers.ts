@@ -102,9 +102,11 @@ export function createQueryBuilder(
 
 export function loadServiceModule<T>(modulePath: string, supabaseMock: unknown): T {
   const supabaseModulePath = require.resolve("../src/lib/supabase");
+  const scheduleRulesModulePath = require.resolve("../src/utils/scheduleRules");
   const targetModulePath = require.resolve(modulePath);
 
   delete require.cache[targetModulePath];
+  delete require.cache[scheduleRulesModulePath];
   require.cache[supabaseModulePath] = ({
     id: supabaseModulePath,
     filename: supabaseModulePath,

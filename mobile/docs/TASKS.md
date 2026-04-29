@@ -4,6 +4,9 @@ Data: 2026-04-05 (America/Sao_Paulo)
 
 Referencia rapida:
 - plano consolidado da proxima rodada: `docs/NEXT_STEPS_PLAN.md`
+- referencia da mudanca de read-only para bloqueio em `start_at`: `docs/SCHEDULE_READ_ONLY_BY_HOUR_PLAN.md`
+- ideia futura de cadastro de visitante: `docs/VISITOR_REGISTRATION_IDEA.md`
+- ideia futura de fluxo de escola biblica: `docs/BIBLE_SCHOOL_IDEA.md`
 - historico documental e registros de rodadas: `docs/history/README.md`
 - aplicacao remota no Supabase: `docs/SUPABASE_REMOTE_RUNBOOK.md`
 
@@ -47,14 +50,14 @@ Objetivo imediato: sair do prototipo e fechar o fluxo principal de "Criacao de E
     - constraint com trigger/funcao (se necessario), ou
     - mover criacao de assignment para uma unica RPC (recomendado) que valida tudo no servidor
 
-- [x] Restringir confirmacao do proprio assignment no backend para antes do dia do evento
+- [x] Restringir confirmacao do proprio assignment no backend para antes de `start_at`
   - Problema:
     - o app ja bloqueava a acao no client, mas a policy de UPDATE do proprio assignment ainda podia ser usada fora do fluxo visual
   - Atualizacao em 2026-04-13:
     - nova migration local `20260413000113_restrict_member_assignment_status_updates.sql`
-    - a policy do proprio membro agora exige que o evento ainda esteja antes do dia atual
+    - a policy do proprio membro agora exige que o evento ainda esteja antes de `start_at`
   - Pendencia operacional:
-    - aplicar a migration nova no Supabase remoto
+    - aplicar no Supabase remoto a migration que alinhou a janela final de read-only em `start_at`
 
 - [ ] Validacoes de data no banco
   - [ ] `events`: `end_at` deve ser > `start_at` quando `end_at` nao for nulo
@@ -186,7 +189,7 @@ Decisao atualizada em 2026-04-07:
     - pessoas elegiveis:
       - mesmo ministerio
       - mesma funcao/capability da solicitacao
-    - no dia do evento e depois dele, a escala vira historico e fica somente leitura
+    - em `start_at` ou depois, a escala vira historico e fica somente leitura
     - nesse estado nao pode:
       - criar swap
       - aceitar swap
@@ -215,7 +218,7 @@ Decisao atualizada em 2026-04-07:
   - Pendente nesta rodada:
     - remover/ajustar qualquer fluxo que trate lider como aprovador
   - Preparado no repo e pendente de aplicar no Supabase:
-    - migration para impedir criacao/aceite/cancelamento de swap no dia do evento ou depois dele
+    - migration para impedir criacao/aceite/cancelamento de swap em `start_at` ou depois
     - migration para corrigir recursao de RLS entre `events` e `schedules`
     - migration para voltar assignment confirmado para `pending` quando a troca for aberta
 
@@ -233,7 +236,7 @@ Decisao atualizada em 2026-04-07:
     - equipe escalada, status de participacao, confirmacao e troca ficam fora da superficie de evento
     - o caso de multiplas escalas do mesmo evento continua resolvido no dominio de escala, nao em evento
   - Atualizacao em 2026-04-14:
-    - `ScheduleScreen`, `EditScheduleScreen` e `scheduleService` foram alinhados para tratar o dia do evento como historico/somente leitura para as acoes ja bloqueadas por regra
+    - `ScheduleScreen`, `EditScheduleScreen` e `scheduleService` foram alinhados para tratar `start_at` como o marco de historico/somente leitura para as acoes ja bloqueadas por regra
     - a tela de edicao agora sinaliza explicitamente quando a escala esta somente leitura
     - a visao gerencial voltou a enxergar historico de escalas sem depender de filtro por horario exato
   - Atualizacao em 2026-04-23:
@@ -244,6 +247,27 @@ Decisao atualizada em 2026-04-07:
 ---
 
 ## P1 (Alto) - Separacao entre Evento e Escala
+
+**Confirmado no codigo**
+- `EventsScreen` ja renderiza card informativo com `showActions={false}` em `src/screens/app/EventsScreen.tsx`
+- `EventsScreen` lista `Proximos` e `Anteriores`, carregando eventos futuros e historico real via `allEvents`
+- `EventDetailsScreen` hoje esta informativa e so expoe edicao para `admin` em `src/screens/app/EventDetailsScreen.tsx`
+- `CreateEventScreen` ja cria e edita eventos usando `normalizeEventRange(...)` em `src/screens/app/CreateEventScreen.tsx` e `src/services/eventService.ts`
+- `CreateEventScreen` agora diferencia evento publico e privado, permitindo selecionar membros por busca nominal quando `is_public = false`
+- a audiencia de evento privado ficou modelada em `event_audiences`, sem acoplar esse fluxo ao dominio de ministerios
+- `events.category` foi modelado como coluna simples com valores em portugues, sem tabela propria nesta fase
+- `EventsScreen` e `EventDetailsScreen` seguem visual minimalista preto/branco, com badge de categoria apenas informativo
+- `events` no store continua reservado para proximos eventos usados por Home/criacao de escala
+- `allEvents` no store alimenta a tela de eventos com futuros + historico
+
+**PENDENTE DE DEFINICAO**
+- regra futura para permissao granular de criacao/edicao de eventos:
+  - por enquanto, apenas `admin` cria/edita eventos
+  - no futuro, avaliar flag/cargo especifico para pastores/pessoas autorizadas
+- se o detalhe do evento deve ganhar metadados extras no futuro, como link de transmissao/video
+
+**INFORMACAO INSUFICIENTE**
+- nao ha definicao fechada de anexos/metadados extras no detalhe do evento
 
 Contexto: eventos sao informativos para todos; escala e o fluxo operacional de quem participa do ministerio/função.
 
@@ -262,14 +286,41 @@ Contexto: eventos sao informativos para todos; escala e o fluxo operacional de q
     - a lista atual ainda mistura contexto de evento e escala em alguns pontos
     - consolidar um shape somente informativo ajuda a manter `EventsScreen` e a futura tela de detalhes de evento sem acao operacional
 
-- [ ] Implementar `EventCard` apenas informativo em `EventsScreen`
+- [x] Implementar `EventCard` apenas informativo em `EventsScreen`
   - Hoje `EventsScreen` usa `EventCard` com `showActions={false}`
   - Direcao preferida atual:
     - card sempre igual para todos os usuarios
     - nenhuma acao operacional de escala no card
     - eventuais melhorias devem ficar restritas a metadados do evento, nao a participation state
+    - tema visual deve seguir o padrao claro minimalista do app, preto/branco/cinza, sem paleta alaranjada
   - Futuro desejado:
     - `EventDetailsScreen` exibe apenas local, data/hora, descricao e links/metadados do evento, como video do culto se houver
+
+- [x] Fechar escopo da listagem de `Eventos`
+  - Decisao:
+    - a tela mostra eventos futuros e historico real
+    - `Proximos` ordena por `start_at` crescente
+    - `Anteriores` ordena por `start_at` decrescente
+
+- [x] Alinhar `EventsScreen` com a fonte real de dados
+  - `getEvents()` busca eventos sem filtro temporal para alimentar futuros + historico
+  - `getUpcomingEvents()` continua existindo para Home e criacao de escala
+
+- [~] Revisar UX de criacao/edicao de evento sem extrapolar escopo
+  - ja ajustado:
+    - `CreateEventScreen` nao usa mais alerts de sucesso
+    - o chip de categoria selecionado nao desloca mais o texto
+    - o formulario de evento privado permite selecionar/remover audiencia na propria tela
+  - ainda vale revisar depois:
+    - refinamentos visuais do seletor de audiencia em telas menores
+    - copy final do fluxo privado/publico
+
+- [ ] Arquitetar permissao granular para criacao/edicao de eventos
+  - regra atual:
+    - apenas `admin` cria/edita eventos
+    - lideres continuam podendo operar escalas dos seus ministerios
+  - futuro possivel:
+    - flag/cargo especifico para pastores ou pessoas autorizadas criarem eventos sem virar admin total
 
 ## Decisao de fluxo registrada em 2026-04-12
 
@@ -297,15 +348,24 @@ Contexto: eventos sao informativos para todos; escala e o fluxo operacional de q
     - cobertura ampliada para `src/utils/eventParticipation.ts`, protegendo o caso de multiplas escalas no mesmo evento
     - cobertura ampliada para cenarios restantes de status em `src/utils/scheduleParticipation.ts` (`Sem participacao`, `Confirmado`, `Parcialmente confirmado`, `Recusado`)
     - cobertura ampliada para `src/services/scheduleService.ts` com cenarios de:
-      - bloqueio de criacao de escala no dia do evento
+      - bloqueio de criacao de escala em `start_at` ou depois
       - upsert de escala quando o evento ainda e editavel
       - bloqueio de remocao de assignment em read-only
+      - rejeicao de membro ja escalado na mesma escala
     - cobertura ampliada para `src/services/ministryService.ts` com cenarios de:
       - remocao de membro com exclusao previa de assignments
       - persistencia de capabilities com lista vazia e com payload real
+    - cobertura ampliada para `src/services/eventService.ts` com cenarios de:
+      - busca de proximos eventos por `end_at` e ordenacao por `start_at`
+      - busca geral de eventos para tela com futuros + historico
+      - criacao com normalizacao de range e termino padrao
+      - categoria padrao `geral` para eventos sem categoria explicita
+      - atualizacao sem sobrescrever `start_at` ao alterar apenas `end_at`
+    - cobertura adicionada para `src/utils/eventCategory.ts` com categorias em portugues e fallback para `geral`
   - Proximos alvos naturais:
     - expandir `scheduleService` para warnings, cards e validacoes adicionais
     - expandir `ministryService` para fluxos restantes
+    - expandir `eventService` conforme novos metadados de evento forem definidos
     - utilitarios de renderizacao/estado de escala
 
 - [~] Tipar navegacao e params
@@ -322,6 +382,10 @@ Contexto: eventos sao informativos para todos; escala e o fluxo operacional de q
     - sempre salvar em UTC (ISO) e formatar no client
     - campos de data/hora nunca iniciam vazios; default visual e funcional deve usar a data/hora atual do sistema em runtime quando o usuario ainda nao selecionou valor
     - para eventos sem horario de termino informado, usar duracao padrao de `3 horas`
+  - Atualizacao registrada em 2026-04-23:
+    - a regra de read-only agora bloqueia exatamente em `start_at`
+    - `start_at` deve ser tratado como instante absoluto no app e no banco
+    - ver referencia de implementacao em `docs/SCHEDULE_READ_ONLY_BY_HOUR_PLAN.md`
 
 ---
 
@@ -418,11 +482,46 @@ Contexto: eventos sao informativos para todos; escala e o fluxo operacional de q
 
 ---
 
+## P2 (Medio) - Escola Biblica
+
+- [ ] Arquitetar o dominio de `escola biblica`
+  - Referencia inicial: `docs/BIBLE_SCHOOL_IDEA.md`
+  - Objetivo desta fase:
+    - mapear o fluxo principal
+    - definir se vira modulo proprio no app
+    - definir como isso conversa com membros, escalas e presenca
+  - Escopo funcional inicial a discutir:
+    - turmas
+    - professores
+    - registro de presenca
+    - escalas
+    - paginas/listagens/detalhes
+  - Ponto importante de UX:
+    - decidir onde isso entra no app sem poluir o fluxo principal atual de eventos e escalas
+    - avaliar se fica como area propria no menu/navegacao ou se entra dentro de um modulo administrativo
+  - Nao implementar antes de fechar:
+    - regras de permissao
+    - modelo de dados
+    - relacao com ministerios, membros e eventos
+    - quem pode criar turma, lancar presenca e gerenciar professores
+
+---
+
 ## P2/P3 - UX e Operacao
 
 - [ ] Loading/error states consistentes em todas as telas
 - [ ] Pull-to-refresh (Home, Events, MySchedules)
 - [ ] Estados vazios com mensagem clara
+- [ ] Arquitetar fluxo de `cadastro de visitante`
+  - Referencia inicial: `docs/VISITOR_REGISTRATION_IDEA.md`
+  - Objetivo nesta fase:
+    - definir se o registro nasce como formulario no app
+    - definir quais campos minimos entram no primeiro MVP
+    - definir quem pode registrar visitante (`recepcao`, `admin`, `pastor`, lideres ou membros em geral)
+  - Nao implementar antes de fechar:
+    - regra de permissao
+    - destino dos dados no produto
+    - relacionamento com membro existente, convite e acompanhamento pastoral
 - [ ] Definir estrategia futura de retencao/limpeza de escalas antigas
   - nao e prioridade agora
   - por enquanto permanecem como historico somente leitura

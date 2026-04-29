@@ -6,7 +6,7 @@ import EventInfoCard from "../../components/card/EventInfoCard";
 import HeaderSecondary from "../../components/Header/HeaderSecondary";
 import type { EventDetailsScreenProps } from "../../navigation/AppNavigator";
 import { useAuthStore } from "../../stores/useAuthStore";
-import { formatDateShort, formatTime } from "../../utils/formatDate";
+import { normalizeEventCategory } from "../../utils/eventCategory";
 
 export default function EventDetailsScreen({
   route,
@@ -15,7 +15,7 @@ export default function EventDetailsScreen({
   const { event } = route.params;
   const { profile } = useAuthStore();
 
-  const canManageEvents = profile?.role === "admin" || profile?.role === "leader";
+  const canManageEvents = profile?.role === "admin";
 
   return (
     <SafeAreaView
@@ -34,6 +34,7 @@ export default function EventDetailsScreen({
                   eventId: event.id,
                   initialData: {
                     ...event,
+                    category: normalizeEventCategory(event.category),
                     end_at: event.end_at ?? null,
                     is_public: event.is_public ?? true,
                   },
@@ -45,10 +46,11 @@ export default function EventDetailsScreen({
       <ScrollView contentContainerStyle={{ padding: 20 }}>
         <EventInfoCard
           title={event.title}
-          date={formatDateShort(event.start_at)}
-          time={formatTime(event.start_at)}
-          location={event.location || "Nao informado"}
-          description={event.description || "Sem descricao."}
+          category={event.category}
+          startAt={event.start_at}
+          endAt={event.end_at}
+          location={event.location || "Não informado"}
+          description={event.description || "Sem descrição."}
         />
       </ScrollView>
     </SafeAreaView>

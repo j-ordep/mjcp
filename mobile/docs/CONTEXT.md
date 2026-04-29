@@ -48,7 +48,8 @@ O dominio principal hoje e o fluxo de escalas.
   - `CreateScheduleScreen` cria o contexto da escala
   - `EditScheduleScreen` faz a montagem da equipe e operacao da escala
   - `ScheduleScreen` funciona como hub principal do dominio de escalas
-- `EventDetailsScreen` e a futura tela de detalhe de evento devem ser somente informativas; presenca, troca e equipe escalada ficam no fluxo de escala
+- `EventsScreen` e `EventDetailsScreen` sao somente informativas; presenca, troca e equipe escalada ficam no fluxo de escala
+- `EventsScreen` mostra proximos eventos e historico real, seguindo a ordenacao por `start_at`
 - Ao tocar em uma escala a partir de `ScheduleScreen`, admin, lider e membro agora abrem a mesma tela `EditScheduleScreen`:
   - admin/lider entram em modo gerencial
   - membro entra em modo de acompanhamento da propria participacao, sem acoes administrativas
@@ -57,6 +58,9 @@ O dominio principal hoje e o fluxo de escalas.
   - cancelar solicitacao propria
   - aceitar troca como primeira pessoa elegivel
   - acompanhar trocas em `SwapRequestsScreen`
+- A janela de read-only do dominio de escala agora bloqueia exatamente em `start_at`, nao no dia inteiro do evento:
+  - antes de `start_at`, mutacoes seguem as permissoes do papel
+  - em `start_at` ou depois, confirmacao, trocas e alteracoes operacionais ficam bloqueadas
 
 ### PENDENTE DE DEFINICAO
 
@@ -79,6 +83,7 @@ O dominio principal hoje e o fluxo de escalas.
    - membership no ministerio
    - capability da role
    - warnings de conflito/indisponibilidade
+   - regra de no maximo um assignment por membro na mesma escala
 4. O proprio usuario pode confirmar sua participacao.
 5. O proprio usuario pode solicitar troca do proprio assignment.
 6. Outra pessoa elegivel pode aceitar a troca.
@@ -92,7 +97,7 @@ O modelo atual e:
 - no banco ja existem regras para:
   - evitar mais de uma solicitacao pendente invalida
   - garantir elegibilidade
-  - impedir criacao/aceite/cancelamento no dia do evento ou depois dele
+  - impedir criacao/aceite/cancelamento em `start_at` ou depois
 
 ---
 
@@ -127,7 +132,7 @@ O modelo atual e:
 - `src/screens/app/EventDetailsScreen.tsx`
   - visao informativa do evento; nao deve concentrar acoes de escala
 - `src/screens/app/EventsScreen.tsx`
-  - listagem informativa de eventos, igual para todos os usuarios
+  - listagem informativa de eventos, com proximos e anteriores, igual para todos os usuarios
 - `src/screens/app/SwapRequestsScreen.tsx`
   - acompanhamento de trocas disponiveis e proprias
 - `src/screens/app/ManageMinistryMembersScreen.tsx`
@@ -145,7 +150,10 @@ O modelo atual e:
 - O acesso primario ao fluxo de trocas deve sair de `ScheduleScreen`, nao da Home.
 - A confirmacao de presenca e a solicitacao/cancelamento de troca nao usam mais alerts nativos de sucesso; o feedback principal agora e o proprio estado da interface.
 - Eventos permanecem apenas como superficie informativa; qualquer acao operacional fica restrita ao dominio de escala.
+- Eventos possuem `category` informativa em portugues para badge visual minimalista; isso nao altera escala, participacao ou permissao.
 - O banco continua persistindo enums em ingles por compatibilidade de schema, mas a UI deve exibir status em pt-BR.
-- Existem duas migrations novas locais que precisam ser aplicadas no Supabase remoto para alinhar o ambiente:
-  - `20260412000111_fix_schedule_rls_recursion.sql`
-  - `20260412000112_reset_assignment_confirmation_on_swap_request.sql`
+- As migrations mais recentes a confirmar/aplicar no Supabase remoto incluem:
+  - `20260423000115_align_schedule_read_only_with_event_start_time.sql`
+  - `20260423000116_simplify_event_read_policy.sql`
+  - `20260426000117_prevent_duplicate_member_schedule_assignments.sql`
+  - `20260427000118_add_event_category.sql`

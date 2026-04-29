@@ -1,11 +1,11 @@
 import { supabase } from "../lib/supabase";
+import { searchProfiles, type SearchableProfile } from "./profileService";
 import type { TableRow } from "../types/database.types";
 import { Ministry } from "../types/models";
 import {
   extractAssignmentIds,
   firstRelation,
   mapMinistryMemberWithCapabilities,
-  mapSearchableUsers,
   mapUserMinistries,
 } from "../utils/ministryMappers";
 
@@ -14,13 +14,7 @@ export interface UserMinistry extends Ministry {
   joined_at: string;
 }
 
-export interface SearchableUser {
-  id: string;
-  full_name: string;
-  email: string | null;
-  avatar_url: string | null;
-  role: "admin" | "leader" | "member";
-}
+export type SearchableUser = SearchableProfile;
 
 export interface MinistryCapabilityOption {
   id: string;
@@ -58,14 +52,6 @@ interface UserMinistryRow {
         color: string | null;
         created_at: string;
       }[];
-}
-
-interface SearchableUserRow {
-  id: string;
-  full_name: string | null;
-  email: string | null;
-  avatar_url: string | null;
-  role: "admin" | "leader" | "member";
 }
 
 interface MinistryMemberCapabilityRow {
@@ -178,36 +164,7 @@ export async function getAllMinistries() {
 }
 
 export async function searchRegisteredUsers(query: string) {
-  try {
-    const normalizedQuery = query.trim();
-    let request = supabase
-      .from("profiles")
-      .select("id,full_name,email,avatar_url,role")
-      .order("full_name", { ascending: true })
-      .limit(30);
-
-    if (normalizedQuery) {
-      request = request.or(
-        `full_name.ilike.%${normalizedQuery}%,email.ilike.%${normalizedQuery}%`,
-      );
-    }
-
-    const { data, error } = await request;
-
-    if (error) throw error;
-
-    const users: SearchableUser[] = ((data ?? []) as SearchableUserRow[]).map((row) => ({
-      id: row.id,
-      full_name: row.full_name ?? "Usuário",
-      email: row.email,
-      avatar_url: row.avatar_url,
-      role: row.role,
-    }));
-
-    return { data: users, error: null };
-  } catch (error: unknown) {
-    return { data: null, error: getErrorMessage(error) };
-  }
+  return searchProfiles(query);
 }
 
 export async function getMinistryMembersDetailed(ministryId: string) {

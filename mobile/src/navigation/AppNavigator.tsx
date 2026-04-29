@@ -34,7 +34,9 @@ export type RootStackParamList = {
       import("../types/models").Event,
       "id" | "title" | "description" | "location" | "start_at"
     > &
-      Partial<Pick<import("../types/models").Event, "end_at" | "is_public">>;
+      Partial<
+        Pick<import("../types/models").Event, "category" | "end_at" | "is_public">
+      >;
   };
   Profile: undefined;
   EditProfile: undefined;
