@@ -164,7 +164,7 @@ export async function getAllMinistries() {
 }
 
 export async function searchRegisteredUsers(query: string) {
-  return searchProfiles(query);
+  return searchProfiles(query, { excludeRoles: ["admin"] });
 }
 
 export async function getMinistryMembersDetailed(ministryId: string) {

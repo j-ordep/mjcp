@@ -49,7 +49,36 @@ O dominio principal hoje e o fluxo de escalas.
   - `EditScheduleScreen` faz a montagem da equipe e operacao da escala
   - `ScheduleScreen` funciona como hub principal do dominio de escalas
 - `EventsScreen` e `EventDetailsScreen` sao somente informativas; presenca, troca e equipe escalada ficam no fluxo de escala
-- `EventsScreen` mostra proximos eventos e historico real, seguindo a ordenacao por `start_at`
+- `EventsScreen` e `EventDetailsScreen` agora consomem o mesmo contrato canonico de apresentacao informativa (`toInformationalEventViewModel`), evitando payload fragmentado entre lista e detalhe
+- o payload usado para abrir a edicao de evento a partir de `EventDetailsScreen` agora passa por sanitizer/whitelist (`toEventEditorInitialData`), impedindo vazamento acidental de campos operacionais de escala para o fluxo de evento
+- `EventsScreen` mostra proximos eventos e historico real; a classificacao entre atual/futuro e historico considera `end_at` quando existir, mantendo a ordenacao por `start_at`
+- `CreateEventScreen` agora reidrata a edicao de evento pelo backend via `eventId`, em vez de depender apenas dos dados passados pela navegacao
+- a audiencia de eventos privados volta carregada corretamente ao editar o evento
+- no MVP atual, `event_audiences` representa ao mesmo tempo visibilidade e lista de convite/convocacao do evento privado
+- reuniao continua sendo um evento; nao existe entidade separada para esse caso
+- `EBD` continua coberta pela categoria `ensino`
+- mesmo para `admin`, o detalhe de evento permanece informativo; escalas vinculadas continuam no fluxo de escalas
+- evento privado pode existir sem audiencia explicita; nesse caso ele fica visivel apenas para `admin`
+- `CreateEventScreen` agora permite vincular sala opcionalmente quando houver uma unica data, carregando disponibilidade real por janela
+- a edicao de evento reidrata e preserva corretamente audiencia privada e reserva vinculada; limpeza automatica de sala por indisponibilidade temporaria nao remove a reserva sem intencao
+- `RoomsScreen` deixou de ser mockado e agora cria reservas independentes reais em `room_reservations`
+- `RoomsScreen` agora tambem mostra agenda diaria por sala:
+  - todas as reservas ativas do dia
+  - badge `Evento` quando a reserva veio de `room_reservations.event_id`
+  - resumo simples somente leitura das escalas vinculadas ao evento
+- se a leitura de `schedules` falhar por permissao/RLS, a agenda diaria continua carregando e apenas omite o resumo de escalas
+- o vinculo estrutural entre evento e sala nesta fase passa por `room_reservations.event_id`, sem introduzir `events.room_id`
+- `save_event_with_optional_room_reservation` salva evento + audiencia + reserva opcional de forma atomica, bloqueando conflito de horario
+- os nomes de sala continuam vindo do banco (`rooms`), nao de mock local
+- o catalogo padrao de salas foi normalizado para:
+  - `Sala 1`
+  - `Sala 2`
+  - `Sala 3`
+  - `Sala 4`
+  - `Casa de Missoes`
+  - `Templo`
+- a migration segura `20260504000122_normalize_room_catalog.sql` renomeia legado conhecido e insere faltantes sem apagar salas extras ja existentes
+- a UI de salas deixou de exibir lotacao/capacidade; `capacity` continua no banco apenas como dado estrutural legado
 - Ao tocar em uma escala a partir de `ScheduleScreen`, admin, lider e membro agora abrem a mesma tela `EditScheduleScreen`:
   - admin/lider entram em modo gerencial
   - membro entra em modo de acompanhamento da propria participacao, sem acoes administrativas
@@ -132,7 +161,9 @@ O modelo atual e:
 - `src/screens/app/EventDetailsScreen.tsx`
   - visao informativa do evento; nao deve concentrar acoes de escala
 - `src/screens/app/EventsScreen.tsx`
-  - listagem informativa de eventos, com proximos e anteriores, igual para todos os usuarios
+  - listagem informativa de eventos, com proximos e anteriores
+  - eventos publicos aparecem para todos os usuarios autenticados
+  - eventos privados aparecem apenas para a audiencia selecionada em `event_audiences`
 - `src/screens/app/SwapRequestsScreen.tsx`
   - acompanhamento de trocas disponiveis e proprias
 - `src/screens/app/ManageMinistryMembersScreen.tsx`
@@ -151,6 +182,11 @@ O modelo atual e:
 - A confirmacao de presenca e a solicitacao/cancelamento de troca nao usam mais alerts nativos de sucesso; o feedback principal agora e o proprio estado da interface.
 - Eventos permanecem apenas como superficie informativa; qualquer acao operacional fica restrita ao dominio de escala.
 - Eventos possuem `category` informativa em portugues para badge visual minimalista; isso nao altera escala, participacao ou permissao.
+- Escala representa servico/funcao; reunioes privadas usam audiencia do evento, e nao assignments, para definir quem participa.
+- Notificacoes para eventos privados ficam como backlog futuro; o estado atual preserva `event_audiences` para suportar isso depois.
+- `location` textual continua existindo em eventos; sala vinculada e opcional e nao substitui local livre.
+- A direcao atual para salas e reservas passa a ser concreta nesta fase: usar `room_reservations.event_id` opcional em vez de `events.room_id`.
+- Ao aplicar as migrations remotas de salas, conferir tambem a normalizacao do catalogo em `20260504000122_normalize_room_catalog.sql`.
 - O banco continua persistindo enums em ingles por compatibilidade de schema, mas a UI deve exibir status em pt-BR.
 - As migrations mais recentes a confirmar/aplicar no Supabase remoto incluem:
   - `20260423000115_align_schedule_read_only_with_event_start_time.sql`

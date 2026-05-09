@@ -10,6 +10,13 @@ export interface SearchableProfile {
   role: 'admin' | 'leader' | 'member';
 }
 
+interface ListProfilesPageOptions {
+  query?: string;
+  page?: number;
+  pageSize?: number;
+  excludeRoles?: SearchableProfile['role'][];
+}
+
 function getErrorMessage(error: unknown) {
   if (error instanceof Error) return error.message;
   return 'Erro inesperado.';
@@ -46,14 +53,48 @@ export async function updateProfile(userId: string, updates: Partial<UserProfile
   }
 }
 
-export async function searchProfiles(query: string) {
+interface SearchProfilesOptions {
+  excludeRoles?: SearchableProfile['role'][];
+}
+
+export async function searchProfiles(
+  query: string,
+  options: SearchProfilesOptions = {},
+) {
+  const result = await listProfilesPage({
+    query,
+    page: 0,
+    pageSize: 30,
+    excludeRoles: options.excludeRoles,
+  });
+
+  return {
+    data: result.data,
+    error: result.error,
+  };
+}
+
+export async function listProfilesPage({
+  query = '',
+  page = 0,
+  pageSize = 10,
+  excludeRoles = [],
+}: ListProfilesPageOptions) {
   try {
     const normalizedQuery = query.trim();
+    const safePage = Math.max(0, page);
+    const safePageSize = Math.max(1, pageSize);
+    const from = safePage * safePageSize;
+    const to = from + safePageSize;
     let request = supabase
       .from('profiles')
       .select('id,full_name,email,avatar_url,role')
       .order('full_name', { ascending: true })
-      .limit(30);
+      .range(from, to);
+
+    for (const role of excludeRoles) {
+      request = request.neq('role', role);
+    }
 
     if (normalizedQuery) {
       request = request.or(
@@ -65,12 +106,17 @@ export async function searchProfiles(query: string) {
 
     if (error) throw error;
 
+    const mappedProfiles = mapSearchableUsers(
+      (data ?? []) as SearchableUserLike[],
+    ) as SearchableProfile[];
+
     return {
-      data: mapSearchableUsers((data ?? []) as SearchableUserLike[]) as SearchableProfile[],
+      data: mappedProfiles.slice(0, safePageSize),
+      hasMore: mappedProfiles.length > safePageSize,
       error: null,
     };
   } catch (error: unknown) {
-    return { data: null, error: getErrorMessage(error) };
+    return { data: null, hasMore: false, error: getErrorMessage(error) };
   }
 }
 

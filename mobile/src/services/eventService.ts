@@ -1,17 +1,21 @@
 import { supabase } from '../lib/supabase';
 import { Event } from '../types/models';
+import { normalizeAudienceUserIds } from '../utils/eventAudience';
 import { normalizeEventRange } from '../utils/eventDate';
 import { normalizeEventCategory } from '../utils/eventCategory';
+import {
+  getLinkedReservationForEvent,
+  mapRoomReservationConflictMessage,
+} from './roomReservationService';
+
+export interface EventEditorData {
+  event: Event;
+  visible_to_user_ids: string[];
+}
 
 function getErrorMessage(error: unknown) {
   if (error instanceof Error) return error.message;
   return 'Erro inesperado.';
-}
-
-function normalizeVisibleUserIds(userIds: string[] | undefined) {
-  return Array.from(
-    new Set((userIds ?? []).map((userId) => userId.trim()).filter(Boolean)),
-  );
 }
 
 function buildEventPayload(eventData: Partial<Event>) {
@@ -45,12 +49,6 @@ async function syncEventAudience(
     );
 
   if (insertError) throw insertError;
-}
-
-function assertPrivateEventAudience(isPublic: boolean, visibleUserIds: string[]) {
-  if (!isPublic && visibleUserIds.length === 0) {
-    throw new Error('Selecione pelo menos um membro para evento privado.');
-  }
 }
 
 export async function getUpcomingEvents(limit: number = 20) {
@@ -88,6 +86,24 @@ export async function getEvents(limit: number = 100) {
   }
 }
 
+export async function getEventById(eventId: string) {
+  try {
+    const { data, error } = await supabase
+      .from('events')
+      .select('*')
+      .eq('id', eventId)
+      .single();
+
+    if (error) throw error;
+
+    return { data: data as Event, error: null };
+  } catch (error: unknown) {
+    const message = getErrorMessage(error);
+    console.error('Erro ao buscar evento por id:', message);
+    return { data: null, error: message };
+  }
+}
+
 export async function getEventAudienceUserIds(eventId: string) {
   try {
     const { data, error } = await supabase
@@ -108,12 +124,50 @@ export async function getEventAudienceUserIds(eventId: string) {
   }
 }
 
+export async function getEventEditorData(eventId: string) {
+  try {
+    const { data, error } = await supabase
+      .from('events')
+      .select('*')
+      .eq('id', eventId)
+      .single();
+
+    if (error) throw error;
+
+    const event = data as Event;
+    if (event.is_public !== false) {
+      return {
+        data: {
+          event,
+          visible_to_user_ids: [],
+        } as EventEditorData,
+        error: null,
+      };
+    }
+
+    const audienceResult = await getEventAudienceUserIds(eventId);
+    if (audienceResult.error) {
+      throw new Error(audienceResult.error);
+    }
+
+    return {
+      data: {
+        event,
+        visible_to_user_ids: audienceResult.data ?? [],
+      } as EventEditorData,
+      error: null,
+    };
+  } catch (error: unknown) {
+    const message = getErrorMessage(error);
+    console.error('Erro ao buscar dados de edicao do evento:', message);
+    return { data: null, error: message };
+  }
+}
+
 export async function createEvent(eventData: Partial<Event>) {
   try {
-    const visibleUserIds = normalizeVisibleUserIds(eventData.visible_to_user_ids);
+    const visibleUserIds = normalizeAudienceUserIds(eventData.visible_to_user_ids);
     const isPublic = eventData.is_public !== false;
-
-    assertPrivateEventAudience(isPublic, visibleUserIds);
 
     const normalizedRange = normalizeEventRange({
       startAt: eventData.start_at,
@@ -141,7 +195,7 @@ export async function createEvent(eventData: Partial<Event>) {
 
     if (error) throw error;
 
-    if (!isPublic) {
+    if (!isPublic && visibleUserIds.length > 0) {
       await syncEventAudience(data.id, false, visibleUserIds);
     }
     
@@ -156,10 +210,8 @@ export async function createEvent(eventData: Partial<Event>) {
 export async function createMultipleEvents(eventsData: Partial<Event>[]) {
   try {
     const normalizedEvents = eventsData.map((eventData) => {
-      const visibleUserIds = normalizeVisibleUserIds(eventData.visible_to_user_ids);
+      const visibleUserIds = normalizeAudienceUserIds(eventData.visible_to_user_ids);
       const isPublic = eventData.is_public !== false;
-
-      assertPrivateEventAudience(isPublic, visibleUserIds);
 
       const normalizedRange = normalizeEventRange({
         startAt: eventData.start_at,
@@ -228,7 +280,7 @@ export async function updateEvent(eventId: string, updates: Partial<Event>) {
       'visible_to_user_ids',
     );
 
-    const visibleUserIds = normalizeVisibleUserIds(updates.visible_to_user_ids);
+    const visibleUserIds = normalizeAudienceUserIds(updates.visible_to_user_ids);
     let currentEvent:
       | Pick<Event, 'start_at' | 'is_public'>
       | null = null;
@@ -288,7 +340,6 @@ export async function updateEvent(eventId: string, updates: Partial<Event>) {
       const effectiveIsPublic =
         updates.is_public ?? (await getCurrentEvent()).is_public;
 
-      assertPrivateEventAudience(effectiveIsPublic !== false, visibleUserIds);
       payload.is_public = effectiveIsPublic;
     }
 
@@ -313,6 +364,110 @@ export async function updateEvent(eventId: string, updates: Partial<Event>) {
   } catch (error: unknown) {
     const message = getErrorMessage(error);
     console.error('Erro ao atualizar evento:', message);
+    return { data: null, error: message };
+  }
+}
+
+export async function saveEventWithOptionalRoom(input: {
+  eventId?: string;
+  event: Partial<Event>;
+  roomId?: string | null;
+}) {
+  try {
+    let currentEventData: EventEditorData | null = null;
+    let currentRoomId: string | null = null;
+
+    if (input.eventId) {
+      const [editorDataResult, linkedReservationResult] = await Promise.all([
+        getEventEditorData(input.eventId),
+        getLinkedReservationForEvent(input.eventId),
+      ]);
+
+      if (editorDataResult.error || !editorDataResult.data) {
+        throw new Error(
+          editorDataResult.error ?? 'Evento nao encontrado para salvar alteracoes.',
+        );
+      }
+
+      if (linkedReservationResult.error) {
+        throw new Error(linkedReservationResult.error);
+      }
+
+      currentEventData = editorDataResult.data;
+      currentRoomId = linkedReservationResult.data?.room_id ?? null;
+    }
+
+    const effectiveTitle = input.event.title ?? currentEventData?.event.title;
+    const effectiveCategory =
+      input.event.category ?? currentEventData?.event.category;
+    const effectiveDescription =
+      input.event.description !== undefined
+        ? input.event.description
+        : currentEventData?.event.description ?? null;
+    const effectiveLocation =
+      input.event.location !== undefined
+        ? input.event.location
+        : currentEventData?.event.location ?? null;
+    const effectiveStartAt =
+      input.event.start_at ?? currentEventData?.event.start_at;
+    const effectiveEndAt =
+      input.event.end_at !== undefined
+        ? input.event.end_at
+        : currentEventData?.event.end_at ?? null;
+    const effectiveIsPublic =
+      input.event.is_public !== undefined
+        ? input.event.is_public
+        : currentEventData?.event.is_public ?? true;
+    const effectiveVisibleUserIds =
+      input.event.visible_to_user_ids !== undefined
+        ? normalizeAudienceUserIds(input.event.visible_to_user_ids)
+        : currentEventData?.visible_to_user_ids ?? [];
+    const effectiveRoomId =
+      input.roomId !== undefined ? input.roomId : currentRoomId;
+
+    if (!effectiveTitle) {
+      throw new Error('Titulo do evento e obrigatorio.');
+    }
+
+    if (!effectiveStartAt) {
+      throw new Error('Data inicial invalida.');
+    }
+
+    const normalizedRange = normalizeEventRange({
+      startAt: effectiveStartAt,
+      endAt: effectiveEndAt,
+      requireFutureStart:
+        !input.eventId ||
+        input.event.start_at !== undefined ||
+        input.event.end_at !== undefined,
+    });
+
+    if (normalizedRange.error || !normalizedRange.data) {
+      throw new Error(normalizedRange.error ?? 'Intervalo do evento invalido.');
+    }
+
+    const { data, error } = await supabase.rpc(
+      'save_event_with_optional_room_reservation',
+      {
+        p_event_id: input.eventId ?? null,
+        p_title: effectiveTitle,
+        p_category: normalizeEventCategory(effectiveCategory),
+        p_description: effectiveDescription,
+        p_location: effectiveLocation,
+        p_start_at: normalizedRange.data.startAt,
+        p_end_at: normalizedRange.data.endAt,
+        p_is_public: effectiveIsPublic !== false,
+        p_visible_user_ids: effectiveVisibleUserIds,
+        p_room_id: effectiveRoomId ?? null,
+      },
+    );
+
+    if (error) throw error;
+
+    return { data: data as Event, error: null };
+  } catch (error: unknown) {
+    const message = mapRoomReservationConflictMessage(error);
+    console.error('Erro ao salvar evento com sala opcional:', message);
     return { data: null, error: message };
   }
 }

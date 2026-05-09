@@ -4,6 +4,7 @@ import {
   createMultipleEvents,
   getEvents,
   getUpcomingEvents,
+  saveEventWithOptionalRoom,
   updateEvent,
 } from "../services/eventService";
 import { Event } from "../types/models";
@@ -22,9 +23,18 @@ interface EventState {
   createBatchEvents: (
     eventsData: Partial<Event>[],
   ) => Promise<{ data: Event[] | null; error: string | null }>;
+  createEventWithRoom: (
+    eventData: Partial<Event>,
+    roomId: string | null,
+  ) => Promise<{ data: Event | null; error: string | null }>;
   updateExistingEvent: (
     eventId: string,
     updates: Partial<Event>,
+  ) => Promise<{ data: Event | null; error: string | null }>;
+  updateEventWithRoom: (
+    eventId: string,
+    updates: Partial<Event>,
+    roomId?: string | null,
   ) => Promise<{ data: Event | null; error: string | null }>;
 }
 
@@ -61,6 +71,36 @@ export const useEventStore = create<EventState>((set, get) => ({
     } else {
       set({ allEvents: data || [], isLoadingAllEvents: false });
     }
+  },
+
+  createEventWithRoom: async (
+    eventData: Partial<Event>,
+    roomId: string | null,
+  ) => {
+    set({ isLoadingEvents: true, error: null });
+    const { data, error } = await saveEventWithOptionalRoom({
+      event: eventData,
+      roomId,
+    });
+
+    if (error) {
+      set({ error, isLoadingEvents: false });
+      return { data: null, error };
+    }
+
+    const [{ data: freshEvents }, { data: freshAllEvents }] = await Promise.all([
+      getUpcomingEvents(),
+      getEvents(),
+    ]);
+
+    set({
+      events: freshEvents || [],
+      allEvents: freshAllEvents || [],
+      isLoadingEvents: false,
+      isLoadingAllEvents: false,
+    });
+
+    return { data, error: null };
   },
 
   createNewEvent: async (eventData: Partial<Event>) => {
@@ -105,6 +145,38 @@ export const useEventStore = create<EventState>((set, get) => ({
       });
       return { data, error: null };
     }
+  },
+
+  updateEventWithRoom: async (
+    eventId: string,
+    updates: Partial<Event>,
+    roomId?: string | null,
+  ) => {
+    set({ isLoadingEvents: true, error: null });
+    const { data, error } = await saveEventWithOptionalRoom({
+      eventId,
+      event: updates,
+      roomId,
+    });
+
+    if (error) {
+      set({ error, isLoadingEvents: false });
+      return { data: null, error };
+    }
+
+    const [{ data: freshEvents }, { data: freshAllEvents }] = await Promise.all([
+      getUpcomingEvents(),
+      getEvents(),
+    ]);
+
+    set({
+      events: freshEvents || [],
+      allEvents: freshAllEvents || [],
+      isLoadingEvents: false,
+      isLoadingAllEvents: false,
+    });
+
+    return { data, error: null };
   },
 
   updateExistingEvent: async (eventId: string, updates: Partial<Event>) => {

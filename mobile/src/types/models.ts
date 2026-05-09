@@ -1,4 +1,4 @@
-import type { EventCategory } from "../utils/eventCategory";
+import type { EventCategory } from "./database.types";
 
 export interface UserProfile {
   id: string
@@ -46,7 +46,7 @@ export interface Event {
   start_at: string
   end_at: string | null
   is_public: boolean
-  visible_to_user_ids?: string[]
+  visible_to_user_ids?: string[] // convite + visibilidade no MVP
 }
 
 // ─── Schedules ────────────────────────────────────────────────────────
@@ -125,10 +125,12 @@ export interface Room {
 export interface RoomReservation {
   id: string
   room_id: string
+  event_id: string | null
   reserved_by: string
   start_at: string
   end_at: string
   purpose: string | null
+  category: EventCategory
   status: 'active' | 'cancelled'
   created_at: string
 }

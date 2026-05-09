@@ -44,9 +44,14 @@ export type RootStackParamList = {
   ScheduleScreen: undefined;
   CreateEvent:
     | {
-        mode?: "edit";
-        eventId?: string;
-        initialData?: import("../types/models").Event;
+        mode: "edit";
+        eventId: string;
+        initialData?: import("../utils/eventPresentation").EventEditorInitialData;
+      }
+    | {
+        mode?: undefined;
+        eventId?: never;
+        initialData?: never;
       }
     | undefined;
   CreateSchedule: undefined;

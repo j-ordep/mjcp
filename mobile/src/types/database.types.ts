@@ -327,30 +327,36 @@ export interface Database {
         Row: {
           id: string;
           room_id: string;
+          event_id: string | null;
           reserved_by: string;
           start_at: string;
           end_at: string;
           purpose: string | null;
+          category: EventCategory;
           status: RoomReservationStatus;
           created_at: string;
         };
         Insert: {
           id?: string;
           room_id: string;
+          event_id?: string | null;
           reserved_by: string;
           start_at: string;
           end_at: string;
           purpose?: string | null;
+          category?: EventCategory;
           status?: RoomReservationStatus;
           created_at?: string;
         };
         Update: {
           id?: string;
           room_id?: string;
+          event_id?: string | null;
           reserved_by?: string;
           start_at?: string;
           end_at?: string;
           purpose?: string | null;
+          category?: EventCategory;
           status?: RoomReservationStatus;
           created_at?: string;
         };

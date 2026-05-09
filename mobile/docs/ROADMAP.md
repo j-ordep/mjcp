@@ -25,6 +25,8 @@ Data de reconciliacao: 2026-04-10 (America/Sao_Paulo)
 - `EventsScreen` usa cards informativos sem acoes operacionais de escala
 - `EventsScreen` lista eventos futuros e historico real
 - Eventos possuem categoria informativa em portugues e visual minimalista preto/branco
+- Edicao de evento hidrata dados canonicos do backend e reaplica corretamente a audiencia privada no formulario
+- `EventDetailsScreen` saneia o payload de edicao por whitelist, evitando reintroduzir campos operacionais no fluxo de eventos
 - Backend bloqueia novo assignment duplicado do mesmo membro na mesma escala
 
 ### Implementado parcialmente
@@ -45,6 +47,20 @@ Data de reconciliacao: 2026-04-10 (America/Sao_Paulo)
 - Arquitetar permissao granular futura para que pessoas especificas criem/editem eventos sem necessariamente virarem `admin`
 - Ampliar cobertura de testes do `scheduleService`, `ministryService` e `eventService`
 - Fluxo de declinio de assignment, caso o produto confirme essa necessidade
+- [x] Integrar salas e reservas ao fluxo basico real do app
+  - `RoomsScreen` deixou de ser mock e agora cria reservas independentes reais
+  - `RoomsScreen` agora tambem mostra agenda diaria por sala com reservas do dia, badge `Evento` e resumo simples das escalas vinculadas
+  - `CreateEventScreen` permite sala opcional para evento com data unica
+  - vinculo estrutural adotado: `room_reservations.event_id`
+  - `events.room_id` continua fora do modelo
+  - catalogo padrao de salas segue vindo do banco e foi normalizado para:
+    - `Sala 1`
+    - `Sala 2`
+    - `Sala 3`
+    - `Sala 4`
+    - `Casa de Missoes`
+    - `Templo`
+  - lotacao/capacidade deixou de aparecer na UI
 
 ---
 
@@ -86,7 +102,8 @@ Data de reconciliacao: 2026-04-10 (America/Sao_Paulo)
 - [x] `EventsScreen` sempre igual para todos os usuarios, sem botoes operacionais de escala
 - [x] `EventsScreen` com `Proximos` e `Anteriores` baseado em `start_at`
 - [x] `EventsScreen` e `EventDetailsScreen` com categoria informativa e UI claro minimalista
-- [ ] Consolidar um shape/payload de backend somente informativo para cards e detalhes de evento
+- [x] Edicao de evento reidratada pelo backend, sem depender apenas de payload de navegacao
+- [x] Consolidar um shape/payload de backend somente informativo para cards e detalhes de evento
 
 ---
 
@@ -122,7 +139,7 @@ Data de reconciliacao: 2026-04-10 (America/Sao_Paulo)
 
 ## P2 - Outras frentes do produto
 
-- [ ] Queries reais de disponibilidade de salas
+- [x] Queries reais de disponibilidade de salas
 - [ ] Tela de musica individual
 - [ ] Setlist por evento
 - [ ] Padronizacao de loading/error/empty states
@@ -133,6 +150,8 @@ Data de reconciliacao: 2026-04-10 (America/Sao_Paulo)
 ## Proximos passos sugeridos
 
 1. Validar no Supabase remoto as migrations mais recentes, incluindo bloqueio de duplicidade de membro na escala e categoria de eventos.
-2. Revisar UX de criacao/edicao de eventos sem mudar a regra atual de permissao.
+2. Revisar UX final de evento + sala em uso real no app.
 3. Arquitetar permissao granular futura para criacao/edicao de eventos.
-4. Implementar notificacoes in-app do fluxo de trocas e escalas, com geracao no backend e inbox real no app.
+4. Confirmar no Supabase remoto a Fase 4 de salas, especialmente catalogo padrao e read-model diario com dados reais.
+5. Arquitetar permissao granular futura para criacao/edicao de eventos.
+6. Implementar notificacoes in-app do fluxo de trocas e escalas, com geracao no backend e inbox real no app.

@@ -1,3 +1,13 @@
+import type { EventCategory as DatabaseEventCategory } from "../types/database.types";
+
+type EventCategoryOption = {
+  value: DatabaseEventCategory;
+  label: string;
+  backgroundColor: string;
+  textColor: string;
+  accentColor: string;
+};
+
 export const EVENT_CATEGORY_OPTIONS = [
   {
     value: "geral",
@@ -48,9 +58,9 @@ export const EVENT_CATEGORY_OPTIONS = [
     textColor: "#111827",
     accentColor: "#111827",
   },
-] as const;
+] as const satisfies readonly EventCategoryOption[];
 
-export type EventCategory = (typeof EVENT_CATEGORY_OPTIONS)[number]["value"];
+export type { EventCategory } from "../types/database.types";
 
 const EVENT_CATEGORY_LABELS = new Map(
   EVENT_CATEGORY_OPTIONS.map((option) => [option.value, option.label]),
@@ -58,7 +68,11 @@ const EVENT_CATEGORY_LABELS = new Map(
 
 export function normalizeEventCategory(
   value: string | null | undefined,
-): EventCategory {
+): DatabaseEventCategory {
+  if (value === "ebd") {
+    return "ensino";
+  }
+
   const option = EVENT_CATEGORY_OPTIONS.find((item) => item.value === value);
   return option?.value ?? "geral";
 }

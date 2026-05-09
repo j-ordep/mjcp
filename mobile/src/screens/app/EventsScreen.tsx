@@ -17,6 +17,11 @@ import { useAuthStore } from "../../stores/useAuthStore";
 import { useEventStore } from "../../stores/useEventStore";
 import { Event } from "../../types/models";
 import { formatDateTime } from "../../utils/formatDate";
+import { toInformationalEventViewModel } from "../../utils/eventPresentation";
+import {
+  compareEventDatesByFilter,
+  matchesEventTimeFilter,
+} from "../../utils/eventFilters";
 
 type Filter = "current" | "past";
 
@@ -54,25 +59,16 @@ export default function EventsScreen() {
 
     return allEvents
       .filter((event) => {
-        const eventTime = new Date(event.start_at).getTime();
-        const matchesFilter =
-          activeFilter === "current"
-            ? eventTime > now
-            : eventTime <= now;
+        const matchesFilter = matchesEventTimeFilter(event, activeFilter, now);
         const matchesSearch =
           !normalizedSearch ||
           event.title.toLowerCase().includes(normalizedSearch);
 
         return matchesFilter && matchesSearch;
       })
-      .sort((left, right) => {
-        const leftTime = new Date(left.start_at).getTime();
-        const rightTime = new Date(right.start_at).getTime();
-
-        return activeFilter === "past"
-          ? rightTime - leftTime
-          : leftTime - rightTime;
-      });
+      .sort((left, right) =>
+        compareEventDatesByFilter(left, right, activeFilter),
+      );
   }, [activeFilter, allEvents, debouncedSearch]);
 
   const filters: { key: Filter; label: string }[] = useMemo(
@@ -84,23 +80,27 @@ export default function EventsScreen() {
   );
 
   const renderItem = useCallback(
-    ({ item }: { item: Event }) => (
-      <EventCard
-        title={item.title}
-        date={formatDateTime(item.start_at)}
-        category={item.category}
-        startAt={item.start_at}
-        endAt={item.end_at}
-        location={item.location || ""}
-        description={item.description || undefined}
-        showActions={false}
-        onDetails={() =>
-          navigation.navigate("EventDetails", {
-            event: item,
-          })
-        }
-      />
-    ),
+    ({ item }: { item: Event }) => {
+      const viewModel = toInformationalEventViewModel(item);
+
+      return (
+        <EventCard
+          title={viewModel.title}
+          date={formatDateTime(viewModel.startAt)}
+          category={viewModel.category}
+          startAt={viewModel.startAt}
+          endAt={viewModel.endAt}
+          location={viewModel.location}
+          description={viewModel.description}
+          showActions={false}
+          onDetails={() =>
+            navigation.navigate("EventDetails", {
+              event: item,
+            })
+          }
+        />
+      );
+    },
     [navigation],
   );
 
@@ -243,3 +243,4 @@ export default function EventsScreen() {
     </SafeAreaView>
   );
 }
+

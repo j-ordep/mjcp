@@ -4,6 +4,10 @@ Data: 2026-04-05 (America/Sao_Paulo)
 
 Referencia rapida:
 - plano consolidado da proxima rodada: `docs/NEXT_STEPS_PLAN.md`
+- plano consolidado do core de eventos: `docs/EVENT_CORE_PLAN.md`
+- plano tecnico da fase 1 do core de eventos: `docs/EVENT_CORE_PHASE1_IMPLEMENTATION_PLAN.md`
+- plano tecnico da fase 2 do core de eventos: `docs/EVENT_CORE_PHASE2_IMPLEMENTATION_PLAN.md`
+- plano pequeno da agenda diaria de salas: `docs/ROOMS_SCREEN_DAY_AGENDA_PLAN.md`
 - referencia da mudanca de read-only para bloqueio em `start_at`: `docs/SCHEDULE_READ_ONLY_BY_HOUR_PLAN.md`
 - ideia futura de cadastro de visitante: `docs/VISITOR_REGISTRATION_IDEA.md`
 - ideia futura de fluxo de escola biblica: `docs/BIBLE_SCHOOL_IDEA.md`
@@ -252,19 +256,83 @@ Decisao atualizada em 2026-04-07:
 - `EventsScreen` ja renderiza card informativo com `showActions={false}` em `src/screens/app/EventsScreen.tsx`
 - `EventsScreen` lista `Proximos` e `Anteriores`, carregando eventos futuros e historico real via `allEvents`
 - `EventDetailsScreen` hoje esta informativa e so expoe edicao para `admin` em `src/screens/app/EventDetailsScreen.tsx`
+- `EventsScreen` e `EventDetailsScreen` agora consomem o mesmo shape canonico de apresentacao informativa em `src/utils/eventPresentation.ts`
 - `CreateEventScreen` ja cria e edita eventos usando `normalizeEventRange(...)` em `src/screens/app/CreateEventScreen.tsx` e `src/services/eventService.ts`
 - `CreateEventScreen` agora diferencia evento publico e privado, permitindo selecionar membros por busca nominal quando `is_public = false`
+- a edicao de evento agora reidrata o estado canonico pelo backend via `eventId`, reaplicando corretamente a audiencia privada no formulario
 - a audiencia de evento privado ficou modelada em `event_audiences`, sem acoplar esse fluxo ao dominio de ministerios
+- no MVP atual, `event_audiences` representa ao mesmo tempo convite e visibilidade
+- admins tambem podem ser adicionados explicitamente na audiencia de eventos privados, mesmo ja tendo visibilidade ampliada por permissao; isso preserva o contexto da audiencia selecionada para evolucoes futuras, como notificacoes
 - `events.category` foi modelado como coluna simples com valores em portugues, sem tabela propria nesta fase
 - `EventsScreen` e `EventDetailsScreen` seguem visual minimalista preto/branco, com badge de categoria apenas informativo
 - `events` no store continua reservado para proximos eventos usados por Home/criacao de escala
 - `allEvents` no store alimenta a tela de eventos com futuros + historico
+- evento privado, no MVP atual, usa `event_audiences` como lista de visibilidade e convite ao mesmo tempo
+- reuniao continua sendo `evento`; ela nao deve virar entidade nova nem reutilizar `escala` para representar participantes
+- `EBD` continua coberta por `ensino`, sem categoria propria nesta fase
+- [x] Fechar Fase 2 do core de eventos
+  - evento privado pode existir sem audiencia explicita; nesse caso fica visivel apenas para `admin`
+  - `event_audiences` continua representando convite + visibilidade no MVP
+  - `room_reservations.event_id` passa a ser o vinculo estrutural opcional entre evento e sala
+  - `save_event_with_optional_room_reservation` salva evento + audiencia + reserva opcional em transacao
+  - `CreateEventScreen` agora permite sala opcional com disponibilidade real por janela para evento de data unica
+  - `RoomsScreen` deixou de ser mock e passou a criar reservas independentes reais
+  - a reconciliacao de sala em edicao protege contra limpeza indevida ao mudar e voltar janela/horario
+
+- [ ] Definir permissao granular para criacao/edicao de eventos
+  - regra atual continua:
+    - apenas `admin` cria/edita eventos
+  - proxima fase deve decidir como liberar isso para pessoas autorizadas sem promover acesso total
+
+- [x] Integrar salas ao fluxo basico de eventos sem criar `events.room_id`
+  - direcao validada em 2026-04-30:
+    - manter `location` textual em eventos
+  - salas agora tambem funcionam como fluxo proprio por `RoomsScreen`
+  - o vinculo estrutural adotado foi `room_reservations.event_id` opcional
+  - nao modelar `events.room_id`, porque um evento pode precisar de zero, uma ou varias reservas
+  - mesmo para `admin`, escalas vinculadas continuam no fluxo de escalas; `EventDetailsScreen` nao vira tela administrativa de escala
+  - catalogo padrao de salas agora fica documentado como:
+    - `Sala 1`
+    - `Sala 2`
+    - `Sala 3`
+    - `Sala 4`
+    - `Casa de Missoes`
+    - `Templo`
+  - os nomes continuam vindo do banco (`rooms`), nao de mock local
+  - a migration segura `20260504000122_normalize_room_catalog.sql` renomeia legado conhecido e insere faltantes sem apagar salas extras
+  - `capacity` continua no schema, mas a UI nao exibe mais lotacao no card nem no seletor de sala
+
+- [x] Fechar Fase 3 do core de eventos
+  - `EventDetailsScreen` continua informativa mesmo quando o evento tem varias escalas vinculadas
+  - o payload de edicao aberto a partir do detalhe agora passa por whitelist/sanitizacao, evitando vazamento acidental de campos operacionais
+  - teste unitario protege o contrato de nao-vazamento entre dominio de evento e dominio de escala
+
+- [~] Fechar Fase 4 do core de eventos
+  - fechado no repo local:
+    - `RoomsScreen` agora mostra agenda diaria por sala
+    - o card mostra todas as reservas do dia
+    - reservas ligadas a evento recebem badge `Evento`
+    - o card mostra resumo simples somente leitura das escalas vinculadas
+    - se a leitura de `schedules` falhar por permissao/RLS, a agenda continua carregando sem quebrar a tela
+  - pendente operacional:
+    - confirmar no Supabase remoto a migration `20260504000122_normalize_room_catalog.sql`
+    - validar no banco o catalogo padrao de salas:
+      - `Sala 1`
+      - `Sala 2`
+      - `Sala 3`
+      - `Sala 4`
+      - `Casa de Missoes`
+      - `Templo`
+  - decidir futuramente se salas extras/customizadas permanecem livres ou se havera gestao administrativa dedicada
 
 **PENDENTE DE DEFINICAO**
 - regra futura para permissao granular de criacao/edicao de eventos:
   - por enquanto, apenas `admin` cria/edita eventos
   - no futuro, avaliar flag/cargo especifico para pastores/pessoas autorizadas
 - se o detalhe do evento deve ganhar metadados extras no futuro, como link de transmissao/video
+- estrategia futura de notificacoes para eventos privados fica registrada, mas fora do escopo atual:
+  - usuarios selecionados explicitamente na audiencia devem poder ser notificados no futuro
+  - isso deve reutilizar a audiencia salva em `event_audiences`, sem depender de inferencia por role ou ministerio
 
 **INFORMACAO INSUFICIENTE**
 - nao ha definicao fechada de anexos/metadados extras no detalhe do evento
@@ -274,17 +342,19 @@ Contexto: eventos sao informativos para todos; escala e o fluxo operacional de q
 - `EventsScreen` nao deve variar por assignment, papel, ministerio ou participacao.
 - `EventDetailsScreen` tambem deve permanecer informativa e nao deve carregar equipe, status, confirmacao ou troca.
 
-- [ ] Padronizar payload do backend para renderizacao de cards
-  - Em vez de logica fragmentada, criar DTO/shape:
-    - `title`
-    - `start_at`
-    - `end_at`
-    - `location`
-    - `description`
-    - `cover_image` ou metadado equivalente, se existir
-  - Observacao:
-    - a lista atual ainda mistura contexto de evento e escala em alguns pontos
-    - consolidar um shape somente informativo ajuda a manter `EventsScreen` e a futura tela de detalhes de evento sem acao operacional
+- [x] Padronizar payload informativo compartilhado para card e detalhe de evento
+  - Confirmado no codigo:
+    - `src/utils/eventPresentation.ts` expoe `toInformationalEventViewModel(...)`
+    - `EventsScreen` e `EventDetailsScreen` reutilizam o mesmo shape canonico:
+      - `title`
+      - `category`
+      - `startAt`
+      - `endAt`
+      - `location`
+      - `description`
+  - Resultado:
+    - a superficie de evento continua somente informativa
+    - lista e detalhe deixam de depender de mapeamentos fragmentados por tela
 
 - [x] Implementar `EventCard` apenas informativo em `EventsScreen`
   - Hoje `EventsScreen` usa `EventCard` com `showActions={false}`
@@ -306,11 +376,18 @@ Contexto: eventos sao informativos para todos; escala e o fluxo operacional de q
   - `getEvents()` busca eventos sem filtro temporal para alimentar futuros + historico
   - `getUpcomingEvents()` continua existindo para Home e criacao de escala
 
+- [x] Fechar fluxo funcional de edicao de evento
+  - a tela de edicao nao depende mais apenas do payload de navegacao
+  - o formulario reidrata o evento canonicamente por `eventId`
+  - a audiencia privada volta carregada corretamente ao editar
+  - isso prepara o fluxo para futuras extensoes, como integracao com salas, sem misturar esse modulo agora
+
 - [~] Revisar UX de criacao/edicao de evento sem extrapolar escopo
   - ja ajustado:
     - `CreateEventScreen` nao usa mais alerts de sucesso
     - o chip de categoria selecionado nao desloca mais o texto
     - o formulario de evento privado permite selecionar/remover audiencia na propria tela
+    - a edicao agora reaplica corretamente os membros ja vinculados ao evento privado
   - ainda vale revisar depois:
     - refinamentos visuais do seletor de audiencia em telas menores
     - copy final do fluxo privado/publico
@@ -321,6 +398,21 @@ Contexto: eventos sao informativos para todos; escala e o fluxo operacional de q
     - lideres continuam podendo operar escalas dos seus ministerios
   - futuro possivel:
     - flag/cargo especifico para pastores ou pessoas autorizadas criarem eventos sem virar admin total
+
+- [x] Consolidar `Evento` como core composicional do produto
+  - Confirmado no codigo e na documentacao viva:
+    - reuniao = evento
+    - convite = audiencia privada em `event_audiences`
+    - `event_audiences` tambem representa visibilidade no MVP
+    - escala = servico/funcao, nunca lista de participantes
+  - referencia consolidada: `docs/EVENT_CORE_PLAN.md`
+
+- [ ] Fechar reuniao como configuracao de evento, nao como modulo proprio
+  - manter categoria `reunião`
+  - manter publico/privado
+  - manter audiencia selecionada no proprio evento
+  - nao exigir escala para reunioes
+  - `EBD` permanece coberta por `ensino`
 
 ## Decisao de fluxo registrada em 2026-04-12
 
@@ -393,6 +485,9 @@ Contexto: eventos sao informativos para todos; escala e o fluxo operacional de q
 
 - [ ] Criar notificacao ao:
   - novo assignment criado
+    - incluir notificacao direta ao usuario escalado quando entrar em uma escala
+  - evento privado criado/atualizado para audiencia selecionada
+    - usuarios escolhidos manualmente devem poder receber notificacao no futuro
   - [~] swap request criado/atualizado
   - [~] swap request criado para:
     - membros elegiveis do mesmo ministerio e mesma funcao
@@ -472,6 +567,10 @@ Contexto: eventos sao informativos para todos; escala e o fluxo operacional de q
 - [ ] Implementar queries reais de disponibilidade
   - A tabela `room_reservations` ja tem exclusao de overlap via GiST.
   - App precisa listar disponibilidade por janela de horario.
+- [x] Evoluir `RoomsScreen` para agenda diaria por sala
+  - mostrar todas as reservas do dia
+  - mostrar badge `Evento` quando `room_reservations.event_id` estiver preenchido
+  - mostrar cronograma simples separado das escalas vinculadas ao evento
 
 ---
 

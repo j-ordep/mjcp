@@ -25,7 +25,9 @@ O `MJCP Mobile` e um app de gestao de igreja e ministerios com foco em:
 
 O dominio mais maduro hoje e `escala`.
 
-- `evento` e superficie informativa e comum a todos os usuarios
+- `evento` e superficie informativa
+- eventos publicos sao visiveis para todos os usuarios autenticados
+- eventos privados sao visiveis para `admin` e, quando houver, para a audiencia selecionada em `event_audiences`
 - `escala` e o fluxo operacional de quem participa de ministerio e funcao
 - a regra de dados `schedule belongs to event` continua valida
 - a experiencia do usuario deve deixar claro quando ele esta em `Eventos` e quando esta em `Escalas`
@@ -49,18 +51,41 @@ O dominio mais maduro hoje e `escala`.
 
 - `EventsScreen` e tela informativa
 - `EventDetailsScreen` e tela informativa
+- ambas agora reutilizam o mesmo contrato canonico de apresentacao informativa (`toInformationalEventViewModel`) para card e detalhe
 - `EventsScreen` lista proximos eventos e historico real
-- `Proximos` ordena por `start_at` crescente
-- `Anteriores` ordena por `start_at` decrescente
+- `Proximos` e `Anteriores` agora classificam pelo fim efetivo do evento (`end_at`, com fallback em `start_at`) e mantem ordenacao por `start_at`
 - criacao e edicao de evento ficam restritas a `admin` nesta fase
 - eventos possuem categoria informativa simples em `events.category`, com valores em portugues
-- eventos podem ser publicos ou privados; quando privados, a visibilidade passa por `event_audiences`
+- eventos podem ser publicos ou privados; quando privados, a visibilidade fica restrita a `event_audiences`
+- no MVP atual, `event_audiences` tambem representa a lista de convite/convocacao do evento
+- reuniao continua sendo `evento`, sem entidade propria
+- `EBD` continua coberta por `ensino`, sem categoria separada nesta fase
+- a edicao de evento reidrata o estado canonico do backend por `eventId`, incluindo a audiencia privada selecionada
+- o payload de edicao aberto a partir de `EventDetailsScreen` agora e saneado por whitelist, mantendo o dominio de evento puramente informativo
+- admins tambem podem ser adicionados explicitamente na audiencia de eventos privados, preservando a lista de destinatarios escolhidos para evolucoes futuras como notificacoes
 - a UI de eventos segue o tema claro minimalista do app: preto, branco e cinzas
+- salas entraram no fluxo de forma opcional e controlada:
+  - `CreateEventScreen` permite vincular uma sala quando houver uma unica data
+  - `RoomsScreen` cria reservas independentes reais
+  - `RoomsScreen` agora mostra agenda diaria por sala com reservas do dia, badge `Evento` e resumo simples de escalas vinculadas
+  - o vinculo estrutural usa `room_reservations.event_id` opcional, e nao `events.room_id`
+  - `location` textual continua existindo em paralelo
+  - os nomes de sala continuam vindo de `rooms` no banco, nao de mock local
+  - o catalogo padrao foi normalizado com migration segura para:
+    - `Sala 1`
+    - `Sala 2`
+    - `Sala 3`
+    - `Sala 4`
+    - `Casa de Missoes`
+    - `Templo`
+  - a UI nao exibe mais lotacao/capacidade, embora `capacity` ainda exista no schema
+- mesmo para `admin`, detalhe de evento continua informativo; escalas vinculadas seguem concentradas em `ScheduleScreen` / `EditScheduleScreen`
 
 **PENDENTE DE DEFINICAO**
 
 - desenhar permissao granular futura para criacao/edicao de eventos sem promover todo usuario autorizado a `admin`
 - definir metadados extras do detalhe de evento, como link de transmissao/video
+- revisar UX final de evento + sala em uso real no app, agora que integracao opcional ja existe
 
 **Direcao validada**
 
@@ -109,6 +134,9 @@ O dominio mais maduro hoje e `escala`.
 
 - aplicar migrations remotas
 - fechar copy final e comportamento complementar de notificacoes
+- evoluir notificacoes para:
+  - usuarios escolhidos em eventos privados
+  - usuarios adicionados a uma escala
 
 ### Salas, musicas e setlists
 
@@ -158,7 +186,7 @@ O dominio mais maduro hoje e `escala`.
 
 ## P1 - Consolidar dominio de eventos como informativo
 
-1. Padronizar um payload/DTO informativo de evento para card e detalhe
+1. Manter o contrato canonico informativo compartilhado entre card e detalhe, sem reintroduzir payload fragmentado por tela
 2. Garantir que `EventsScreen` nao varie por assignment, participacao, ministerio ou papel
 3. Manter `EventsScreen` com proximos eventos e historico real, sem acoes operacionais de escala
 4. Manter em eventos apenas metadados de contexto como:
@@ -173,7 +201,13 @@ O dominio mais maduro hoje e `escala`.
 1. Revisar `src/types/database.types.ts` para reduzir fragilidade de tipagem
 2. Padronizar timezone e datas no app com persistencia em UTC e formatacao no client
 3. Fechar loading, error e empty states nas telas principais
-4. Retomar salas, musicas e setlists apenas depois da estabilizacao do fluxo principal
+4. Fechar permissao granular de criacao/edicao de eventos sem depender so de `admin`
+5. Confirmar operacao remota da Fase 4 do core de eventos:
+   - validar no Supabase remoto a migration `20260504000122_normalize_room_catalog.sql`
+   - confirmar no banco o catalogo padrao de salas
+   - validar o read-model diario de salas com dados reais
+6. Fechar permissao granular de criacao/edicao de eventos sem depender so de `admin`
+7. Depois retomar musicas e setlists; salas ja entraram no fluxo principal basico desta fase
 
 ---
 
@@ -224,6 +258,7 @@ O dominio mais maduro hoje e `escala`.
 Ao retomar o trabalho, iniciar por esta ordem:
 
 1. revisar `docs/TASKS.md` e este arquivo
-2. fechar os itens restantes de `escala`
-3. expandir testes unitarios do service layer
-4. so depois entrar em `eventos`, `notificacoes` e demais modulos
+2. revisar `docs/EVENT_CORE_PHASE2_IMPLEMENTATION_PLAN.md`
+3. validar remoto das migrations e catalogo de salas
+4. definir proxima fase de `eventos` com foco em permissao granular
+5. depois retomar `notificacoes` e demais modulos
