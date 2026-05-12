@@ -16,6 +16,7 @@ import { RootStackParamList } from "../../navigation/AppNavigator";
 import { useAuthStore } from "../../stores/useAuthStore";
 import { useEventStore } from "../../stores/useEventStore";
 import { Event } from "../../types/models";
+import { canManageEvents as canManageEventsForProfile } from "../../utils/eventPermissions";
 import { formatDateTime } from "../../utils/formatDate";
 import { toInformationalEventViewModel } from "../../utils/eventPresentation";
 import {
@@ -33,7 +34,7 @@ export default function EventsScreen() {
 
   const { profile } = useAuthStore();
   const { allEvents, isLoadingAllEvents, fetchEvents } = useEventStore();
-  const canManageEvents = profile?.role === "admin";
+  const canManageEvents = canManageEventsForProfile(profile);
 
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 

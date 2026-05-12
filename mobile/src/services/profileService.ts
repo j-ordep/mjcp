@@ -22,6 +22,17 @@ function getErrorMessage(error: unknown) {
   return 'Erro inesperado.';
 }
 
+function normalizeUserProfile(data: Partial<UserProfile> | null) {
+  if (!data) {
+    return null;
+  }
+
+  return {
+    ...data,
+    can_manage_events: data.can_manage_events === true,
+  } as UserProfile;
+}
+
 export async function getProfile(userId: string) {
   try {
     const { data, error } = await supabase
@@ -31,7 +42,7 @@ export async function getProfile(userId: string) {
       .single();
 
     if (error) throw error;
-    return { profile: data as UserProfile, error: null };
+    return { profile: normalizeUserProfile(data as Partial<UserProfile> | null), error: null };
   } catch (error: any) {
     console.error('Erro ao buscar perfil:', error.message);
     return { profile: null, error: error.message };

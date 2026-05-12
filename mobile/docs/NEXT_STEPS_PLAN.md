@@ -27,7 +27,10 @@ O dominio mais maduro hoje e `escala`.
 
 - `evento` e superficie informativa
 - eventos publicos sao visiveis para todos os usuarios autenticados
-- eventos privados sao visiveis para `admin` e, quando houver, para a audiencia selecionada em `event_audiences`
+- eventos privados sao visiveis para:
+  - `admin`
+  - usuarios com `profiles.can_manage_events = true`
+  - audiencia selecionada em `event_audiences`, quando houver
 - `escala` e o fluxo operacional de quem participa de ministerio e funcao
 - a regra de dados `schedule belongs to event` continua valida
 - a experiencia do usuario deve deixar claro quando ele esta em `Eventos` e quando esta em `Escalas`
@@ -54,7 +57,10 @@ O dominio mais maduro hoje e `escala`.
 - ambas agora reutilizam o mesmo contrato canonico de apresentacao informativa (`toInformationalEventViewModel`) para card e detalhe
 - `EventsScreen` lista proximos eventos e historico real
 - `Proximos` e `Anteriores` agora classificam pelo fim efetivo do evento (`end_at`, com fallback em `start_at`) e mantem ordenacao por `start_at`
-- criacao e edicao de evento ficam restritas a `admin` nesta fase
+- criacao e edicao de evento agora usam permissao granular global:
+  - `admin`
+  - usuarios com `profiles.can_manage_events = true`
+- a concessao/revogacao dessa permissao ainda e manual no banco nesta fase
 - eventos possuem categoria informativa simples em `events.category`, com valores em portugues
 - eventos podem ser publicos ou privados; quando privados, a visibilidade fica restrita a `event_audiences`
 - no MVP atual, `event_audiences` tambem representa a lista de convite/convocacao do evento
@@ -83,7 +89,7 @@ O dominio mais maduro hoje e `escala`.
 
 **PENDENTE DE DEFINICAO**
 
-- desenhar permissao granular futura para criacao/edicao de eventos sem promover todo usuario autorizado a `admin`
+- desenhar painel administrativo futuro para grant/revoke de `profiles.can_manage_events` sem depender de SQL manual
 - definir metadados extras do detalhe de evento, como link de transmissao/video
 - revisar UX final de evento + sala em uso real no app, agora que integracao opcional ja existe
 
@@ -176,6 +182,7 @@ O dominio mais maduro hoje e `escala`.
    - `20260426000117_prevent_duplicate_member_schedule_assignments.sql`
    - `20260427000118_add_event_category.sql`
    - `20260428000119_add_private_event_audiences.sql`
+   - `20260509000123_add_event_management_permission.sql`
    - migrations de notificacoes de swap, se ainda nao estiverem aplicadas no projeto remoto
 2. Implementar validacoes de data ainda pendentes no banco:
    - `events.end_at > start_at` quando `end_at` existir
@@ -201,13 +208,12 @@ O dominio mais maduro hoje e `escala`.
 1. Revisar `src/types/database.types.ts` para reduzir fragilidade de tipagem
 2. Padronizar timezone e datas no app com persistencia em UTC e formatacao no client
 3. Fechar loading, error e empty states nas telas principais
-4. Fechar permissao granular de criacao/edicao de eventos sem depender so de `admin`
+4. Criar UI futura para grant/revoke de `profiles.can_manage_events`
 5. Confirmar operacao remota da Fase 4 do core de eventos:
    - validar no Supabase remoto a migration `20260504000122_normalize_room_catalog.sql`
    - confirmar no banco o catalogo padrao de salas
    - validar o read-model diario de salas com dados reais
-6. Fechar permissao granular de criacao/edicao de eventos sem depender so de `admin`
-7. Depois retomar musicas e setlists; salas ja entraram no fluxo principal basico desta fase
+6. Depois retomar musicas e setlists; salas ja entraram no fluxo principal basico desta fase
 
 ---
 

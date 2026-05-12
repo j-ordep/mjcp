@@ -8,6 +8,7 @@ import HeaderSecondary from "../../components/Header/HeaderSecondary";
 import type { EventDetailsScreenProps } from "../../navigation/AppNavigator";
 import { getEventById } from "../../services/eventService";
 import { useAuthStore } from "../../stores/useAuthStore";
+import { canManageEvents as canManageEventsForProfile } from "../../utils/eventPermissions";
 import {
   toEventEditorInitialData,
   toInformationalEventViewModel,
@@ -20,7 +21,7 @@ export default function EventDetailsScreen({
   const [event, setEvent] = useState(route.params.event);
   const { profile } = useAuthStore();
 
-  const canManageEvents = profile?.role === "admin";
+  const canManageEvents = canManageEventsForProfile(profile);
 
   useFocusEffect(
     useCallback(() => {

@@ -52,13 +52,18 @@ O dominio principal hoje e o fluxo de escalas.
 - `EventsScreen` e `EventDetailsScreen` agora consomem o mesmo contrato canonico de apresentacao informativa (`toInformationalEventViewModel`), evitando payload fragmentado entre lista e detalhe
 - o payload usado para abrir a edicao de evento a partir de `EventDetailsScreen` agora passa por sanitizer/whitelist (`toEventEditorInitialData`), impedindo vazamento acidental de campos operacionais de escala para o fluxo de evento
 - `EventsScreen` mostra proximos eventos e historico real; a classificacao entre atual/futuro e historico considera `end_at` quando existir, mantendo a ordenacao por `start_at`
+- criacao e edicao de evento agora ficam disponiveis para:
+  - `admin`
+  - usuarios com `profiles.can_manage_events = true`
 - `CreateEventScreen` agora reidrata a edicao de evento pelo backend via `eventId`, em vez de depender apenas dos dados passados pela navegacao
 - a audiencia de eventos privados volta carregada corretamente ao editar o evento
 - no MVP atual, `event_audiences` representa ao mesmo tempo visibilidade e lista de convite/convocacao do evento privado
 - reuniao continua sendo um evento; nao existe entidade separada para esse caso
 - `EBD` continua coberta pela categoria `ensino`
 - mesmo para `admin`, o detalhe de evento permanece informativo; escalas vinculadas continuam no fluxo de escalas
-- evento privado pode existir sem audiencia explicita; nesse caso ele fica visivel apenas para `admin`
+- evento privado pode existir sem audiencia explicita; nesse caso ele fica visivel para:
+  - `admin`
+  - usuarios com `profiles.can_manage_events = true`
 - `CreateEventScreen` agora permite vincular sala opcionalmente quando houver uma unica data, carregando disponibilidade real por janela
 - a edicao de evento reidrata e preserva corretamente audiencia privada e reserva vinculada; limpeza automatica de sala por indisponibilidade temporaria nao remove a reserva sem intencao
 - `RoomsScreen` deixou de ser mockado e agora cria reservas independentes reais em `room_reservations`
@@ -163,7 +168,10 @@ O modelo atual e:
 - `src/screens/app/EventsScreen.tsx`
   - listagem informativa de eventos, com proximos e anteriores
   - eventos publicos aparecem para todos os usuarios autenticados
-  - eventos privados aparecem apenas para a audiencia selecionada em `event_audiences`
+  - eventos privados aparecem para:
+    - audiencia selecionada em `event_audiences`
+    - `admin`
+    - usuarios com `profiles.can_manage_events = true`
 - `src/screens/app/SwapRequestsScreen.tsx`
   - acompanhamento de trocas disponiveis e proprias
 - `src/screens/app/ManageMinistryMembersScreen.tsx`
@@ -183,6 +191,7 @@ O modelo atual e:
 - Eventos permanecem apenas como superficie informativa; qualquer acao operacional fica restrita ao dominio de escala.
 - Eventos possuem `category` informativa em portugues para badge visual minimalista; isso nao altera escala, participacao ou permissao.
 - Escala representa servico/funcao; reunioes privadas usam audiencia do evento, e nao assignments, para definir quem participa.
+- A permissao granular de eventos nesta fase usa a flag `profiles.can_manage_events`; nao existe painel administrativo no app para grant/revoke, apenas operacao manual no Supabase.
 - Notificacoes para eventos privados ficam como backlog futuro; o estado atual preserva `event_audiences` para suportar isso depois.
 - `location` textual continua existindo em eventos; sala vinculada e opcional e nao substitui local livre.
 - A direcao atual para salas e reservas passa a ser concreta nesta fase: usar `room_reservations.event_id` opcional em vez de `events.room_id`.

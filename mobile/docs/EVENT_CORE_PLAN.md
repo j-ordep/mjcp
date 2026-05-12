@@ -63,7 +63,9 @@ O comportamento vem da composicao do evento com outros modulos, e nao da criacao
 - apenas usuarios escolhidos explicitamente podem visualizar
 - no MVP, visibilidade e `convite` sao a mesma coisa
 - adicionar/remover pessoas da audiencia do evento e o unico modo de controlar quem ve a reuniao privada
-- se nao houver audiencia explicita, o evento privado fica visivel apenas para `admin`
+- se nao houver audiencia explicita, o evento privado fica visivel para:
+  - `admin`
+  - usuarios com `profiles.can_manage_events = true`
 
 ### Reuniao
 
@@ -148,6 +150,22 @@ Ela:
 - usuario escalado nao e a mesma coisa que usuario convidado para reuniao
 - evento com sala usa reserva opcional real, sem sobrescrever conflito de horario
 - `RoomsScreen` deixou de ser mock e cria reservas independentes reais
+- a permissao granular de eventos foi fechada por flag global em `profiles.can_manage_events`, separada de `admin`
+
+### Fase 5 - Permissao granular para gestao de eventos
+
+Objetivo: liberar criacao/edicao global de eventos para usuarios autorizados, sem promover acesso total de `admin`.
+
+Status em 2026-05-09: concluida no repo local.
+
+- `profiles.can_manage_events` passa a ser a flag explicita de gestao de eventos
+- a helper SQL `public.can_manage_events()` unifica `admin` + flag no backend
+- policies de escrita de `events` passam a aceitar gestores de evento, mantendo a janela de editabilidade antes de `start_at`
+- leitura de eventos privados passa a incluir gestores de evento, alem de `admin` e audiencia explicita
+- leitura e mutacao de `event_audiences` passam a aceitar gestores de evento; escrita continua limitada a eventos ainda editaveis
+- a RPC `save_event_with_optional_room_reservation` passa a aceitar gestores de evento
+- o app usa gating derivado por capacidade em vez de checks locais hardcoded de `admin`
+- nao existe painel administrativo no app para grant/revoke; nesta fase isso continua manual no Supabase
 
 ---
 
@@ -176,7 +194,9 @@ Status em 2026-05-04: concluida no repo local.
 - categoria `reuniao` continua sendo apenas tag semantica
 - suporte a publico/privado continua no proprio `event`
 - audiencia selecionada continua no proprio evento por `event_audiences`
-- privado sem audiencia explicita agora e valido e fica visivel apenas para `admin`
+- privado sem audiencia explicita agora e valido e fica visivel para:
+  - `admin`
+  - usuarios com `profiles.can_manage_events = true`
 - nao existe exigencia de escala para reunioes
 - notificacoes de eventos privados continuam explicitamente para fase futura
 - a integracao opcional de sala ficou acoplada a `room_reservations.event_id`, sem criar `events.room_id`
@@ -237,7 +257,7 @@ Status em 2026-05-06: concluida no repo local, com pendencia operacional remota.
 
 ## 8. Pendencias de definicao
 
-- permissao granular futura para criacao/edicao de eventos sem depender apenas de `admin`
+- painel administrativo futuro para grant/revoke de `profiles.can_manage_events`
 - decidir se o detalhe do evento tera metadados extras futuros, como links, materiais ou transmissao
 - decidir no futuro se salas extras/customizadas permanecem livres ou se havera gestao administrativa do catalogo
 
@@ -253,9 +273,10 @@ Status em 2026-05-06: concluida no repo local, com pendencia operacional remota.
 ## 9. Ordem pratica de execucao
 
 1. consolidar a documentacao do core de eventos
-2. fechar permissao granular de criacao/edicao de eventos
-3. concluir os pendentes operacionais remotos da Fase 4 em salas
+2. concluir os pendentes operacionais remotos da Fase 4 em salas
+3. validar no Supabase remoto a migration `20260509000123_add_event_management_permission.sql`
 4. estabilizar testes e contrato do core
+5. desenhar UI futura para grant/revoke de `profiles.can_manage_events`
 
 ---
 

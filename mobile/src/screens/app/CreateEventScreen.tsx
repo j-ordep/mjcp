@@ -32,6 +32,7 @@ import {
   listProfilesPage,
   type SearchableProfile,
 } from "../../services/profileService";
+import { useAuthStore } from "../../stores/useAuthStore";
 import { useEventStore } from "../../stores/useEventStore";
 import {
   createLocalDateTime,
@@ -46,6 +47,7 @@ import {
   type EventCategory,
   normalizeEventCategory,
 } from "../../utils/eventCategory";
+import { canManageEvents as canManageEventsForProfile } from "../../utils/eventPermissions";
 import {
   getRoomIdForEditSave,
   isRoomSelectable,
@@ -183,6 +185,7 @@ function formatReservationSummary(room: RoomAvailability, currentEventId?: strin
 export default function CreateEventScreen({ route }: CreateEventScreenProps) {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { profile } = useAuthStore();
   const scrollViewRef = useRef<ScrollView | null>(null);
   const audienceRequestIdRef = useRef(0);
   const audienceResultsRef = useRef<SearchableProfile[]>([]);
@@ -202,6 +205,7 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
     updateEventWithRoom,
     isLoadingEvents,
   } = useEventStore();
+  const canManageEvents = canManageEventsForProfile(profile);
 
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState<EventCategory>("geral");
@@ -265,6 +269,16 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
   useEffect(() => {
     audienceResultsRef.current = audienceResults;
   }, [audienceResults]);
+
+  useEffect(() => {
+    if (profile && !canManageEvents) {
+      if (navigation.canGoBack()) {
+        navigation.goBack();
+      } else {
+        navigation.navigate("EventsScreen");
+      }
+    }
+  }, [canManageEvents, navigation, profile]);
 
   useEffect(() => {
     isPublicRef.current = isPublic;
@@ -608,6 +622,11 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
   };
 
   const handleSave = async () => {
+    if (!canManageEvents) {
+      Alert.alert("Acesso negado", "VocÃª nÃ£o tem permissÃ£o para gerenciar eventos.");
+      return;
+    }
+
     if (isEdit && !eventId) {
       Alert.alert("Erro", "Evento invÃ¡lido para ediÃ§Ã£o.");
       return;
@@ -701,6 +720,10 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
 
     navigation.goBack();
   };
+
+  if (!canManageEvents) {
+    return null;
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={["top", "left", "right"]}>

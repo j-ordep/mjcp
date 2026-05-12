@@ -255,7 +255,9 @@ Decisao atualizada em 2026-04-07:
 **Confirmado no codigo**
 - `EventsScreen` ja renderiza card informativo com `showActions={false}` em `src/screens/app/EventsScreen.tsx`
 - `EventsScreen` lista `Proximos` e `Anteriores`, carregando eventos futuros e historico real via `allEvents`
-- `EventDetailsScreen` hoje esta informativa e so expoe edicao para `admin` em `src/screens/app/EventDetailsScreen.tsx`
+- `EventDetailsScreen` hoje esta informativa e expoe edicao para:
+  - `admin`
+  - usuarios com `profiles.can_manage_events = true`
 - `EventsScreen` e `EventDetailsScreen` agora consomem o mesmo shape canonico de apresentacao informativa em `src/utils/eventPresentation.ts`
 - `CreateEventScreen` ja cria e edita eventos usando `normalizeEventRange(...)` em `src/screens/app/CreateEventScreen.tsx` e `src/services/eventService.ts`
 - `CreateEventScreen` agora diferencia evento publico e privado, permitindo selecionar membros por busca nominal quando `is_public = false`
@@ -271,7 +273,9 @@ Decisao atualizada em 2026-04-07:
 - reuniao continua sendo `evento`; ela nao deve virar entidade nova nem reutilizar `escala` para representar participantes
 - `EBD` continua coberta por `ensino`, sem categoria propria nesta fase
 - [x] Fechar Fase 2 do core de eventos
-  - evento privado pode existir sem audiencia explicita; nesse caso fica visivel apenas para `admin`
+  - evento privado pode existir sem audiencia explicita; nesse caso fica visivel para:
+    - `admin`
+    - usuarios com `profiles.can_manage_events = true`
   - `event_audiences` continua representando convite + visibilidade no MVP
   - `room_reservations.event_id` passa a ser o vinculo estrutural opcional entre evento e sala
   - `save_event_with_optional_room_reservation` salva evento + audiencia + reserva opcional em transacao
@@ -279,10 +283,12 @@ Decisao atualizada em 2026-04-07:
   - `RoomsScreen` deixou de ser mock e passou a criar reservas independentes reais
   - a reconciliacao de sala em edicao protege contra limpeza indevida ao mudar e voltar janela/horario
 
-- [ ] Definir permissao granular para criacao/edicao de eventos
-  - regra atual continua:
-    - apenas `admin` cria/edita eventos
-  - proxima fase deve decidir como liberar isso para pessoas autorizadas sem promover acesso total
+- [x] Fechar permissao granular para criacao/edicao de eventos
+  - regra atual implementada:
+    - `admin` cria/edita eventos
+    - usuarios com `profiles.can_manage_events = true` tambem criam/editam eventos globalmente
+  - a audiencia privada e a reserva opcional de sala continuam dentro da mesma permissao
+  - a concessao/revogacao da flag continua manual no banco nesta fase
 
 - [x] Integrar salas ao fluxo basico de eventos sem criar `events.room_id`
   - direcao validada em 2026-04-30:
@@ -326,9 +332,7 @@ Decisao atualizada em 2026-04-07:
   - decidir futuramente se salas extras/customizadas permanecem livres ou se havera gestao administrativa dedicada
 
 **PENDENTE DE DEFINICAO**
-- regra futura para permissao granular de criacao/edicao de eventos:
-  - por enquanto, apenas `admin` cria/edita eventos
-  - no futuro, avaliar flag/cargo especifico para pastores/pessoas autorizadas
+- painel administrativo futuro para grant/revoke de `profiles.can_manage_events`
 - se o detalhe do evento deve ganhar metadados extras no futuro, como link de transmissao/video
 - estrategia futura de notificacoes para eventos privados fica registrada, mas fora do escopo atual:
   - usuarios selecionados explicitamente na audiencia devem poder ser notificados no futuro
@@ -392,12 +396,13 @@ Contexto: eventos sao informativos para todos; escala e o fluxo operacional de q
     - refinamentos visuais do seletor de audiencia em telas menores
     - copy final do fluxo privado/publico
 
-- [ ] Arquitetar permissao granular para criacao/edicao de eventos
-  - regra atual:
-    - apenas `admin` cria/edita eventos
-    - lideres continuam podendo operar escalas dos seus ministerios
-  - futuro possivel:
-    - flag/cargo especifico para pastores ou pessoas autorizadas criarem eventos sem virar admin total
+- [x] Arquitetar permissao granular para criacao/edicao de eventos
+  - implementado:
+    - `profiles.can_manage_events` como flag global por usuario
+    - helper backend `public.can_manage_events()`
+    - gating de app derivado por capacidade, sem espalhar `role === "admin"`
+  - pendente futuro:
+    - UI administrativa para grant/revoke da flag
 
 - [x] Consolidar `Evento` como core composicional do produto
   - Confirmado no codigo e na documentacao viva:

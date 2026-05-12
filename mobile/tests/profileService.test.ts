@@ -11,6 +11,7 @@ function createProfilesQueryMock(response: {
   const calls = {
     from: [] as string[],
     select: [] as unknown[][],
+    eq: [] as unknown[][],
     neq: [] as unknown[][],
     order: [] as unknown[][],
     range: [] as unknown[][],
@@ -20,6 +21,10 @@ function createProfilesQueryMock(response: {
   const builder: any = {
     select: (...args: unknown[]) => {
       calls.select.push(args);
+      return builder;
+    },
+    eq: (...args: unknown[]) => {
+      calls.eq.push(args);
       return builder;
     },
     neq: (...args: unknown[]) => {
@@ -38,6 +43,10 @@ function createProfilesQueryMock(response: {
       calls.or.push(args);
       return builder;
     },
+    single: async () => ({
+      data: (response.data?.[0] ?? null),
+      error: response.error ?? null,
+    }),
     then: (
       onfulfilled: (value: {
         data: unknown[];
@@ -169,4 +178,30 @@ test("listProfilesPage applies name search and advances pagination", async () =>
   assert.deepEqual(calls.or[0], [
     "full_name.ilike.%Maria%,email.ilike.%Maria%",
   ]);
+});
+
+test("getProfile normalizes missing can_manage_events to false", async () => {
+  const { supabaseMock } = createProfilesQueryMock({
+    data: [
+      {
+        id: "user-1",
+        full_name: "Rute",
+        email: "rute@example.com",
+        phone: null,
+        avatar_url: null,
+        role: "leader",
+        created_at: "2026-05-09T00:00:00.000Z",
+      },
+    ],
+  });
+
+  const { getProfile } = loadServiceModule<ProfileService>(
+    "../src/services/profileService",
+    supabaseMock,
+  );
+
+  const result = await getProfile("user-1");
+
+  assert.equal(result.error, null);
+  assert.equal(result.profile?.can_manage_events, false);
 });

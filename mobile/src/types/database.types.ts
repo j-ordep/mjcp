@@ -25,6 +25,7 @@ export interface Database {
           phone: string | null;
           avatar_url: string | null;
           role: AppRole;
+          can_manage_events: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -35,6 +36,7 @@ export interface Database {
           phone?: string | null;
           avatar_url?: string | null;
           role?: AppRole;
+          can_manage_events?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -45,6 +47,7 @@ export interface Database {
           phone?: string | null;
           avatar_url?: string | null;
           role?: AppRole;
+          can_manage_events?: boolean;
           created_at?: string;
           updated_at?: string;
         };

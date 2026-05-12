@@ -7,6 +7,7 @@ export interface UserProfile {
   phone: string | null
   avatar_url: string | null
   role: 'admin' | 'leader' | 'member'
+  can_manage_events: boolean
   created_at: string
 }
 
