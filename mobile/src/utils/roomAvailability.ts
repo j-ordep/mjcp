@@ -1,4 +1,5 @@
 import type { RoomAvailability } from "../services/roomReservationService";
+import type { RoomReservation } from "../types/models";
 
 export function isRoomSelectable(
   room: RoomAvailability,
@@ -108,4 +109,17 @@ export function canCreateStandaloneRoomReservation(input: {
   reservationWindow: { startAt: string; endAt: string } | null;
 }) {
   return input.title.trim().length > 0 && input.reservationWindow != null;
+}
+
+export function canCancelStandaloneRoomReservation(input: {
+  currentUserId: string | null | undefined;
+  reservation: RoomReservation | null | undefined;
+}) {
+  return (
+    typeof input.currentUserId === "string" &&
+    input.currentUserId.length > 0 &&
+    input.reservation?.status === "active" &&
+    input.reservation.event_id == null &&
+    input.reservation.reserved_by === input.currentUserId
+  );
 }

@@ -147,8 +147,19 @@ O dominio mais maduro hoje e `escala`.
 
 **Confirmado no repo**
 
-- ha estrutura inicial no banco e telas no app
-- esses modulos ainda nao sao o foco principal da rodada atual
+- `RoomsScreen` ja funciona com:
+  - disponibilidade por janela
+  - agenda diaria por sala
+  - reserva avulsa real
+  - cancelamento da propria reserva avulsa ativa
+- `BlockDatesScreen` ja persiste indisponibilidades reais do usuario em `blocked_dates`
+- a integracao com escala continua warning-only e reaproveita `getAssignmentWarningsForSchedule`
+- `MusicScreen` deixou de usar arrays mockados:
+  - carrega catalogo real de `songs`
+  - mostra o setlist real do proximo evento via `event_setlists`
+  - permite edicao simples do setlist do proximo evento para quem gerencia eventos
+- pendencia operacional remota desta frente:
+  - aplicar `20260512000125_allow_event_managers_to_manage_event_setlists.sql`
 
 ---
 
@@ -183,6 +194,7 @@ O dominio mais maduro hoje e `escala`.
    - `20260428000119_add_private_event_audiences.sql`
    - `20260509000123_add_event_management_permission.sql`
    - `20260511000124_add_profile_event_management_permission_rpc.sql`
+   - `20260512000125_allow_event_managers_to_manage_event_setlists.sql`
    - migrations de notificacoes de swap, se ainda nao estiverem aplicadas no projeto remoto
 2. Implementar validacoes de data ainda pendentes no banco:
    - `events.end_at > start_at` quando `end_at` existir

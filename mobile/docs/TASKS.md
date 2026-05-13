@@ -4,6 +4,7 @@ Data: 2026-04-05 (America/Sao_Paulo)
 
 Referencia rapida:
 - plano consolidado da proxima rodada: `docs/NEXT_STEPS_PLAN.md`
+- plano da rodada para transformar o app em POC usavel: `docs/POC_USABLE_PLAN.md`
 - plano consolidado do core de eventos: `docs/EVENT_CORE_PLAN.md`
 - plano tecnico da fase 1 do core de eventos: `docs/EVENT_CORE_PHASE1_IMPLEMENTATION_PLAN.md`
 - plano tecnico da fase 2 do core de eventos: `docs/EVENT_CORE_PHASE2_IMPLEMENTATION_PLAN.md`
@@ -568,20 +569,23 @@ Contexto: eventos sao informativos para todos; escala e o fluxo operacional de q
 
 ## P2 (Medio) - Salas e Reservas
 
-- [ ] Implementar queries reais de disponibilidade
+- [x] Implementar queries reais de disponibilidade
   - A tabela `room_reservations` ja tem exclusao de overlap via GiST.
   - App precisa listar disponibilidade por janela de horario.
 - [x] Evoluir `RoomsScreen` para agenda diaria por sala
   - mostrar todas as reservas do dia
   - mostrar badge `Evento` quando `room_reservations.event_id` estiver preenchido
   - mostrar cronograma simples separado das escalas vinculadas ao evento
+- [x] Permitir cancelamento da propria reserva avulsa sem cancelar reserva vinculada a evento
 
 ---
 
 ## P2 (Medio) - Musicas e Setlists
 
 - [ ] Implementar tela de musica individual (letra/cifra via URL)
-- [ ] Implementar setlist por evento (`event_setlists` + ordenacao)
+- [x] Implementar setlist por evento (`event_setlists` + ordenacao)
+  - entregue em modo simples no `MusicScreen`, focado no proximo evento
+  - permissao de escrita alinhada por migration com `can_manage_events`
 
 ---
 

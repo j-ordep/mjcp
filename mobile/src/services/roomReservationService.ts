@@ -1,6 +1,8 @@
 import { supabase } from "../lib/supabase";
 import type { Room, RoomReservation } from "../types/models";
 import { normalizeEventCategory } from "../utils/eventCategory";
+export const ROOM_EVENT_LINKED_CANCELLATION_MESSAGE =
+  "Esta reserva estÃ¡ vinculada a um evento e nÃ£o pode ser cancelada por aqui.";
 
 export const ROOM_RESERVATION_CONFLICT_MESSAGE =
   "Esta sala já está reservada para esse horário.";
@@ -337,6 +339,60 @@ export async function createStandaloneRoomReservation(input: {
     return { data: data as RoomReservation, error: null };
   } catch (error: unknown) {
     return { data: null, error: mapRoomReservationConflictMessage(error) };
+  }
+}
+
+export async function cancelStandaloneRoomReservation(reservationId: string) {
+  try {
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError) throw authError;
+
+    if (!user?.id) {
+      throw new Error("UsuÃ¡rio nÃ£o autenticado.");
+    }
+
+    const { data: reservationData, error: reservationError } = await supabase
+      .from("room_reservations")
+      .select("*")
+      .eq("id", reservationId)
+      .single();
+
+    if (reservationError) throw reservationError;
+
+    const reservation = reservationData as RoomReservation | null;
+
+    if (!reservation) {
+      throw new Error("Reserva nÃ£o encontrada.");
+    }
+
+    if (reservation.reserved_by !== user.id) {
+      throw new Error("VocÃª nÃ£o pode cancelar esta reserva.");
+    }
+
+    if (reservation.event_id != null) {
+      throw new Error(ROOM_EVENT_LINKED_CANCELLATION_MESSAGE);
+    }
+
+    if (reservation.status !== "active") {
+      throw new Error("Esta reserva jÃ¡ nÃ£o estÃ¡ ativa.");
+    }
+
+    const { data, error } = await supabase
+      .from("room_reservations")
+      .update({ status: "cancelled" })
+      .eq("id", reservationId)
+      .select("*")
+      .single();
+
+    if (error) throw error;
+
+    return { data: data as RoomReservation, error: null };
+  } catch (error: unknown) {
+    return { data: null, error: getErrorMessage(error) };
   }
 }
 

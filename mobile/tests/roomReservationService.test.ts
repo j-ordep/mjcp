@@ -181,6 +181,65 @@ function createLinkedReservationMock(response: MockResponse) {
   };
 }
 
+function createCancelReservationMock(config: {
+  authUserId?: string | null;
+  reservationResponse: MockResponse;
+  updateResponse: MockResponse;
+}) {
+  const calls = {
+    selects: [] as unknown[][],
+    eqs: [] as unknown[][],
+    updates: [] as unknown[][],
+  };
+  let phase: "select" | "update" = "select";
+
+  const builder: any = {
+    select: (...args: unknown[]) => {
+      calls.selects.push(args);
+      return builder;
+    },
+    eq: (...args: unknown[]) => {
+      calls.eqs.push(args);
+      return builder;
+    },
+    update: (...args: unknown[]) => {
+      calls.updates.push(args);
+      phase = "update";
+      return builder;
+    },
+    single: async () =>
+      phase === "select"
+        ? {
+            data: config.reservationResponse.data ?? null,
+            error: config.reservationResponse.error ?? null,
+          }
+        : {
+            data: config.updateResponse.data ?? null,
+            error: config.updateResponse.error ?? null,
+          },
+  };
+
+  return {
+    calls,
+    supabaseMock: {
+      auth: {
+        getUser: async () => ({
+          data: {
+            user: config.authUserId ? { id: config.authUserId } : null,
+          },
+          error: null,
+        }),
+      },
+      from: (table: string) => {
+        if (table !== "room_reservations") {
+          throw new Error(`Unexpected table: ${table}`);
+        }
+        return builder;
+      },
+    },
+  };
+}
+
 test("getRoomsForWindow returns room availability with overlapping reservation summary", async () => {
   const { calls, supabaseMock } = createRoomsWindowMock({
     rooms: [{ id: "room-1", name: "Sala 1", capacity: 20, description: null }],
@@ -386,6 +445,86 @@ test("createStandaloneRoomReservation includes the current user and maps overlap
     end_at: "2026-05-02T21:00:00.000Z",
   }]]);
   assert.equal(result.error, "Esta sala já está reservada para esse horário.");
+});
+
+test("cancelStandaloneRoomReservation cancels the current user's active standalone reservation", async () => {
+  const { calls, supabaseMock } = createCancelReservationMock({
+    authUserId: "user-1",
+    reservationResponse: {
+      data: {
+        id: "reservation-1",
+        room_id: "room-1",
+        event_id: null,
+        reserved_by: "user-1",
+        start_at: "2026-05-02T19:00:00.000Z",
+        end_at: "2026-05-02T21:00:00.000Z",
+        purpose: "ReuniÃ£o de alinhamento",
+        category: "reuniÃ£o",
+        status: "active",
+        created_at: "2026-05-01T10:00:00.000Z",
+      },
+    },
+    updateResponse: {
+      data: {
+        id: "reservation-1",
+        room_id: "room-1",
+        event_id: null,
+        reserved_by: "user-1",
+        start_at: "2026-05-02T19:00:00.000Z",
+        end_at: "2026-05-02T21:00:00.000Z",
+        purpose: "ReuniÃ£o de alinhamento",
+        category: "reuniÃ£o",
+        status: "cancelled",
+        created_at: "2026-05-01T10:00:00.000Z",
+      },
+    },
+  });
+  const { cancelStandaloneRoomReservation } = loadServiceModule<RoomReservationService>(
+    "../src/services/roomReservationService",
+    supabaseMock,
+  );
+
+  const result = await cancelStandaloneRoomReservation("reservation-1");
+
+  assert.equal(result.error, null);
+  assert.deepEqual(calls.selects[0], ["*"]);
+  assert.deepEqual(calls.eqs.slice(0, 1), [["id", "reservation-1"]]);
+  assert.deepEqual(calls.updates[0], [{ status: "cancelled" }]);
+  assert.deepEqual(calls.eqs.slice(1), [["id", "reservation-1"]]);
+  assert.equal(result.data?.status, "cancelled");
+});
+
+test("cancelStandaloneRoomReservation blocks reservations linked to an event", async () => {
+  const { calls, supabaseMock } = createCancelReservationMock({
+    authUserId: "user-1",
+    reservationResponse: {
+      data: {
+        id: "reservation-1",
+        room_id: "room-1",
+        event_id: "event-1",
+        reserved_by: "user-1",
+        start_at: "2026-05-02T19:00:00.000Z",
+        end_at: "2026-05-02T21:00:00.000Z",
+        purpose: "Culto da noite",
+        category: "culto",
+        status: "active",
+        created_at: "2026-05-01T10:00:00.000Z",
+      },
+    },
+    updateResponse: {},
+  });
+  const { cancelStandaloneRoomReservation } = loadServiceModule<RoomReservationService>(
+    "../src/services/roomReservationService",
+    supabaseMock,
+  );
+
+  const result = await cancelStandaloneRoomReservation("reservation-1");
+
+  assert.equal(
+    result.error,
+    "Esta reserva estÃ¡ vinculada a um evento e nÃ£o pode ser cancelada por aqui.",
+  );
+  assert.equal(calls.updates.length, 0);
 });
 
 test("getLinkedReservationForEvent returns the first active reservation for the event", async () => {

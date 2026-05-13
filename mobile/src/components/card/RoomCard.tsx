@@ -14,7 +14,9 @@ interface RoomCardProps {
   availability?: RoomAvailability | null;
   agenda?: RoomDailyAgendaItem[];
   onReserve?: () => void;
+  onCancelReservation?: () => void;
   isReserving?: boolean;
+  isCancellingReservation?: boolean;
 }
 
 function formatTimeLabel(value: string) {
@@ -36,7 +38,9 @@ export default function RoomCard({
   availability = null,
   agenda = [],
   onReserve,
+  onCancelReservation,
   isReserving = false,
+  isCancellingReservation = false,
 }: RoomCardProps) {
   const status = availability?.status ?? null;
   const reservation = availability?.reservation ?? null;
@@ -55,6 +59,7 @@ export default function RoomCard({
   const agendaItems = buildRoomAgendaDisplayItems(agenda, {
     excludeReservationId: !isAvailable ? reservation?.id ?? null : null,
   });
+  const canCancelReservation = !isAvailable && typeof onCancelReservation === "function";
   const agendaEmptyMessage = !isAvailable && reservation
     ? "Nenhuma outra reserva para esta sala neste dia."
     : "Nenhuma reserva para esta sala neste dia.";
@@ -125,7 +130,7 @@ export default function RoomCard({
         style={{
           backgroundColor: "#f9fafb",
           borderRadius: 16,
-          marginBottom: isAvailable ? 12 : 0,
+          marginBottom: isAvailable || canCancelReservation ? 12 : 0,
           padding: 12,
         }}
       >
@@ -220,6 +225,15 @@ export default function RoomCard({
           disabled={!onReserve}
         >
           Reservar
+        </DefaultButton>
+      ) : canCancelReservation ? (
+        <DefaultButton
+          variant="destructive"
+          onPress={onCancelReservation}
+          isLoading={isCancellingReservation}
+          disabled={!onCancelReservation}
+        >
+          Cancelar reserva
         </DefaultButton>
       ) : null}
     </View>

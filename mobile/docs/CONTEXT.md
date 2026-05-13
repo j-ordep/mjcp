@@ -71,6 +71,7 @@ O dominio principal hoje e o fluxo de escalas.
   - todas as reservas ativas do dia
   - badge `Evento` quando a reserva veio de `room_reservations.event_id`
   - resumo simples somente leitura das escalas vinculadas ao evento
+- `RoomsScreen` agora tambem permite cancelar a propria reserva avulsa ativa, sem tocar em reservas vinculadas a evento
 - se a leitura de `schedules` falhar por permissao/RLS, a agenda diaria continua carregando e apenas omite o resumo de escalas
 - o vinculo estrutural entre evento e sala nesta fase passa por `room_reservations.event_id`, sem introduzir `events.room_id`
 - `save_event_with_optional_room_reservation` salva evento + audiencia + reserva opcional de forma atomica, bloqueando conflito de horario
@@ -84,6 +85,12 @@ O dominio principal hoje e o fluxo de escalas.
   - `Templo`
 - a migration segura `20260504000122_normalize_room_catalog.sql` renomeia legado conhecido e insere faltantes sem apagar salas extras ja existentes
 - a UI de salas deixou de exibir lotacao/capacidade; `capacity` continua no banco apenas como dado estrutural legado
+- `BlockDatesScreen` deixou de ser placeholder e agora carrega/salva as indisponibilidades reais do usuario em `blocked_dates`
+- `blocked_dates` continua como warning soft no fluxo de escala; nao virou bloqueio hard
+- `MusicScreen` deixou de ser mock:
+  - o catalogo agora vem de `songs`
+  - o proximo setlist agora vem de `event_setlists`
+  - usuarios com permissao de gerenciar eventos agora conseguem editar de forma simples o setlist do proximo evento
 - Ao tocar em uma escala a partir de `ScheduleScreen`, admin, lider e membro agora abrem a mesma tela `EditScheduleScreen`:
   - admin/lider entram em modo gerencial
   - membro entra em modo de acompanhamento da propria participacao, sem acoes administrativas
@@ -196,6 +203,7 @@ O modelo atual e:
 - `location` textual continua existindo em eventos; sala vinculada e opcional e nao substitui local livre.
 - A direcao atual para salas e reservas passa a ser concreta nesta fase: usar `room_reservations.event_id` opcional em vez de `events.room_id`.
 - Ao aplicar as migrations remotas de salas, conferir tambem a normalizacao do catalogo em `20260504000122_normalize_room_catalog.sql`.
+- A migration remota adicional desta rodada e `20260512000125_allow_event_managers_to_manage_event_setlists.sql`, para liberar escrita de `event_setlists` a quem ja pode gerenciar eventos.
 - O banco continua persistindo enums em ingles por compatibilidade de schema, mas a UI deve exibir status em pt-BR.
 - As migrations mais recentes a confirmar/aplicar no Supabase remoto incluem:
   - `20260423000115_align_schedule_read_only_with_event_start_time.sql`

@@ -141,7 +141,8 @@ Data de reconciliacao: 2026-04-10 (America/Sao_Paulo)
 
 - [x] Queries reais de disponibilidade de salas
 - [ ] Tela de musica individual
-- [ ] Setlist por evento
+- [x] Setlist por evento
+  - entregue em modo simples no `MusicScreen`, focado no proximo evento
 - [ ] Padronizacao de loading/error/empty states
 - [ ] Definir estrategia de historico/retencao de escalas antigas
 
@@ -149,9 +150,9 @@ Data de reconciliacao: 2026-04-10 (America/Sao_Paulo)
 
 ## Proximos passos sugeridos
 
-1. Validar no Supabase remoto as migrations mais recentes, incluindo bloqueio de duplicidade de membro na escala e categoria de eventos.
+1. Aplicar no Supabase remoto a migration `20260512000125_allow_event_managers_to_manage_event_setlists.sql`.
 2. Revisar UX final de evento + sala em uso real no app.
-3. Validar em uso real a permissao granular de criacao/edicao de eventos.
-4. Confirmar no Supabase remoto a Fase 4 de salas, especialmente catalogo padrao e read-model diario com dados reais.
+3. Validar em uso real a permissao granular de criacao/edicao de eventos e setlists.
+4. Confirmar no Supabase remoto a fase atual de salas, especialmente catalogo padrao e read-model diario com dados reais.
 5. Refinar a UI administrativa de permissao granular se o uso real pedir filtros ou escopo extra.
-6. Implementar notificacoes in-app do fluxo de trocas e escalas, com geracao no backend e inbox real no app.
+6. Implementar notificacoes in-app do fluxo de trocas, escalas e eventos privados.

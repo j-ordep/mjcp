@@ -23,6 +23,7 @@ Aplicar no Supabase remoto as migrations locais pendentes que fecham o fluxo pri
 10. `20260428000119_add_private_event_audiences.sql`
 11. `20260509000123_add_event_management_permission.sql`
 12. `20260511000124_add_profile_event_management_permission_rpc.sql`
+13. `20260512000125_allow_event_managers_to_manage_event_setlists.sql`
 
 ---
 
@@ -144,6 +145,13 @@ Aplicar no Supabase remoto as migrations locais pendentes que fecham o fluxo pri
   - `admin` pode conceder/revogar a flag pelo app sem abrir SQL
   - usuarios comuns continuam sem poder elevar a propria permissao
 
+### `20260512000125_allow_event_managers_to_manage_event_setlists.sql`
+
+- redefine a policy de escrita de `event_setlists` para usar `public.can_manage_events()`
+- impacto funcional:
+  - quem ja pode gerenciar eventos passa a conseguir editar setlists sem precisar virar `admin`
+  - leitura autenticada de `event_setlists` continua igual
+
 ## 3. Ordem recomendada de aplicacao
 
 Aplicar exatamente nesta ordem:
@@ -160,6 +168,7 @@ Aplicar exatamente nesta ordem:
 10. `20260428000119_add_private_event_audiences.sql`
 11. `20260509000123_add_event_management_permission.sql`
 12. `20260511000124_add_profile_event_management_permission_rpc.sql`
+13. `20260512000125_allow_event_managers_to_manage_event_setlists.sql`
 
 ### Motivo da ordem
 
@@ -172,6 +181,7 @@ Aplicar exatamente nesta ordem:
 - `20260428000119` deve entrar depois da simplificacao de leitura de eventos, porque especializa a visibilidade publica/privada do dominio
 - `20260509000123` fecha a permissao granular de eventos por cima da modelagem ja consolidada de audiencia privada e sala opcional
 - `20260511000124` fecha a operacao segura de grant/revoke da flag no proprio app
+- `20260512000125` alinha `event_setlists` com a mesma permissao granular ja adotada no dominio de eventos
 
 ### Pre-requisito critico
 
@@ -318,7 +328,7 @@ where proname in (
 select policyname, cmd
 from pg_policies
 where schemaname = 'public'
-  and tablename in ('events', 'event_audiences')
+  and tablename in ('events', 'event_audiences', 'event_setlists')
 order by tablename, policyname;
 ```
 

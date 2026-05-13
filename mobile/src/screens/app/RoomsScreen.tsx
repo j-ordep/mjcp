@@ -7,18 +7,21 @@ import RoomCard from "../../components/card/RoomCard";
 import HeaderSecondary from "../../components/Header/HeaderSecondary";
 import CalendarModal from "../../components/utils/CalendarModal";
 import {
+  cancelStandaloneRoomReservation,
   createStandaloneRoomReservation,
   getRoomsDailyAgenda,
   getRoomsForWindow,
   type RoomAvailability,
   type RoomDailyAgendaRoom,
 } from "../../services/roomReservationService";
+import { useAuthStore } from "../../stores/useAuthStore";
 import { formatLocalDateKey, getDefaultEndAt, getNow } from "../../utils/eventDate";
 import {
   EVENT_CATEGORY_OPTIONS,
   type EventCategory,
 } from "../../utils/eventCategory";
 import {
+  canCancelStandaloneRoomReservation,
   canCreateStandaloneRoomReservation,
   getRefreshAvailabilityWindow,
   shouldApplyAvailabilityResponse,
@@ -110,6 +113,7 @@ function buildReservationWindow(dateKey: string, startTime: string, endTime: str
 }
 
 export default function RoomsScreen({ navigation }) {
+  const { session } = useAuthStore();
   const initialDate = formatLocalDateKey(getNow());
   const defaultStart = "19:00";
   const defaultEnd = new Date(
@@ -135,8 +139,10 @@ export default function RoomsScreen({ navigation }) {
   const [roomsError, setRoomsError] = useState<string | null>(null);
   const [dailyAgendaError, setDailyAgendaError] = useState<string | null>(null);
   const [submittingRoomId, setSubmittingRoomId] = useState<string | null>(null);
+  const [cancellingReservationId, setCancellingReservationId] = useState<string | null>(null);
   const availabilityRequestIdRef = useRef(0);
   const dailyAgendaRequestIdRef = useRef(0);
+  const currentUserId = session?.user?.id ?? null;
 
   const reservationWindow = useMemo(
     () => buildReservationWindow(selectedDateISO, startTime, endTime),
@@ -251,6 +257,45 @@ export default function RoomsScreen({ navigation }) {
       ),
       loadDailyAgenda(selectedDateISO),
     ]);
+  };
+
+  const handleCancelReservation = (reservationId: string) => {
+    Alert.alert(
+      "Cancelar reserva",
+      "Esta ação cancela apenas a sua reserva avulsa desta sala.",
+      [
+        { text: "Voltar", style: "cancel" },
+        {
+          text: "Cancelar reserva",
+          style: "destructive",
+          onPress: () => {
+            void (async () => {
+              setCancellingReservationId(reservationId);
+
+              const { error } = await cancelStandaloneRoomReservation(reservationId);
+
+              setCancellingReservationId(null);
+
+              if (error) {
+                Alert.alert("Erro ao cancelar", error);
+                return;
+              }
+
+              Alert.alert("Reserva cancelada", "A sala voltou a ficar disponível.");
+              await Promise.all([
+                loadRooms(
+                  getRefreshAvailabilityWindow({
+                    latestWindow: reservationWindowRef.current,
+                    fallbackWindow: reservationWindow,
+                  }),
+                ),
+                loadDailyAgenda(selectedDateISO),
+              ]);
+            })();
+          },
+        },
+      ],
+    );
   };
 
   const availableRoomsCount = availabilityRooms.filter(
@@ -544,6 +589,11 @@ export default function RoomsScreen({ navigation }) {
 
         {!showAgendaPlaceholders && displayRooms.map((room) => {
           const availability = availabilityByRoomId.get(room.id) ?? null;
+          const canCancelReservation = canCancelStandaloneRoomReservation({
+            currentUserId,
+            reservation: availability?.reservation,
+          });
+          const reservationId = availability?.reservation?.id ?? null;
 
           return (
             <RoomCard
@@ -552,10 +602,20 @@ export default function RoomsScreen({ navigation }) {
               availability={availability}
               agenda={room.agenda}
               isReserving={submittingRoomId === room.id}
+              isCancellingReservation={
+                reservationId != null && cancellingReservationId === reservationId
+              }
               onReserve={
                 availability?.status === "available" && canSubmitReservation
                   ? () => {
                       void handleReserve(room.id);
+                    }
+                  : undefined
+              }
+              onCancelReservation={
+                canCancelReservation && reservationId
+                  ? () => {
+                      handleCancelReservation(reservationId);
                     }
                   : undefined
               }
