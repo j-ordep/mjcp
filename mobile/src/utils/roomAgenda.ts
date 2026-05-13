@@ -11,6 +11,10 @@ export interface RoomAgendaDisplayItem {
   isPrimary: boolean;
 }
 
+interface BuildRoomAgendaDisplayItemsOptions {
+  excludeReservationId?: string | null;
+}
+
 function formatTimeLabel(value: string) {
   const date = new Date(value);
 
@@ -41,8 +45,15 @@ function buildScheduleSummaryLabel(item: RoomDailyAgendaItem) {
   ].join(" · ")}`;
 }
 
-export function buildRoomAgendaDisplayItems(items: RoomDailyAgendaItem[]): RoomAgendaDisplayItem[] {
-  return items.map((item, index) => ({
+export function buildRoomAgendaDisplayItems(
+  items: RoomDailyAgendaItem[],
+  options: BuildRoomAgendaDisplayItemsOptions = {},
+): RoomAgendaDisplayItem[] {
+  const filteredItems = options.excludeReservationId
+    ? items.filter((item) => item.id !== options.excludeReservationId)
+    : items;
+
+  return filteredItems.map((item, index) => ({
     id: item.id,
     title: item.purpose?.trim() || "Reserva ativa",
     categoryLabel: getEventCategoryLabel(item.category),

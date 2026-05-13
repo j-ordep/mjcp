@@ -1,4 +1,4 @@
-import { Clock, MapPin } from "lucide-react-native";
+import { ChevronRight, Clock, MapPin } from "lucide-react-native";
 import { View } from "react-native";
 import { Card, Text } from "react-native-paper";
 import { getEventCategoryOption } from "../../utils/eventCategory";
@@ -81,6 +81,7 @@ export default function EventCard(props: EventCardProps) {
   const datePlate = buildDatePlate(props.startAt);
   const timeRange = formatTimeRange(props.startAt, props.endAt);
   const isInformationalEvent = Boolean(props.category || props.startAt) && !props.showActions;
+  const showDateLine = !datePlate && Boolean(props.date);
 
   if (isInformationalEvent) {
     return (
@@ -144,9 +145,11 @@ export default function EventCard(props: EventCardProps) {
                 {props.title}
               </Text>
 
-              <Text style={{ color: "#111827", fontWeight: "700", fontSize: 14 }}>
-                {props.date}
-              </Text>
+              {showDateLine ? (
+                <Text style={{ color: "#111827", fontWeight: "700", fontSize: 14 }}>
+                  {props.date}
+                </Text>
+              ) : null}
 
               {timeRange ? (
                 <View style={{ flexDirection: "row", alignItems: "center", marginTop: 8 }}>
@@ -176,6 +179,22 @@ export default function EventCard(props: EventCardProps) {
             >
               {props.description}
             </Text>
+          ) : null}
+
+          {props.onDetails ? (
+            <View
+              style={{
+                alignItems: "center",
+                flexDirection: "row",
+                justifyContent: "flex-end",
+                marginTop: 14,
+              }}
+            >
+              <Text style={{ color: "#6b7280", fontSize: 13, fontWeight: "700" }}>
+                Ver detalhes
+              </Text>
+              <ChevronRight size={16} color="#6b7280" style={{ marginLeft: 2 }} />
+            </View>
           ) : null}
         </Card.Content>
       </Card>

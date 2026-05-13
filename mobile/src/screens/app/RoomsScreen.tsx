@@ -29,6 +29,10 @@ function formatDisplayDate(dateKey: string) {
   return `${day}/${month}/${year}`;
 }
 
+function pluralizeRooms(count: number) {
+  return `${count} ${count === 1 ? "sala disponível" : "salas disponíveis"}`;
+}
+
 function applyTimeMask(value: string) {
   let clean = value.replace(/\D/g, "");
 
@@ -274,6 +278,11 @@ export default function RoomsScreen({ navigation }) {
     !dailyAgendaError &&
     dailyAgendaRooms.length === 0 &&
     displayRooms.length === 0;
+  const roomsSummaryLabel = reservationWindow
+    ? `${formatDisplayDate(selectedDateISO)} • ${startTime} - ${endTime} • ${pluralizeRooms(
+        availableRoomsCount,
+      )}`
+    : `${formatDisplayDate(selectedDateISO)} • ajuste o horário para ver a disponibilidade`;
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={["top", "left", "right"]}>
@@ -395,20 +404,26 @@ export default function RoomsScreen({ navigation }) {
 
         <View
           style={{
-            alignItems: "center",
-            flexDirection: "row",
-            justifyContent: "space-between",
             marginBottom: 12,
           }}
         >
-          <Text style={{ color: "#6b7280", fontSize: 14 }}>
-            {reservationWindow
-              ? `${availableRoomsCount} sala(s) disponíveis neste horário`
-              : "Agenda diária carregada por sala"}
+          <Text style={{ color: "#111827", fontSize: 14, fontWeight: "700", marginBottom: 4 }}>
+            {roomsSummaryLabel}
           </Text>
-          {isLoadingRooms || isLoadingDailyAgenda ? (
-            <Text style={{ color: "#6b7280", fontSize: 13 }}>Carregando agenda...</Text>
-          ) : null}
+          <View
+            style={{
+              alignItems: "center",
+              flexDirection: "row",
+              justifyContent: "space-between",
+            }}
+          >
+            <Text style={{ color: "#6b7280", fontSize: 13 }}>
+              Agenda do dia por sala
+            </Text>
+            {isLoadingRooms || isLoadingDailyAgenda ? (
+              <Text style={{ color: "#6b7280", fontSize: 13 }}>Carregando agenda...</Text>
+            ) : null}
+          </View>
         </View>
 
         {showAgendaPlaceholders ? (

@@ -71,6 +71,28 @@ function createProfilesQueryMock(response: {
   };
 }
 
+function createProfilePermissionRpcMock(response: {
+  data?: unknown;
+  error?: { message: string } | null;
+}) {
+  const calls = {
+    rpc: [] as Array<{ fn: string; args: Record<string, unknown> }>,
+  };
+
+  return {
+    calls,
+    supabaseMock: {
+      rpc: async (fn: string, args: Record<string, unknown>) => {
+        calls.rpc.push({ fn, args });
+        return {
+          data: response.data ?? null,
+          error: response.error ?? null,
+        };
+      },
+    },
+  };
+}
+
 test("listProfilesPage loads the first page with 10 members and reports hasMore", async () => {
   const { calls, supabaseMock } = createProfilesQueryMock({
     data: Array.from({ length: 11 }, (_, index) => ({
@@ -204,4 +226,123 @@ test("getProfile normalizes missing can_manage_events to false", async () => {
 
   assert.equal(result.error, null);
   assert.equal(result.profile?.can_manage_events, false);
+});
+
+test("listProfilesForEventPermissionPage returns current event permission flags", async () => {
+  const { calls, supabaseMock } = createProfilesQueryMock({
+    data: [
+      {
+        id: "user-1",
+        full_name: "Lia",
+        email: "lia@example.com",
+        avatar_url: null,
+        role: "leader",
+        can_manage_events: true,
+      },
+      {
+        id: "user-2",
+        full_name: "Marta",
+        email: "marta@example.com",
+        avatar_url: null,
+        role: "member",
+      },
+    ],
+  });
+
+  const profileService = loadServiceModule<Record<string, any>>(
+    "../src/services/profileService",
+    supabaseMock,
+  );
+
+  const result = await profileService.listProfilesForEventPermissionPage({
+    page: 0,
+    pageSize: 10,
+  });
+
+  assert.equal(result.error, null);
+  assert.deepEqual(calls.select[0], [
+    "id,full_name,email,avatar_url,role,can_manage_events",
+  ]);
+  assert.deepEqual(result.data, [
+    {
+      id: "user-1",
+      full_name: "Lia",
+      email: "lia@example.com",
+      avatar_url: null,
+      role: "leader",
+      can_manage_events: true,
+    },
+    {
+      id: "user-2",
+      full_name: "Marta",
+      email: "marta@example.com",
+      avatar_url: null,
+      role: "member",
+      can_manage_events: false,
+    },
+  ]);
+});
+
+test("setProfileEventManagementPermission calls the secure rpc", async () => {
+  const { calls, supabaseMock } = createProfilePermissionRpcMock({
+    data: {
+      id: "user-2",
+      full_name: "Marta",
+      email: "marta@example.com",
+      avatar_url: null,
+      role: "member",
+      can_manage_events: true,
+    },
+  });
+
+  const profileService = loadServiceModule<Record<string, any>>(
+    "../src/services/profileService",
+    supabaseMock,
+  );
+
+  const result = await profileService.setProfileEventManagementPermission(
+    "user-2",
+    true,
+  );
+
+  assert.equal(result.error, null);
+  assert.deepEqual(calls.rpc[0], {
+    fn: "set_profile_event_management_permission",
+    args: {
+      p_user_id: "user-2",
+      p_can_manage_events: true,
+    },
+  });
+  assert.deepEqual(result.data, {
+    id: "user-2",
+    full_name: "Marta",
+    email: "marta@example.com",
+    avatar_url: null,
+    role: "member",
+    can_manage_events: true,
+  });
+});
+
+test("setProfileEventManagementPermission returns the rpc error message", async () => {
+  const { supabaseMock } = createProfilePermissionRpcMock({
+    error: {
+      message: "Apenas administradores podem alterar esta permissao.",
+    },
+  });
+
+  const profileService = loadServiceModule<Record<string, any>>(
+    "../src/services/profileService",
+    supabaseMock,
+  );
+
+  const result = await profileService.setProfileEventManagementPermission(
+    "user-2",
+    false,
+  );
+
+  assert.equal(result.data, null);
+  assert.equal(
+    result.error,
+    "Apenas administradores podem alterar esta permissao.",
+  );
 });

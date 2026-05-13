@@ -86,3 +86,29 @@ test("buildRoomAgendaDisplayItems marks only first reservation as primary", () =
   assert.equal(items[0].isPrimary, true);
   assert.equal(items[1].isPrimary, false);
 });
+
+test("buildRoomAgendaDisplayItems excludes the active reservation and recalculates the primary item", () => {
+  const items = buildRoomAgendaDisplayItems(
+    [
+      createAgendaItem({
+        id: "reservation-active",
+        roomId: "room-1",
+        startAt: "2026-05-05T08:00:00-03:00",
+        endAt: "2026-05-05T09:00:00-03:00",
+      }),
+      createAgendaItem({
+        id: "reservation-next",
+        roomId: "room-1",
+        startAt: "2026-05-05T10:00:00-03:00",
+        endAt: "2026-05-05T11:00:00-03:00",
+      }),
+    ],
+    {
+      excludeReservationId: "reservation-active",
+    },
+  );
+
+  assert.equal(items.length, 1);
+  assert.equal(items[0].id, "reservation-next");
+  assert.equal(items[0].isPrimary, true);
+});

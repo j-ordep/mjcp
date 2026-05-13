@@ -10,6 +10,10 @@ export interface SearchableProfile {
   role: 'admin' | 'leader' | 'member';
 }
 
+export interface EventPermissionProfile extends SearchableProfile {
+  can_manage_events: boolean;
+}
+
 interface ListProfilesPageOptions {
   query?: string;
   page?: number;
@@ -17,8 +21,20 @@ interface ListProfilesPageOptions {
   excludeRoles?: SearchableProfile['role'][];
 }
 
+interface EventPermissionProfileLike extends SearchableUserLike {
+  can_manage_events?: boolean | null;
+}
+
 function getErrorMessage(error: unknown) {
   if (error instanceof Error) return error.message;
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'message' in error &&
+    typeof error.message === 'string'
+  ) {
+    return error.message;
+  }
   return 'Erro inesperado.';
 }
 
@@ -31,6 +47,57 @@ function normalizeUserProfile(data: Partial<UserProfile> | null) {
     ...data,
     can_manage_events: data.can_manage_events === true,
   } as UserProfile;
+}
+
+function buildProfilesPageRequest(
+  selectClause: string,
+  {
+    query = '',
+    page = 0,
+    pageSize = 10,
+    excludeRoles = [],
+  }: ListProfilesPageOptions,
+) {
+  const normalizedQuery = query.trim();
+  const safePage = Math.max(0, page);
+  const safePageSize = Math.max(1, pageSize);
+  const from = safePage * safePageSize;
+  const to = from + safePageSize;
+
+  let request = supabase
+    .from('profiles')
+    .select(selectClause)
+    .order('full_name', { ascending: true })
+    .range(from, to);
+
+  for (const role of excludeRoles) {
+    request = request.neq('role', role);
+  }
+
+  if (normalizedQuery) {
+    request = request.or(
+      `full_name.ilike.%${normalizedQuery}%,email.ilike.%${normalizedQuery}%`,
+    );
+  }
+
+  return { request, safePageSize };
+}
+
+function mapEventPermissionProfiles(rows: EventPermissionProfileLike[]) {
+  const baseProfiles = mapSearchableUsers(rows);
+
+  return baseProfiles.map((profile, index) => ({
+    ...profile,
+    can_manage_events: rows[index]?.can_manage_events === true,
+  })) as EventPermissionProfile[];
+}
+
+function toSearchableUserRows(data: unknown) {
+  return (data ?? []) as unknown as SearchableUserLike[];
+}
+
+function toEventPermissionProfileRows(data: unknown) {
+  return (data ?? []) as unknown as EventPermissionProfileLike[];
 }
 
 export async function getProfile(userId: string) {
@@ -92,34 +159,50 @@ export async function listProfilesPage({
   excludeRoles = [],
 }: ListProfilesPageOptions) {
   try {
-    const normalizedQuery = query.trim();
-    const safePage = Math.max(0, page);
-    const safePageSize = Math.max(1, pageSize);
-    const from = safePage * safePageSize;
-    const to = from + safePageSize;
-    let request = supabase
-      .from('profiles')
-      .select('id,full_name,email,avatar_url,role')
-      .order('full_name', { ascending: true })
-      .range(from, to);
-
-    for (const role of excludeRoles) {
-      request = request.neq('role', role);
-    }
-
-    if (normalizedQuery) {
-      request = request.or(
-        `full_name.ilike.%${normalizedQuery}%,email.ilike.%${normalizedQuery}%`,
-      );
-    }
+    const { request, safePageSize } = buildProfilesPageRequest(
+      'id,full_name,email,avatar_url,role',
+      {
+        query,
+        page,
+        pageSize,
+        excludeRoles,
+      },
+    );
 
     const { data, error } = await request;
 
     if (error) throw error;
 
     const mappedProfiles = mapSearchableUsers(
-      (data ?? []) as SearchableUserLike[],
+      toSearchableUserRows(data),
     ) as SearchableProfile[];
+
+    return {
+      data: mappedProfiles.slice(0, safePageSize),
+      hasMore: mappedProfiles.length > safePageSize,
+      error: null,
+    };
+  } catch (error: unknown) {
+    return { data: null, hasMore: false, error: getErrorMessage(error) };
+  }
+}
+
+export async function listProfilesForEventPermissionPage(
+  options: ListProfilesPageOptions,
+) {
+  try {
+    const { request, safePageSize } = buildProfilesPageRequest(
+      'id,full_name,email,avatar_url,role,can_manage_events',
+      options,
+    );
+
+    const { data, error } = await request;
+
+    if (error) throw error;
+
+    const mappedProfiles = mapEventPermissionProfiles(
+      toEventPermissionProfileRows(data),
+    );
 
     return {
       data: mappedProfiles.slice(0, safePageSize),
@@ -145,11 +228,37 @@ export async function getProfilesByIds(userIds: string[]) {
 
     if (error) throw error;
 
-    const profiles = mapSearchableUsers((data ?? []) as SearchableUserLike[]) as SearchableProfile[];
+    const profiles = mapSearchableUsers(toSearchableUserRows(data)) as SearchableProfile[];
     const profilesById = new Map(profiles.map((profile) => [profile.id, profile]));
 
     return {
       data: userIds.map((userId) => profilesById.get(userId)).filter((profile): profile is SearchableProfile => !!profile),
+      error: null,
+    };
+  } catch (error: unknown) {
+    return { data: null, error: getErrorMessage(error) };
+  }
+}
+
+export async function setProfileEventManagementPermission(
+  userId: string,
+  canManageEvents: boolean,
+) {
+  try {
+    const { data, error } = await supabase.rpc(
+      'set_profile_event_management_permission',
+      {
+        p_user_id: userId,
+        p_can_manage_events: canManageEvents,
+      },
+    );
+
+    if (error) throw error;
+
+    return {
+      data: mapEventPermissionProfiles([
+        (data ?? null) as EventPermissionProfileLike,
+      ])[0] ?? null,
       error: null,
     };
   } catch (error: unknown) {

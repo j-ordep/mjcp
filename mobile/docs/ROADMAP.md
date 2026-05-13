@@ -44,7 +44,7 @@ Data de reconciliacao: 2026-04-10 (America/Sao_Paulo)
 - Confirmar no Supabase remoto o estado final das migrations mais recentes de `start_at`, simplificacao da leitura de eventos e categoria de eventos
 - Aplicar/validar no Supabase remoto a migration que conecta notificacoes operacionais de swap, se ainda nao estiver aplicada
 - Pull-to-refresh e estados de loading/error mais consistentes
-- Arquitetar permissao granular futura para que pessoas especificas criem/editem eventos sem necessariamente virarem `admin`
+- Validar em uso real a permissao granular de eventos e a nova UI admin de grant/revoke
 - Ampliar cobertura de testes do `scheduleService`, `ministryService` e `eventService`
 - Fluxo de declinio de assignment, caso o produto confirme essa necessidade
 - [x] Integrar salas e reservas ao fluxo basico real do app
@@ -151,7 +151,7 @@ Data de reconciliacao: 2026-04-10 (America/Sao_Paulo)
 
 1. Validar no Supabase remoto as migrations mais recentes, incluindo bloqueio de duplicidade de membro na escala e categoria de eventos.
 2. Revisar UX final de evento + sala em uso real no app.
-3. Arquitetar permissao granular futura para criacao/edicao de eventos.
+3. Validar em uso real a permissao granular de criacao/edicao de eventos.
 4. Confirmar no Supabase remoto a Fase 4 de salas, especialmente catalogo padrao e read-model diario com dados reais.
-5. Arquitetar permissao granular futura para criacao/edicao de eventos.
+5. Refinar a UI administrativa de permissao granular se o uso real pedir filtros ou escopo extra.
 6. Implementar notificacoes in-app do fluxo de trocas e escalas, com geracao no backend e inbox real no app.

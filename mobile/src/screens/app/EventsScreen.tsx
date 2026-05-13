@@ -26,6 +26,10 @@ import {
 
 type Filter = "current" | "past";
 
+function pluralizeEvents(count: number) {
+  return `${count} ${count === 1 ? "evento" : "eventos"}`;
+}
+
 export default function EventsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [activeFilter, setActiveFilter] = useState<Filter>("current");
@@ -79,6 +83,17 @@ export default function EventsScreen() {
     ],
     [],
   );
+  const resultsSummaryLabel = useMemo(() => {
+    const normalizedSearch = debouncedSearch.trim();
+
+    if (normalizedSearch) {
+      return `${pluralizeEvents(filteredEvents.length)} para "${normalizedSearch}"`;
+    }
+
+    return `${pluralizeEvents(filteredEvents.length)} • ${
+      activeFilter === "past" ? "Anteriores" : "Próximos"
+    }`;
+  }, [activeFilter, debouncedSearch, filteredEvents.length]);
 
   const renderItem = useCallback(
     ({ item }: { item: Event }) => {
@@ -221,6 +236,16 @@ export default function EventsScreen() {
             </TouchableOpacity>
           ))}
         </View>
+
+        <Text
+          style={{
+            color: "#6b7280",
+            fontSize: 13,
+            marginBottom: 14,
+          }}
+        >
+          {resultsSummaryLabel}
+        </Text>
       </View>
 
       {isLoadingAllEvents ? (
@@ -244,4 +269,3 @@ export default function EventsScreen() {
     </SafeAreaView>
   );
 }
-

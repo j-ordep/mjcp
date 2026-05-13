@@ -60,7 +60,7 @@ O dominio mais maduro hoje e `escala`.
 - criacao e edicao de evento agora usam permissao granular global:
   - `admin`
   - usuarios com `profiles.can_manage_events = true`
-- a concessao/revogacao dessa permissao ainda e manual no banco nesta fase
+- a concessao/revogacao dessa permissao agora pode ser feita por `admin` no app; o SQL manual continua como fallback operacional
 - eventos possuem categoria informativa simples em `events.category`, com valores em portugues
 - eventos podem ser publicos ou privados; quando privados, a visibilidade fica restrita a `event_audiences`
 - no MVP atual, `event_audiences` tambem representa a lista de convite/convocacao do evento
@@ -89,7 +89,6 @@ O dominio mais maduro hoje e `escala`.
 
 **PENDENTE DE DEFINICAO**
 
-- desenhar painel administrativo futuro para grant/revoke de `profiles.can_manage_events` sem depender de SQL manual
 - definir metadados extras do detalhe de evento, como link de transmissao/video
 - revisar UX final de evento + sala em uso real no app, agora que integracao opcional ja existe
 
@@ -183,6 +182,7 @@ O dominio mais maduro hoje e `escala`.
    - `20260427000118_add_event_category.sql`
    - `20260428000119_add_private_event_audiences.sql`
    - `20260509000123_add_event_management_permission.sql`
+   - `20260511000124_add_profile_event_management_permission_rpc.sql`
    - migrations de notificacoes de swap, se ainda nao estiverem aplicadas no projeto remoto
 2. Implementar validacoes de data ainda pendentes no banco:
    - `events.end_at > start_at` quando `end_at` existir
@@ -208,7 +208,7 @@ O dominio mais maduro hoje e `escala`.
 1. Revisar `src/types/database.types.ts` para reduzir fragilidade de tipagem
 2. Padronizar timezone e datas no app com persistencia em UTC e formatacao no client
 3. Fechar loading, error e empty states nas telas principais
-4. Criar UI futura para grant/revoke de `profiles.can_manage_events`
+4. Validar em uso real a nova UI admin de grant/revoke de `profiles.can_manage_events`
 5. Confirmar operacao remota da Fase 4 do core de eventos:
    - validar no Supabase remoto a migration `20260504000122_normalize_room_catalog.sql`
    - confirmar no banco o catalogo padrao de salas
@@ -266,5 +266,5 @@ Ao retomar o trabalho, iniciar por esta ordem:
 1. revisar `docs/TASKS.md` e este arquivo
 2. revisar `docs/EVENT_CORE_PHASE2_IMPLEMENTATION_PLAN.md`
 3. validar remoto das migrations e catalogo de salas
-4. definir proxima fase de `eventos` com foco em permissao granular
+4. definir a proxima fase de `eventos` a partir do uso real da permissao granular e da UX de salas
 5. depois retomar `notificacoes` e demais modulos

@@ -52,7 +52,12 @@ export default function RoomCard({
           reservation.end_at,
         )}`
       : null;
-  const agendaItems = buildRoomAgendaDisplayItems(agenda);
+  const agendaItems = buildRoomAgendaDisplayItems(agenda, {
+    excludeReservationId: !isAvailable ? reservation?.id ?? null : null,
+  });
+  const agendaEmptyMessage = !isAvailable && reservation
+    ? "Nenhuma outra reserva para esta sala neste dia."
+    : "Nenhuma reserva para esta sala neste dia.";
 
   return (
     <View className="mb-4 min-h-[80px] rounded-2xl border border-[#ececec] bg-white p-4 shadow-sm">
@@ -91,6 +96,16 @@ export default function RoomCard({
             padding: 12,
           }}
         >
+          <Text
+            style={{
+              color: "#6b7280",
+              fontSize: 11,
+              fontWeight: "700",
+              marginBottom: 6,
+            }}
+          >
+            NESTE HORÁRIO
+          </Text>
           <Text style={{ color: "#111827", fontSize: 15, fontWeight: "700" }}>
             {reservationTitle}
           </Text>
@@ -120,7 +135,7 @@ export default function RoomCard({
 
         {agendaItems.length === 0 ? (
           <Text style={{ color: "#6b7280", fontSize: 13 }}>
-            Nenhuma reserva para esta sala neste dia.
+            {agendaEmptyMessage}
           </Text>
         ) : (
           agendaItems.map((item, index) => (

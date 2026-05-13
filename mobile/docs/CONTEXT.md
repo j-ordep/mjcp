@@ -191,7 +191,7 @@ O modelo atual e:
 - Eventos permanecem apenas como superficie informativa; qualquer acao operacional fica restrita ao dominio de escala.
 - Eventos possuem `category` informativa em portugues para badge visual minimalista; isso nao altera escala, participacao ou permissao.
 - Escala representa servico/funcao; reunioes privadas usam audiencia do evento, e nao assignments, para definir quem participa.
-- A permissao granular de eventos nesta fase usa a flag `profiles.can_manage_events`; nao existe painel administrativo no app para grant/revoke, apenas operacao manual no Supabase.
+- A permissao granular de eventos usa a flag `profiles.can_manage_events` e agora possui tela administrativa no app para grant/revoke por `admin`; o SQL manual no Supabase continua como fallback operacional.
 - Notificacoes para eventos privados ficam como backlog futuro; o estado atual preserva `event_audiences` para suportar isso depois.
 - `location` textual continua existindo em eventos; sala vinculada e opcional e nao substitui local livre.
 - A direcao atual para salas e reservas passa a ser concreta nesta fase: usar `room_reservations.event_id` opcional em vez de `events.room_id`.

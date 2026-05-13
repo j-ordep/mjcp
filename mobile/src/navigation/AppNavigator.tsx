@@ -16,6 +16,7 @@ import EditProfile from "../screens/app/EditProfileScreen";
 import EventDetailsScreen from "../screens/app/EventDetailsScreen";
 import EventsScreen from "../screens/app/EventsScreen";
 import ManageMinistryMembersScreen from "../screens/app/ManageMinistryMembersScreen";
+import ManageEventPermissionsScreen from "../screens/app/ManageEventPermissionsScreen";
 import ScheduleScreen from "../screens/app/ScheduleScreen";
 import ProfileScreen from "../screens/app/ProfileScreen";
 import SwapRequestsScreen from "../screens/app/SwapRequestsScreen";
@@ -63,6 +64,7 @@ export type RootStackParamList = {
         ministryId?: string;
       }
     | undefined;
+  ManageEventPermissions: undefined;
   SwapRequests: undefined;
 };
 
@@ -189,6 +191,10 @@ export default function AppNavigator() {
             <Stack.Screen
               name="ManageMinistryMembers"
               component={ManageMinistryMembersScreen}
+            />
+            <Stack.Screen
+              name="ManageEventPermissions"
+              component={ManageEventPermissionsScreen}
             />
             <Stack.Screen
               name="SwapRequests"

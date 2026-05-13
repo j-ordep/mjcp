@@ -22,6 +22,7 @@ Aplicar no Supabase remoto as migrations locais pendentes que fecham o fluxo pri
 9. `20260427000118_add_event_category.sql`
 10. `20260428000119_add_private_event_audiences.sql`
 11. `20260509000123_add_event_management_permission.sql`
+12. `20260511000124_add_profile_event_management_permission_rpc.sql`
 
 ---
 
@@ -133,7 +134,15 @@ Aplicar no Supabase remoto as migrations locais pendentes que fecham o fluxo pri
 - impacto funcional:
   - usuarios autorizados por flag podem criar/editar/excluir eventos sem virar `admin`
   - a permissao tambem cobre audiencia privada e reserva opcional de sala no mesmo fluxo
-  - o grant/revoke continua manual no banco nesta fase
+  - prepara o backend para diferenciar claramente `admin` de gestores globais de evento
+
+### `20260511000124_add_profile_event_management_permission_rpc.sql`
+
+- cria a RPC `set_profile_event_management_permission`
+- cria trigger defensiva para impedir alteracao indevida de `profiles.can_manage_events`
+- impacto funcional:
+  - `admin` pode conceder/revogar a flag pelo app sem abrir SQL
+  - usuarios comuns continuam sem poder elevar a propria permissao
 
 ## 3. Ordem recomendada de aplicacao
 
@@ -150,6 +159,7 @@ Aplicar exatamente nesta ordem:
 9. `20260427000118_add_event_category.sql`
 10. `20260428000119_add_private_event_audiences.sql`
 11. `20260509000123_add_event_management_permission.sql`
+12. `20260511000124_add_profile_event_management_permission_rpc.sql`
 
 ### Motivo da ordem
 
@@ -161,6 +171,7 @@ Aplicar exatamente nesta ordem:
 - `20260423000115` faz o alinhamento final da janela de read-only para bloquear exatamente em `start_at`
 - `20260428000119` deve entrar depois da simplificacao de leitura de eventos, porque especializa a visibilidade publica/privada do dominio
 - `20260509000123` fecha a permissao granular de eventos por cima da modelagem ja consolidada de audiencia privada e sala opcional
+- `20260511000124` fecha a operacao segura de grant/revoke da flag no proprio app
 
 ### Pre-requisito critico
 
@@ -311,7 +322,7 @@ where schemaname = 'public'
 order by tablename, policyname;
 ```
 
-### 6.6 Grant / revoke manual da flag
+### 6.6 Grant / revoke da flag
 
 Listar perfis:
 
@@ -337,8 +348,9 @@ set can_manage_events = false
 where id = '00000000-0000-0000-0000-000000000000';
 ```
 
-Observacao:
+Observacoes:
 
+- no app, `admin` agora pode usar a tela `Permissoes de eventos` para fazer grant/revoke sem SQL
 - depois de grant/revoke, pedir novo bootstrap do app:
   - reiniciar o app, ou
   - sair e entrar novamente, para recarregar `profile`
@@ -470,7 +482,7 @@ Este runbook nao cobre:
 - validacoes de data ainda pendentes em `events` e `room_reservations`
 - novos indices alem de `schedule_assignments (user_id, status)`
 - melhorias de notificacao de copy/frequencia
-- UI administrativa para grant/revoke de `profiles.can_manage_events`
+- evolucoes futuras da UI administrativa para grant/revoke de `profiles.can_manage_events`
 - proximas evolucoes de UI fora da tela informativa de eventos
 
 Esses itens continuam no backlog e no `docs/NEXT_STEPS_PLAN.md`.

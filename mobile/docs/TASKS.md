@@ -288,7 +288,7 @@ Decisao atualizada em 2026-04-07:
     - `admin` cria/edita eventos
     - usuarios com `profiles.can_manage_events = true` tambem criam/editam eventos globalmente
   - a audiencia privada e a reserva opcional de sala continuam dentro da mesma permissao
-  - a concessao/revogacao da flag continua manual no banco nesta fase
+  - a concessao/revogacao da flag agora pode ser feita por `admin` no app; o SQL manual continua como fallback
 
 - [x] Integrar salas ao fluxo basico de eventos sem criar `events.room_id`
   - direcao validada em 2026-04-30:
@@ -332,7 +332,6 @@ Decisao atualizada em 2026-04-07:
   - decidir futuramente se salas extras/customizadas permanecem livres ou se havera gestao administrativa dedicada
 
 **PENDENTE DE DEFINICAO**
-- painel administrativo futuro para grant/revoke de `profiles.can_manage_events`
 - se o detalhe do evento deve ganhar metadados extras no futuro, como link de transmissao/video
 - estrategia futura de notificacoes para eventos privados fica registrada, mas fora do escopo atual:
   - usuarios selecionados explicitamente na audiencia devem poder ser notificados no futuro
@@ -401,8 +400,8 @@ Contexto: eventos sao informativos para todos; escala e o fluxo operacional de q
     - `profiles.can_manage_events` como flag global por usuario
     - helper backend `public.can_manage_events()`
     - gating de app derivado por capacidade, sem espalhar `role === "admin"`
-  - pendente futuro:
-    - UI administrativa para grant/revoke da flag
+  - fechado nesta rodada:
+    - UI administrativa basica para grant/revoke da flag por `admin`
 
 - [x] Consolidar `Evento` como core composicional do produto
   - Confirmado no codigo e na documentacao viva:

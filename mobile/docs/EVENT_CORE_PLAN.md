@@ -165,7 +165,7 @@ Status em 2026-05-09: concluida no repo local.
 - leitura e mutacao de `event_audiences` passam a aceitar gestores de evento; escrita continua limitada a eventos ainda editaveis
 - a RPC `save_event_with_optional_room_reservation` passa a aceitar gestores de evento
 - o app usa gating derivado por capacidade em vez de checks locais hardcoded de `admin`
-- nao existe painel administrativo no app para grant/revoke; nesta fase isso continua manual no Supabase
+- a flag segue existindo no banco, mas agora tambem possui UI administrativa basica no app para grant/revoke por `admin`
 
 ---
 
@@ -257,7 +257,6 @@ Status em 2026-05-06: concluida no repo local, com pendencia operacional remota.
 
 ## 8. Pendencias de definicao
 
-- painel administrativo futuro para grant/revoke de `profiles.can_manage_events`
 - decidir se o detalhe do evento tera metadados extras futuros, como links, materiais ou transmissao
 - decidir no futuro se salas extras/customizadas permanecem livres ou se havera gestao administrativa do catalogo
 
@@ -276,7 +275,7 @@ Status em 2026-05-06: concluida no repo local, com pendencia operacional remota.
 2. concluir os pendentes operacionais remotos da Fase 4 em salas
 3. validar no Supabase remoto a migration `20260509000123_add_event_management_permission.sql`
 4. estabilizar testes e contrato do core
-5. desenhar UI futura para grant/revoke de `profiles.can_manage_events`
+5. validar em uso real a UI admin de grant/revoke e decidir se ela precisa de filtros/papeis adicionais
 
 ---
 

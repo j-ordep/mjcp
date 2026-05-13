@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, ScrollView, View } from "react-native";
+import { ActivityIndicator, Alert, ScrollView, TouchableOpacity, View } from "react-native";
+import { ShieldCheck } from "lucide-react-native";
 import { Avatar, Divider, Text } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ActivityCard from "../../components/card/ActivityCard";
@@ -94,6 +95,44 @@ export default function ProfileScreen({ navigation }) {
             <Divider style={{ marginTop: 10, marginBottom: 0 }} />
           </View>
         </View>
+
+        {profile?.role === "admin" ? (
+          <View className="mt-8 px-6">
+            <Text style={{ fontWeight: "bold", fontSize: 16, marginBottom: 12 }}>
+              Administracao
+            </Text>
+            <TouchableOpacity
+              onPress={() => navigation.navigate("ManageEventPermissions")}
+              style={{
+                borderRadius: 24,
+                padding: 18,
+                borderWidth: 1,
+                borderColor: "#eef2f7",
+                backgroundColor: "#fff",
+              }}
+            >
+              <View
+                style={{
+                  width: 46,
+                  height: 46,
+                  borderRadius: 23,
+                  backgroundColor: "#111827",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: 14,
+                }}
+              >
+                <ShieldCheck size={20} color="#fff" />
+              </View>
+              <Text style={{ fontWeight: "700", fontSize: 16, marginBottom: 4 }}>
+                Permissoes globais de eventos
+              </Text>
+              <Text style={{ color: "#6b7280", lineHeight: 20 }}>
+                Gerencie quem pode criar, editar e excluir eventos em todo o app.
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
 
         {/* Meus Ministérios */}
         <View className="mt-8 px-6">
