@@ -156,7 +156,7 @@ function formatReservationSummary(room: RoomAvailability, currentEventId?: strin
   const reservation = room.reservation;
 
   if (!reservation) {
-    return "Disponí­vel neste horário.";
+    return "Disponível neste horário.";
   }
 
   const startAt = new Date(reservation.start_at);
@@ -173,13 +173,17 @@ function formatReservationSummary(room: RoomAvailability, currentEventId?: strin
         })}`;
 
   if (reservation.event_id && reservation.event_id === currentEventId) {
-    return `Sala jÃ¡ vinculada a este evento${timeLabel ? ` Â· ${timeLabel}` : ""}.`;
+    return `Sala já vinculada a este evento${timeLabel ? ` · ${timeLabel}` : ""}.`;
   }
 
   const title = reservation.purpose?.trim() || "Reserva ativa";
   const category = getEventCategoryLabel(reservation.category);
 
-  return `${title} Â· ${category}${timeLabel ? ` Â· ${timeLabel}` : ""}`;
+  return `${title} · ${category}${timeLabel ? ` · ${timeLabel}` : ""}`;
+}
+
+function showFriendlyError(title: string, message: string) {
+  Alert.alert(title, message);
 }
 
 export default function CreateEventScreen({ route }: CreateEventScreenProps) {
@@ -320,16 +324,13 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
       if (!isMounted) return;
 
       if (eventResult.error || !eventResult.data) {
-        Alert.alert(
-          "Erro",
-          eventResult.error || "NÃ£o foi possÃ­vel carregar o evento para ediÃ§Ã£o.",
-        );
+        showFriendlyError("Erro", "Não foi possível carregar o evento para edição.");
         setIsHydratingEvent(false);
         return;
       }
 
       if (linkedReservationResult.error) {
-        Alert.alert("Erro", linkedReservationResult.error);
+        showFriendlyError("Erro", "Não foi possível carregar a sala vinculada a este evento.");
         setIsHydratingEvent(false);
         return;
       }
@@ -354,7 +355,7 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
       if (!isMounted) return;
 
       if (profilesResult.error) {
-        Alert.alert("Erro", profilesResult.error);
+        showFriendlyError("Erro", "Não foi possível carregar a lista de membros deste evento.");
         setIsHydratingEvent(false);
         return;
       }
@@ -405,7 +406,7 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
     setIsLoadingAudience(false);
 
     if (error) {
-      Alert.alert("Erro", error);
+      showFriendlyError("Erro", "Não foi possível carregar os membros agora.");
       return;
     }
 
@@ -623,22 +624,22 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
 
   const handleSave = async () => {
     if (!canManageEvents) {
-      Alert.alert("Acesso negado", "VocÃª nÃ£o tem permissÃ£o para gerenciar eventos.");
+      showFriendlyError("Acesso negado", "Você não tem permissão para gerenciar eventos.");
       return;
     }
 
     if (isEdit && !eventId) {
-      Alert.alert("Erro", "Evento invÃ¡lido para ediÃ§Ã£o.");
+      showFriendlyError("Erro", "Evento inválido para edição.");
       return;
     }
 
     if (!title.trim() || selectedDateKeys.length === 0 || !time.trim()) {
-      Alert.alert("Erro", "TÃ­tulo, data e hora sÃ£o obrigatÃ³rios.");
+      showFriendlyError("Erro", "Título, data e hora são obrigatórios.");
       return;
     }
 
     if (!isValidTimeValue(time)) {
-      Alert.alert("Erro", "Informe uma hora vÃ¡lida no formato HH:MM.");
+      showFriendlyError("Erro", "Informe uma hora válida no formato HH:MM.");
       return;
     }
 
@@ -649,7 +650,7 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
       const eventWindow = buildSingleEventWindow(dateKey, time);
 
       if (!eventWindow) {
-        Alert.alert("Erro", "NÃ£o foi possÃ­vel montar a data/hora do evento.");
+        showFriendlyError("Erro", "Não foi possível montar a data e hora do evento.");
         return;
       }
 
@@ -673,7 +674,7 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
         const { error } = await updateEventWithRoom(eventId, payload, roomIdForSave);
 
         if (error) {
-          Alert.alert("Erro ao atualizar", error);
+          showFriendlyError("Erro ao atualizar", "Não foi possível atualizar o evento agora.");
           return;
         }
 
@@ -684,7 +685,7 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
       const { error } = await createEventWithRoom(payload, selectedRoomId);
 
       if (error) {
-        Alert.alert("Erro ao criar evento", error);
+        showFriendlyError("Erro ao criar evento", "Não foi possível criar o evento agora.");
         return;
       }
 
@@ -696,7 +697,7 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
       const eventWindow = buildSingleEventWindow(dateKey, time);
 
       if (!eventWindow) {
-        throw new Error("NÃ£o foi possÃ­vel montar a data/hora do evento.");
+        throw new Error("Não foi possível montar a data e hora do evento.");
       }
 
       return {
@@ -714,7 +715,7 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
     const { error } = await createBatchEvents(eventsToCreate);
 
     if (error) {
-      Alert.alert("Erro ao criar eventos", error);
+      showFriendlyError("Erro ao criar eventos", "Não foi possível criar os eventos agora.");
       return;
     }
 
@@ -779,7 +780,7 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
                     fontWeight: "bold",
                   }}
                 >
-                  SUGESTÃ•ES GERAIS
+                  SUGESTÕES GERAIS
                 </Text>
               </View>
 
@@ -803,7 +804,7 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
           ) : null}
 
           <TextInput
-            label="TÃ­tulo do evento"
+            label="Título do evento"
             mode="outlined"
             value={title}
             onChangeText={setTitle}
@@ -851,7 +852,7 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
           </View>
 
           <TextInput
-            label="LocalizaÃ§Ã£o"
+            label="Localização"
             mode="outlined"
             value={location}
             onChangeText={setLocation}
@@ -918,17 +919,17 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
                   lineHeight: 18,
                 }}
               >
-                Vincule uma sala apenas quando o evento tiver uma Ãºnica data.
+                Vincule uma sala apenas quando o evento tiver uma única data.
               </Text>
             </View>
 
             {singleSelectedDateKey == null ? (
               <Text style={{ fontSize: 13, color: "#6b7280", lineHeight: 18 }}>
-                Se houver mÃºltiplas datas selecionadas, o evento serÃ¡ salvo sem sala.
+                Se houver múltiplas datas selecionadas, o evento será salvo sem sala.
               </Text>
             ) : !roomWindow ? (
               <Text style={{ fontSize: 13, color: "#6b7280", lineHeight: 18 }}>
-                Informe uma hora vÃ¡lida para carregar as salas disponÃ­veis.
+                Informe uma hora válida para carregar as salas disponíveis.
               </Text>
             ) : (
               <>
@@ -959,7 +960,7 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
                       marginTop: 4,
                     }}
                   >
-                    Salva o evento sem criar ou mantÃ©m sem reserva vinculada.
+                    Salva o evento sem criar ou mantém sem reserva vinculada.
                   </Text>
                 </RNTouchableOpacity>
 
@@ -971,8 +972,8 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
 
                 {isRoomSelectionAutoCleared && currentReservedRoomId != null ? (
                   <Text style={{ fontSize: 13, color: "#b45309", lineHeight: 18 }}>
-                    Sala vinculada ficou indisponÃ­vel para horÃ¡rio atual. Se salvar agora,
-                    reserva serÃ¡ removida.
+                    Sala vinculada ficou indisponível para o horário atual. Se salvar agora,
+                    a reserva será removida.
                   </Text>
                 ) : null}
 
@@ -997,7 +998,7 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
 
                 {!isLoadingRooms && !roomsError && rooms.length === 0 ? (
                   <Text style={{ fontSize: 13, color: "#6b7280" }}>
-                    Nenhuma sala cadastrada para este horÃ¡rio.
+                    Nenhuma sala cadastrada para este horário.
                   </Text>
                 ) : null}
 
@@ -1075,7 +1076,7 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
                             }}
                           >
                             {room.status === "available"
-                              ? "DisponÃ­vel"
+                              ? "Disponível"
                               : isOwnReservation
                                 ? "Neste evento"
                                 : "Ocupada"}
@@ -1104,7 +1105,7 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
                           ? "Sala selecionada"
                           : isSelectable
                             ? "Toque para selecionar"
-                            : "IndisponÃ­vel para este horÃ¡rio"}
+                            : "Indisponível para este horário"}
                       </Text>
                     </RNTouchableOpacity>
                   );
@@ -1142,7 +1143,7 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
               marginBottom: 8,
             }}
           >
-            <Text style={{ fontSize: 16 }}>Evento pÃºblico?</Text>
+            <Text style={{ fontSize: 16 }}>Evento público?</Text>
             <Switch value={isPublic} onValueChange={handleVisibilityChange} color="#000" />
           </View>
 
@@ -1270,7 +1271,7 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
                     color: "#374151",
                   }}
                 >
-                  Membros disponÃ­veis
+                  Membros disponíveis
                 </Text>
 
                 {isLoadingAudience && availableAudienceResults.length === 0 ? (
@@ -1281,7 +1282,7 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
                   <Text style={{ fontSize: 13, color: "#6b7280" }}>
                     {debouncedAudienceSearch
                       ? "Nenhum membro encontrado para este termo."
-                      : "Nenhum membro disponÃ­vel para adicionar."}
+                      : "Nenhum membro disponível para adicionar."}
                   </Text>
                 ) : (
                   <>
@@ -1409,7 +1410,7 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
                   {isEdit ? "Alterar Data" : "Selecione as Datas"}
                 </Text>
                 <Text style={{ fontSize: 12, color: "#666" }}>
-                  {isEdit ? "Toque para escolher um novo dia" : "Toque para selecionar vÃ¡rios dias"}
+                  {isEdit ? "Toque para escolher um novo dia" : "Toque para selecionar vários dias"}
                 </Text>
               </View>
 

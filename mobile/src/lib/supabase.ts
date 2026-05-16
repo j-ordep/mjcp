@@ -11,8 +11,26 @@ const nativeStorageAdapter = {
   removeItem: (key: string) => SecureStore.deleteItemAsync(key),
 }
 
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!
-const supabasePubKey = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
+function readRequiredPublicEnv(
+  name: 'EXPO_PUBLIC_SUPABASE_URL' | 'EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
+) {
+  const value = process.env[name]?.trim()
+
+  if (
+    !value ||
+    value.includes('******') ||
+    /your_|change[_-]?me|placeholder|example/i.test(value)
+  ) {
+    throw new Error(
+      `${name} não está configurada. Atualize as variáveis públicas do Supabase antes de iniciar o app.`,
+    )
+  }
+
+  return value
+}
+
+const supabaseUrl = readRequiredPublicEnv('EXPO_PUBLIC_SUPABASE_URL')
+const supabasePubKey = readRequiredPublicEnv('EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY')
 
 export const supabase = createClient(supabaseUrl, supabasePubKey, {
   auth: {
