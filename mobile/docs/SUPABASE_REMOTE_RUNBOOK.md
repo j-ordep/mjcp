@@ -24,6 +24,7 @@ Aplicar no Supabase remoto as migrations locais pendentes que fecham o fluxo pri
 11. `20260509000123_add_event_management_permission.sql`
 12. `20260511000124_add_profile_event_management_permission_rpc.sql`
 13. `20260512000125_allow_event_managers_to_manage_event_setlists.sql`
+14. `20260515000126_add_replace_event_setlist_rpc.sql`
 
 ---
 
@@ -152,6 +153,13 @@ Aplicar no Supabase remoto as migrations locais pendentes que fecham o fluxo pri
   - quem ja pode gerenciar eventos passa a conseguir editar setlists sem precisar virar `admin`
   - leitura autenticada de `event_setlists` continua igual
 
+### `20260515000126_add_replace_event_setlist_rpc.sql`
+
+- cria a RPC transacional `replace_event_setlist`
+- impacto funcional:
+  - a troca completa da setlist acontece dentro de uma unica transacao no banco
+  - evita apagar a setlist atual se a insercao da nova lista falhar no meio do processo
+
 ## 3. Ordem recomendada de aplicacao
 
 Aplicar exatamente nesta ordem:
@@ -169,6 +177,7 @@ Aplicar exatamente nesta ordem:
 11. `20260509000123_add_event_management_permission.sql`
 12. `20260511000124_add_profile_event_management_permission_rpc.sql`
 13. `20260512000125_allow_event_managers_to_manage_event_setlists.sql`
+14. `20260515000126_add_replace_event_setlist_rpc.sql`
 
 ### Motivo da ordem
 
@@ -182,6 +191,7 @@ Aplicar exatamente nesta ordem:
 - `20260509000123` fecha a permissao granular de eventos por cima da modelagem ja consolidada de audiencia privada e sala opcional
 - `20260511000124` fecha a operacao segura de grant/revoke da flag no proprio app
 - `20260512000125` alinha `event_setlists` com a mesma permissao granular ja adotada no dominio de eventos
+- `20260515000126` fecha a integridade do fluxo de setlist com troca atomica no banco
 
 ### Pre-requisito critico
 

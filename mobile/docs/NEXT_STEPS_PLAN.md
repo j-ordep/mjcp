@@ -158,8 +158,23 @@ O dominio mais maduro hoje e `escala`.
   - carrega catalogo real de `songs`
   - mostra o setlist real do proximo evento via `event_setlists`
   - permite edicao simples do setlist do proximo evento para quem gerencia eventos
+  - a troca completa da setlist agora passa por RPC transacional no banco, evitando perda parcial em falha entre delete e insert
 - pendencia operacional remota desta frente:
-  - aplicar `20260512000125_allow_event_managers_to_manage_event_setlists.sql`
+  - aplicar `20260515000126_add_replace_event_setlist_rpc.sql`
+
+### Perfil e hygiene
+
+**Confirmado no codigo**
+
+- `HeaderPrimary`, `HomeScreen`, `ProfileScreen` e `EditProfileScreen` nao dependem mais de geradores externos de avatar
+- o app usa apenas `avatar_url` real ou iniciais locais derivadas de `profile.full_name`
+- o perfil parou de exibir CTA enganoso de troca de foto
+- `BottomSheetMenu` nao expoe mais acoes fake de compartilhar perfil ou configurar notificacoes
+- `ProfileScreen` trocou o bloco mockado de atividades recentes por um resumo simples da POC com dados reais
+- `ProfileScreen` mostra telefone formatado para leitura humana
+- `CalendarModal` reseta a selecao temporaria ao abrir novamente
+- `BlockDatesScreen` trava interacoes durante `isSaving`, evitando alteracoes perdidas logo antes de fechar
+- `YoutubeCarousel` ja ignora placeholders publicos de `EXPO_PUBLIC_YOUTUBE_API_KEY`, evitando fetch inutil sem chave real
 
 ---
 
@@ -195,6 +210,7 @@ O dominio mais maduro hoje e `escala`.
    - `20260509000123_add_event_management_permission.sql`
    - `20260511000124_add_profile_event_management_permission_rpc.sql`
    - `20260512000125_allow_event_managers_to_manage_event_setlists.sql`
+   - `20260515000126_add_replace_event_setlist_rpc.sql`
    - migrations de notificacoes de swap, se ainda nao estiverem aplicadas no projeto remoto
 2. Implementar validacoes de data ainda pendentes no banco:
    - `events.end_at > start_at` quando `end_at` existir
@@ -226,6 +242,9 @@ O dominio mais maduro hoje e `escala`.
    - confirmar no banco o catalogo padrao de salas
    - validar o read-model diario de salas com dados reais
 6. Depois retomar musicas e setlists; salas ja entraram no fluxo principal basico desta fase
+7. Fechar guardrails restantes de bootstrap/config:
+   - endurecer feedback para `.env` publico incompleto de `EXPO_PUBLIC_SUPABASE_*`
+   - revisar mensagens de erro cruas e strings com mojibake nas telas/services mais visiveis
 
 ---
 
