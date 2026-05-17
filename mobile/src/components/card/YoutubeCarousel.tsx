@@ -12,6 +12,17 @@ import {
 const CHANNEL_ID = "UCDD1ne3PdG18xG81BnrzPhQ";
 const API_KEY = process.env.EXPO_PUBLIC_YOUTUBE_API_KEY ?? "";
 
+function hasConfiguredYoutubeApiKey(value: string) {
+  const normalized = value.trim();
+
+  return ![
+    "",
+    "COLE_SUA_CHAVE_AQUI",
+    "YOUR_YOUTUBE_API_KEY",
+    "******",
+  ].includes(normalized);
+}
+
 interface VideoItem {
   id: string;
   title: string;
@@ -21,6 +32,10 @@ interface VideoItem {
 }
 
 async function fetchLatestVideos(): Promise<VideoItem[]> {
+  if (!hasConfiguredYoutubeApiKey(API_KEY)) {
+    return [];
+  }
+
   // Step 1: Get uploads playlist ID from channel
   const channelRes = await fetch(
     `https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${CHANNEL_ID}&key=${API_KEY}`,
@@ -81,7 +96,7 @@ export default function YoutubeCarousel() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!API_KEY || API_KEY === "COLE_SUA_CHAVE_AQUI") {
+    if (!hasConfiguredYoutubeApiKey(API_KEY)) {
       setLoading(false);
       return;
     }
@@ -91,7 +106,7 @@ export default function YoutubeCarousel() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (!API_KEY || API_KEY === "COLE_SUA_CHAVE_AQUI") return null;
+  if (!hasConfiguredYoutubeApiKey(API_KEY)) return null;
 
   if (loading) {
     return (

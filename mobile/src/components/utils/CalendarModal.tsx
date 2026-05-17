@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Modal, TouchableOpacity, View } from "react-native";
 import { Calendar } from "react-native-calendars";
 import { Text } from "react-native-paper";
@@ -32,6 +32,15 @@ export default function CalendarModal({
   const [range, setRange] = useState<{ startDate?: string; endDate?: string }>(
     initialRange || {},
   );
+
+  useEffect(() => {
+    if (!visible) {
+      return;
+    }
+
+    setSelectedDate(initialDate);
+    setRange(initialRange || {});
+  }, [initialDate, initialRange, visible]);
 
   const markedDates = useMemo(() => {
     if (mode === "single" && selectedDate) {

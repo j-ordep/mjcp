@@ -1,13 +1,24 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, ScrollView, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { ShieldCheck } from "lucide-react-native";
 import { Avatar, Divider, Text } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
-import ActivityCard from "../../components/card/ActivityCard";
 import ProfileHeader from "../../components/Header/ProfileHeader";
 import BottomSheetMenu from "../../components/utils/BottomSheetMenu";
 import { signOut } from "../../services/authService";
 import { useAuthStore } from "../../stores/useAuthStore";
 import { useMinistryStore } from "../../stores/useMinistryStore";
+import {
+  formatProfilePhone,
+  getProfileAvatarUri,
+  getProfileInitials,
+} from "../../utils/profileAvatar";
 
 export default function ProfileScreen({ navigation }) {
   const [showMenu, setShowMenu] = useState(false);
@@ -17,54 +28,46 @@ export default function ProfileScreen({ navigation }) {
 
   useEffect(() => {
     fetchUserMinistries();
-  }, []);
+  }, [fetchUserMinistries]);
 
-  const activities = [
-    {
-      icon: "calendar",
-      title: "Escala - Culto Dominical",
-      subtitle: "Louvor e Adoração",
-      content: "Ministério de Música • Domingo, 19h • Participantes: 8 membros",
-      timestamp: "2d",
-    },
-    {
-      icon: "calendar",
-      title: "Escala - Culto Dominical",
-      subtitle: "Louvor e Adoração",
-      content: "Ministério de Música • Domingo, 19h • Participantes: 8 membros",
-      timestamp: "7d",
-    },
-    {
-      icon: "calendar",
-      title: "Escala - Culto Dominical",
-      subtitle: "Louvor e Adoração",
-      content: "Ministério de Música • Domingo, 19h • Participantes: 8 membros",
-      timestamp: "10d",
-    },
-  ];
+  const avatarUri = getProfileAvatarUri(profile?.avatar_url);
+
+  function handleBack() {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+
+    navigation.navigate("Home");
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={["top", "left", "right"]}>
       <ProfileHeader
-        onBack={() => navigation.goBack()}
+        onBack={handleBack}
         onMenu={() => setShowMenu(true)}
       />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ padding: 2 }}
       >
-        {/* Perfil */}
         <View className="items-center mt-3">
-          <Avatar.Image
-            size={110}
-            source={{
-              uri:
-                profile?.avatar_url ||
-                "https://ui-avatars.com/api/?name=" +
-                  (profile?.full_name || ""),
-            }}
-            style={{ marginBottom: 12 }}
-          />
+          {avatarUri ? (
+            <Avatar.Image
+              size={110}
+              source={{
+                uri: avatarUri,
+              }}
+              style={{ marginBottom: 12 }}
+            />
+          ) : (
+            <Avatar.Text
+              size={110}
+              label={getProfileInitials(profile?.full_name)}
+              color="#111111"
+              style={{ marginBottom: 12, backgroundColor: "#f3f4f6" }}
+            />
+          )}
           <Text style={{ fontSize: 22, fontWeight: "bold", marginTop: 8 }}>
             {profile?.full_name || "Carregando..."}
           </Text>
@@ -77,7 +80,6 @@ export default function ProfileScreen({ navigation }) {
           </Text>
         </View>
 
-        {/* Email e Telefone */}
         <View className="mt-8 px-6">
           <View className="py-3">
             <Text style={{ color: "#888", marginBottom: 2 }}>Email</Text>
@@ -89,13 +91,50 @@ export default function ProfileScreen({ navigation }) {
           <View className="py-3">
             <Text style={{ color: "#888", marginBottom: 2 }}>Telefone</Text>
             <Text style={{ fontSize: 15, marginBottom: 0 }}>
-              {profile?.phone || "Não informado"}
+              {formatProfilePhone(profile?.phone)}
             </Text>
             <Divider style={{ marginTop: 10, marginBottom: 0 }} />
           </View>
         </View>
 
-        {/* Meus Ministérios */}
+        {profile?.role === "admin" ? (
+          <View className="mt-8 px-6">
+            <Text style={{ fontWeight: "bold", fontSize: 16, marginBottom: 12 }}>
+              Administração
+            </Text>
+            <TouchableOpacity
+              onPress={() => navigation.navigate("ManageEventPermissions")}
+              style={{
+                borderRadius: 24,
+                padding: 18,
+                borderWidth: 1,
+                borderColor: "#eef2f7",
+                backgroundColor: "#fff",
+              }}
+            >
+              <View
+                style={{
+                  width: 46,
+                  height: 46,
+                  borderRadius: 23,
+                  backgroundColor: "#111827",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: 14,
+                }}
+              >
+                <ShieldCheck size={20} color="#fff" />
+              </View>
+              <Text style={{ fontWeight: "700", fontSize: 16, marginBottom: 4 }}>
+                Permissões globais de eventos
+              </Text>
+              <Text style={{ color: "#6b7280", lineHeight: 20 }}>
+                Gerencie quem pode criar, editar e excluir eventos em todo o app.
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
         <View className="mt-8 px-6">
           <Text style={{ fontWeight: "bold", fontSize: 16, marginBottom: 12 }}>
             Meus Ministérios
@@ -107,9 +146,9 @@ export default function ProfileScreen({ navigation }) {
               Você ainda não faz parte de nenhum ministério.
             </Text>
           ) : (
-            userMinistries.map((m) => (
+            userMinistries.map((ministry) => (
               <View
-                key={m.id}
+                key={ministry.id}
                 style={{
                   flexDirection: "row",
                   alignItems: "center",
@@ -120,12 +159,12 @@ export default function ProfileScreen({ navigation }) {
                 }}
               >
                 <View>
-                  <Text style={{ fontWeight: "bold" }}>{m.name}</Text>
+                  <Text style={{ fontWeight: "bold" }}>{ministry.name}</Text>
                   <Text style={{ fontSize: 12, color: "#888" }}>
-                    Desde {new Date(m.joined_at).toLocaleDateString("pt-BR")}
+                    Desde {new Date(ministry.joined_at).toLocaleDateString("pt-BR")}
                   </Text>
                 </View>
-                {m.is_leader && (
+                {ministry.is_leader ? (
                   <View
                     style={{
                       backgroundColor: "#000",
@@ -144,33 +183,36 @@ export default function ProfileScreen({ navigation }) {
                       LÍDER
                     </Text>
                   </View>
-                )}
+                ) : null}
               </View>
             ))
           )}
         </View>
 
-        {/* Cards de Atividades Recentes (Mock por enquanto) */}
-        <View className="mt-8 mb-10">
-          <Text
+        <View className="mt-8 mb-10 px-6">
+          <Text style={{ fontWeight: "bold", fontSize: 16, marginBottom: 12 }}>
+            Resumo
+          </Text>
+          <View
             style={{
-              fontWeight: "bold",
-              fontSize: 16,
-              marginBottom: 10,
-              marginLeft: 20,
+              borderRadius: 24,
+              padding: 18,
+              borderWidth: 1,
+              borderColor: "#eef2f7",
+              backgroundColor: "#fff",
             }}
           >
-            Atividades Recentes
-          </Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingLeft: 20, paddingRight: 20 }}
-          >
-            {activities.map((activity, idx) => (
-              <ActivityCard key={idx} {...activity} />
-            ))}
-          </ScrollView>
+            <Text style={{ fontWeight: "700", fontSize: 16, marginBottom: 6 }}>
+              Dados reais do seu perfil
+            </Text>
+            <Text style={{ color: "#6b7280", lineHeight: 20, marginBottom: 12 }}>
+              Esta tela mostra apenas informações reais do app. Histórico detalhado
+              de atividades ainda não entrou na POC.
+            </Text>
+            <Text style={{ color: "#111827", fontSize: 14 }}>
+              Ministérios vinculados: {userMinistries.length}
+            </Text>
+          </View>
         </View>
       </ScrollView>
       <BottomSheetMenu
