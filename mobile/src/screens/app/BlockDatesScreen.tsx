@@ -31,6 +31,18 @@ export default function BlockDatesScreen() {
   const hasChanges = addedCount > 0 || removedCount > 0;
   const canSave = !isLoading && hasChanges;
 
+  useEffect(() => {
+    if (!isSaving) {
+      return;
+    }
+
+    const unsubscribe = navigation.addListener("beforeRemove", (event) => {
+      event.preventDefault();
+    });
+
+    return unsubscribe;
+  }, [isSaving, navigation]);
+
   const loadBlockedDates = useCallback(async () => {
     if (!userId) {
       setIsLoading(false);
@@ -81,6 +93,10 @@ export default function BlockDatesScreen() {
   );
 
   function onDayPress(day: { dateString: string }) {
+    if (isSaving) {
+      return;
+    }
+
     const dateStr = day.dateString;
     setSelectedDates((prev) => {
       const next = { ...prev };
@@ -91,6 +107,14 @@ export default function BlockDatesScreen() {
       }
       return next;
     });
+  }
+
+  function handleBack() {
+    if (isSaving) {
+      return;
+    }
+
+    navigation.goBack();
   }
 
   async function blockAction() {
@@ -115,10 +139,7 @@ export default function BlockDatesScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
       <View className="flex-1 bg-white">
-        <HeaderSecondary
-          title="Bloquear Datas"
-          onBack={() => navigation.goBack()}
-        />
+        <HeaderSecondary title="Bloquear Datas" onBack={handleBack} />
 
         <View className="px-5 mt-10">
           <Text
@@ -129,7 +150,10 @@ export default function BlockDatesScreen() {
 
           <Divider style={{ marginBottom: 20 }} />
 
-          <View className="rounded-3xl border border-gray-200 p-4">
+          <View
+            className="rounded-3xl border border-gray-200 p-4"
+            pointerEvents={isSaving ? "none" : "auto"}
+          >
             {isLoading ? (
               <View className="items-center py-10">
                 <ActivityIndicator color="#111111" />
@@ -175,7 +199,8 @@ export default function BlockDatesScreen() {
             <View className="flex-1">
               <DefaultButton
                 variant="outline"
-                onPress={() => navigation.goBack()}
+                onPress={handleBack}
+                disabled={isSaving}
               >
                 Cancelar
               </DefaultButton>

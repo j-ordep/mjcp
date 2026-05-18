@@ -1,6 +1,7 @@
 import { TouchableOpacity, View } from "react-native";
 import { Avatar, IconButton, Text } from "react-native-paper";
 import { Bell } from "lucide-react-native";
+import { getProfileInitials } from "../../utils/profileAvatar";
 
 interface HeaderPrimaryProps {
   title: string;
@@ -8,6 +9,7 @@ interface HeaderPrimaryProps {
   onNotificationPress?: () => void;
   onAvatarPress?: () => void;
   avatarUri?: string;
+  avatarLabel?: string;
 }
 
 export default function HeaderPrimary(props: HeaderPrimaryProps) {
@@ -31,11 +33,20 @@ export default function HeaderPrimary(props: HeaderPrimaryProps) {
           onPress={props.onNotificationPress}
         />
         <TouchableOpacity onPress={props.onAvatarPress}>
-          <Avatar.Image
-            size={32}
-            source={{ uri: props.avatarUri || "https://avatar.iran.liara.run/public/46" }}
-            style={{ backgroundColor: '#e5e7eb' }}
-          />
+          {props.avatarUri ? (
+            <Avatar.Image
+              size={32}
+              source={{ uri: props.avatarUri }}
+              style={{ backgroundColor: "#e5e7eb" }}
+            />
+          ) : (
+            <Avatar.Text
+              size={32}
+              label={getProfileInitials(props.avatarLabel)}
+              color="#111111"
+              style={{ backgroundColor: "#e5e7eb" }}
+            />
+          )}
         </TouchableOpacity>
       </View>
     </View>

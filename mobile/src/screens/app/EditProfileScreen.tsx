@@ -1,4 +1,3 @@
-import { Camera } from "lucide-react-native";
 import { useRef, useState } from "react";
 import {
   Alert,
@@ -6,7 +5,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  TouchableOpacity,
   TouchableWithoutFeedback,
   View,
 } from "react-native";
@@ -16,6 +14,10 @@ import HeaderSecondary from "../../components/Header/HeaderSecondary";
 import DefaultButton from "../../components/button/DefaultButton";
 import { updateProfile } from "../../services/profileService";
 import { useAuthStore } from "../../stores/useAuthStore";
+import {
+  getProfileAvatarUri,
+  getProfileInitials,
+} from "../../utils/profileAvatar";
 
 export default function EditProfileScreen({ navigation }) {
   const { profile, session, setProfile } = useAuthStore();
@@ -23,27 +25,27 @@ export default function EditProfileScreen({ navigation }) {
   function applyPhoneMask(raw: string) {
     if (!raw) return "";
     const clean = raw.replace(/\D/g, "");
-    if (clean.length > 7)
+    if (clean.length > 7) {
       return `(${clean.substring(0, 2)}) ${clean.substring(2, 7)}-${clean.substring(7, 11)}`;
-    if (clean.length > 2)
+    }
+    if (clean.length > 2) {
       return `(${clean.substring(0, 2)}) ${clean.substring(2)}`;
+    }
     return clean;
   }
 
   const [name, setName] = useState(profile?.full_name || "");
   const [email, setEmail] = useState(profile?.email || "");
   const [phone, setPhone] = useState(applyPhoneMask(profile?.phone || ""));
-  const [avatar, setAvatar] = useState(
-    profile?.avatar_url || "https://avatar.iran.liara.run/public/46",
-  );
   const [isLoading, setIsLoading] = useState(false);
 
   const emailRef = useRef<any>(null);
   const phoneRef = useRef<any>(null);
+  const avatarUrl = getProfileAvatarUri(profile?.avatar_url);
 
   async function handleSave() {
     if (!name.trim()) {
-      Alert.alert("Erro", "O Nome não pode ficar vazio.");
+      Alert.alert("Erro", "O nome não pode ficar vazio.");
       return;
     }
 
@@ -56,8 +58,7 @@ export default function EditProfileScreen({ navigation }) {
     setIsLoading(true);
     const updates = {
       full_name: name.trim(),
-      phone: rawPhone, // Salva só os números pro sistema de SMS ler certinho depois
-      avatar_url: avatar,
+      phone: rawPhone,
     };
 
     const { error } = await updateProfile(session?.user?.id || "", updates);
@@ -65,13 +66,14 @@ export default function EditProfileScreen({ navigation }) {
 
     if (error) {
       Alert.alert("Erro ao salvar perfil", error);
-    } else {
-      // Atualiza o Zustand Store localmente para não precisar baixar de novo
-      if (profile) {
-        setProfile({ ...profile, ...updates });
-      }
-      navigation.goBack();
+      return;
     }
+
+    if (profile) {
+      setProfile({ ...profile, ...updates });
+    }
+
+    navigation.goBack();
   }
 
   return (
@@ -106,33 +108,21 @@ export default function EditProfileScreen({ navigation }) {
             <View
               style={{ alignItems: "center", marginTop: 32, marginBottom: 24 }}
             >
-              <View style={{ position: "relative" }}>
+              {avatarUrl ? (
                 <Avatar.Image
                   size={110}
                   source={{
-                    uri:
-                      avatar ||
-                      "https://ui-avatars.com/api/?name=" + (name || ""),
+                    uri: avatarUrl,
                   }}
                 />
-                <TouchableOpacity
-                  style={{
-                    position: "absolute",
-                    bottom: 4,
-                    right: 4,
-                    backgroundColor: "#000",
-                    borderRadius: 20,
-                    padding: 6,
-                    justifyContent: "center",
-                    alignItems: "center",
-                  }}
-                  onPress={() => {
-                    /* lógica para trocar foto */
-                  }}
-                >
-                  <Camera size={20} color="#fff" />
-                </TouchableOpacity>
-              </View>
+              ) : (
+                <Avatar.Text
+                  size={110}
+                  label={getProfileInitials(name)}
+                  color="#111111"
+                  style={{ backgroundColor: "#f3f4f6" }}
+                />
+              )}
               <Text
                 style={{
                   textAlign: "center",
@@ -141,7 +131,7 @@ export default function EditProfileScreen({ navigation }) {
                   marginTop: 10,
                 }}
               >
-                Alterar foto
+                Foto de perfil
               </Text>
             </View>
 
@@ -154,8 +144,8 @@ export default function EditProfileScreen({ navigation }) {
                   value={name}
                   onChangeText={setName}
                   autoCapitalize="words"
-                  autoCorrect={true}
-                  spellCheck={true}
+                  autoCorrect
+                  spellCheck
                   returnKeyType="next"
                   style={{ backgroundColor: "transparent" }}
                   onSubmitEditing={() => emailRef.current?.focus()}
@@ -186,7 +176,7 @@ export default function EditProfileScreen({ navigation }) {
                   value={phone}
                   onChangeText={(text) => setPhone(applyPhoneMask(text))}
                   keyboardType="number-pad"
-                  maxLength={15} // (XX) XXXXX-XXXX
+                  maxLength={15}
                   returnKeyType="done"
                   style={{ backgroundColor: "transparent" }}
                   onSubmitEditing={handleSave}

@@ -331,7 +331,17 @@ export default function RoomsScreen({ navigation }) {
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={["top", "left", "right"]}>
-      <HeaderSecondary title="Salas" onBack={() => navigation.goBack()} />
+      <HeaderSecondary
+        title="Salas"
+        onBack={() => {
+          if (navigation.canGoBack()) {
+            navigation.goBack();
+            return;
+          }
+
+          navigation.navigate("Home");
+        }}
+      />
 
       <ScrollView
         contentContainerStyle={{

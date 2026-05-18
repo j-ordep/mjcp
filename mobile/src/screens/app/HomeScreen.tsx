@@ -12,11 +12,14 @@ import YoutubeCarousel from "../../components/card/YoutubeCarousel";
 import HeaderPrimary from "../../components/Header/HeaderPrimary";
 import NotificationsModal from "../../components/utils/NotificationsModal";
 import { RootStackParamList } from "../../navigation/AppNavigator";
+import { useAuthStore } from "../../stores/useAuthStore";
 import { useEventStore } from "../../stores/useEventStore";
+import { getProfileAvatarUri } from "../../utils/profileAvatar";
 
 export default function HomeScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const { events, isLoadingEvents, fetchUpcomingEvents } = useEventStore();
+  const { profile } = useAuthStore();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
@@ -41,7 +44,8 @@ export default function HomeScreen() {
         title="Dashboard"
         onNotificationPress={() => setModalVisible(true)}
         onAvatarPress={() => navigation.navigate("Profile")}
-        avatarUri=""
+        avatarUri={getProfileAvatarUri(profile?.avatar_url)}
+        avatarLabel={profile?.full_name ?? ""}
       />
 
       <ScrollView
