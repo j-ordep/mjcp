@@ -39,28 +39,28 @@ test("countAssignmentsByStatus returns zeros when assignments are missing", () =
   });
 });
 
-test("isEventDateEditable allows editing on the same calendar day", () => {
-  const now = new Date("2026-04-09T10:00:00.000Z");
-  const result = isEventDateEditable("2026-04-09T22:00:00.000Z", now);
+test("isEventDateEditable allows editing before the exact event time on the same day", () => {
+  const now = new Date("2026-04-10T10:00:00.000Z");
+  const result = isEventDateEditable("2026-04-10T22:00:00.000Z", now);
 
   assert.equal(result, true);
 });
 
-test("isEventDateEditable blocks editing after the event day has passed", () => {
-  const now = new Date("2026-04-10T10:00:00.000Z");
-  const result = isEventDateEditable("2026-04-09T22:00:00.000Z", now);
+test("isEventDateEditable blocks editing at the exact event time", () => {
+  const now = new Date("2026-04-10T22:00:00.000Z");
+  const result = isEventDateEditable("2026-04-10T22:00:00.000Z", now);
 
   assert.equal(result, false);
 });
 
-test("isEventDateReadOnly blocks actions on the event day", () => {
-  const now = new Date("2026-04-10T10:00:00.000Z");
+test("isEventDateReadOnly blocks actions at the exact event time", () => {
+  const now = new Date("2026-04-10T22:00:00.000Z");
   const result = isEventDateReadOnly("2026-04-10T22:00:00.000Z", now);
 
   assert.equal(result, true);
 });
 
-test("isEventDateReadOnly allows actions before the event day", () => {
+test("isEventDateReadOnly allows actions before the exact event time on the same day", () => {
   const now = new Date("2026-04-10T10:00:00.000Z");
   const result = isEventDateReadOnly("2026-04-11T22:00:00.000Z", now);
 
@@ -80,8 +80,21 @@ test("matchesScheduleTimeFilter keeps future schedules in current", () => {
   );
 });
 
-test("matchesScheduleTimeFilter treats the event day as past/read-only", () => {
+test("matchesScheduleTimeFilter keeps same-day future schedules in current", () => {
   const now = new Date("2026-04-10T10:00:00.000Z");
+
+  assert.equal(
+    matchesScheduleTimeFilter("2026-04-10T22:00:00.000Z", "current", now),
+    true,
+  );
+  assert.equal(
+    matchesScheduleTimeFilter("2026-04-10T22:00:00.000Z", "past", now),
+    false,
+  );
+});
+
+test("matchesScheduleTimeFilter moves schedules to past at the exact event time", () => {
+  const now = new Date("2026-04-10T22:00:00.000Z");
 
   assert.equal(
     matchesScheduleTimeFilter("2026-04-10T22:00:00.000Z", "current", now),

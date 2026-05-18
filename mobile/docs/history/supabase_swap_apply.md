@@ -7,8 +7,8 @@ Objetivo:
 - liberar as RPCs `accept_swap_request` e `cancel_own_swap_request`
 - validar a regra de somente leitura no dia do evento ou depois
 
-Project ref encontrado no repo:
-- `ifiksgchvjiuqhttazvv`
+Project ref encontrado no repo na epoca:
+- `YOUR_SUPABASE_PROJECT_REF`
 
 ---
 
@@ -18,7 +18,7 @@ Voce precisa ter:
 - Supabase CLI instalada
 - acesso ao projeto Supabase correto
 - terminal aberto na raiz do projeto:
-  - `C:\dev\mjcp\mobile`
+  - `<repo-root>\mobile`
 
 Comando para conferir a CLI:
 
@@ -51,14 +51,14 @@ Isso vai abrir o fluxo de autenticacao no navegador.
 Na raiz do repo:
 
 ```powershell
-supabase link --project-ref ifiksgchvjiuqhttazvv
+supabase link --project-ref YOUR_SUPABASE_PROJECT_REF
 ```
 
 Se pedir o database password, use a senha do banco do projeto Supabase.
 
 Observacao:
 - o arquivo `supabase\config.toml` neste repo esta vazio
-- o `project-ref` foi encontrado em `supabase\.temp\project-ref`
+- o `project-ref` foi encontrado em `supabase\.temp\project-ref` durante a rodada historica
 
 ---
 
@@ -92,7 +92,7 @@ supabase db push
 
 Esse comando aplica no banco remoto todas as migrations locais ainda nao aplicadas.
 
-Se o CLI mostrar diff ou pedir confirmacao, confirme apenas se o projeto remoto correto for o `ifiksgchvjiuqhttazvv`.
+Se o CLI mostrar diff ou pedir confirmacao, confirme apenas se o projeto remoto correto for o esperado para o seu ambiente.
 
 ---
 
@@ -171,7 +171,7 @@ supabase db push
 Confirme o projeto linkado:
 
 ```powershell
-supabase link --project-ref ifiksgchvjiuqhttazvv
+supabase link --project-ref YOUR_SUPABASE_PROJECT_REF
 ```
 
 ### Migration nao aparece como aplicada

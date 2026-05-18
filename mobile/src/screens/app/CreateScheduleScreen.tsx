@@ -121,12 +121,7 @@ export default function CreateScheduleScreen() {
       forceRefresh: true,
     });
 
-    Alert.alert("Escala criada", "Agora voce pode abrir a escala na lista para montar a equipe.", [
-      {
-        text: "OK",
-        onPress: () => navigation.navigate("ScheduleScreen"),
-      },
-    ]);
+    navigation.goBack();
   };
 
   return (

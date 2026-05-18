@@ -21,28 +21,46 @@ Data de reconciliacao: 2026-04-10 (America/Sao_Paulo)
 - Tela dedicada para acompanhar trocas (`SwapRequestsScreen`)
 - Gestao de membros do ministerio e capabilities
 - Integridade e RLS para lider/admin no dominio principal de escalas
+- `EventDetailsScreen` reduzida para papel informativo, sem equipe, status, confirmacao ou troca
+- `EventsScreen` usa cards informativos sem acoes operacionais de escala
+- `EventsScreen` lista eventos futuros e historico real
+- Eventos possuem categoria informativa em portugues e visual minimalista preto/branco
+- Edicao de evento hidrata dados canonicos do backend e reaplica corretamente a audiencia privada no formulario
+- `EventDetailsScreen` saneia o payload de edicao por whitelist, evitando reintroduzir campos operacionais no fluxo de eventos
+- Backend bloqueia novo assignment duplicado do mesmo membro na mesma escala
 
 ### Implementado parcialmente
 
-- `EventDetailsScreen` ainda precisa ser reduzida para um papel puramente informativo, sem equipe, status, confirmacao ou troca
 - a UX basica entre `ScheduleScreen` e `EditScheduleScreen` segue como centro do fluxo operacional de escala
 - `EditScheduleScreen` agora tambem serve como tela unificada da escala para membro:
   - o membro abre a mesma tela que admin/lider a partir de `ScheduleScreen`
   - as acoes administrativas ficam ocultas quando ele nao pode gerenciar a escala
 - Edicao de dados basicos da escala nao deve expor observacoes, `notes` ou `note`; trocar evento ou ministerio nao esta exposto
 - Tipagem de banco existe em `src/types/database.types.ts`, mas ainda merece revisao de cobertura
-- Suite de testes unitarios existe, mas hoje cobre principalmente utils e mapeamentos, nao o service layer principal
+- Suite de testes unitarios existe e ja cobre utils, mapeamentos e partes relevantes dos services de escalas, ministerios e eventos
 
 ### Ainda pendente
 
-- Aplicar no Supabase remoto a migration que conecta notificacoes operacionais de swap
-- Aplicar no Supabase remoto as migrations locais de hotfix:
-  - `20260412000111_fix_schedule_rls_recursion.sql`
-  - `20260412000112_reset_assignment_confirmation_on_swap_request.sql`
+- Confirmar no Supabase remoto o estado final das migrations mais recentes de `start_at`, simplificacao da leitura de eventos e categoria de eventos
+- Aplicar/validar no Supabase remoto a migration que conecta notificacoes operacionais de swap, se ainda nao estiver aplicada
 - Pull-to-refresh e estados de loading/error mais consistentes
-- Refinar o caso de multiplas escalas do mesmo usuario no mesmo evento
-- Cobertura de testes do `scheduleService` e `ministryService`
+- Validar em uso real a permissao granular de eventos e a nova UI admin de grant/revoke
+- Ampliar cobertura de testes do `scheduleService`, `ministryService` e `eventService`
 - Fluxo de declinio de assignment, caso o produto confirme essa necessidade
+- [x] Integrar salas e reservas ao fluxo basico real do app
+  - `RoomsScreen` deixou de ser mock e agora cria reservas independentes reais
+  - `RoomsScreen` agora tambem mostra agenda diaria por sala com reservas do dia, badge `Evento` e resumo simples das escalas vinculadas
+  - `CreateEventScreen` permite sala opcional para evento com data unica
+  - vinculo estrutural adotado: `room_reservations.event_id`
+  - `events.room_id` continua fora do modelo
+  - catalogo padrao de salas segue vindo do banco e foi normalizado para:
+    - `Sala 1`
+    - `Sala 2`
+    - `Sala 3`
+    - `Sala 4`
+    - `Casa de Missoes`
+    - `Templo`
+  - lotacao/capacidade deixou de aparecer na UI
 
 ---
 
@@ -54,7 +72,7 @@ Data de reconciliacao: 2026-04-10 (America/Sao_Paulo)
 - [x] Adicionar membro na escala com validacao de capability e warnings de conflito/indisponibilidade
 - [x] Remover membro da escala com confirmacao explicita
 - [x] Excluir escala com confirmacao explicita
-- [ ] Fechar revisao final do comportamento de historico/somente leitura no dia do evento ou depois dele em todos os fluxos
+- [x] Fechar revisao final do comportamento de historico/somente leitura em `start_at` ou depois dele nos fluxos centrais
 
 ---
 
@@ -62,7 +80,7 @@ Data de reconciliacao: 2026-04-10 (America/Sao_Paulo)
 
 - [x] Confirmar presenca em `ScheduleScreen`
 - [x] Confirmar presenca em `EditScheduleScreen`
-- [ ] Remover confirmacao de presenca de `EventDetailsScreen`
+- [x] Remover confirmacao de presenca de `EventDetailsScreen`
 - [x] Padronizar bloqueios e desabilitacoes dessas acoes entre as tres telas
 - [x] Remover alerts nativos de sucesso de confirmacao e troca
 - [x] Abrir a tela nova de escala tambem para membro, com modo somente leitura administrativa
@@ -80,9 +98,12 @@ Data de reconciliacao: 2026-04-10 (America/Sao_Paulo)
 
 - [x] `ScheduleScreen` como hub operacional de escalas
 - [x] `EditScheduleScreen` mistura contexto de gestor e, quando aplicavel, bloco "Minha participacao"
-- [ ] `EventDetailsScreen` como tela apenas informativa do evento
-- [ ] `EventsScreen` sempre igual para todos os usuarios, sem botoes operacionais de escala
-- [ ] Consolidar um shape/payload de backend somente informativo para cards e detalhes de evento
+- [x] `EventDetailsScreen` como tela apenas informativa do evento
+- [x] `EventsScreen` sempre igual para todos os usuarios, sem botoes operacionais de escala
+- [x] `EventsScreen` com `Proximos` e `Anteriores` baseado em `start_at`
+- [x] `EventsScreen` e `EventDetailsScreen` com categoria informativa e UI claro minimalista
+- [x] Edicao de evento reidratada pelo backend, sem depender apenas de payload de navegacao
+- [x] Consolidar um shape/payload de backend somente informativo para cards e detalhes de evento
 
 ---
 
@@ -93,8 +114,9 @@ Data de reconciliacao: 2026-04-10 (America/Sao_Paulo)
 - [x] Migrations para endurecimento de integridade e fluxo de swap
 - [~] Tipagem do banco presente, mas ainda passivel de revisao
 - [~] Testes automatizados iniciais existentes
-- [ ] Cobrir `scheduleService` com testes
-- [ ] Cobrir `ministryService` com testes
+- [~] Cobrir `scheduleService` com testes
+- [~] Cobrir `ministryService` com testes
+- [~] Cobrir `eventService` com testes
 
 ---
 
@@ -117,9 +139,10 @@ Data de reconciliacao: 2026-04-10 (America/Sao_Paulo)
 
 ## P2 - Outras frentes do produto
 
-- [ ] Queries reais de disponibilidade de salas
+- [x] Queries reais de disponibilidade de salas
 - [ ] Tela de musica individual
-- [ ] Setlist por evento
+- [x] Setlist por evento
+  - entregue em modo simples no `MusicScreen`, focado no proximo evento
 - [ ] Padronizacao de loading/error/empty states
 - [ ] Definir estrategia de historico/retencao de escalas antigas
 
@@ -127,7 +150,9 @@ Data de reconciliacao: 2026-04-10 (America/Sao_Paulo)
 
 ## Proximos passos sugeridos
 
-1. Fechar a separacao visual e funcional entre evento informativo e escala operacional.
-2. Reduzir `EventDetailsScreen` para detalhes do evento sem acoes de escala.
-3. Padronizar UX do usuario escalado entre `ScheduleScreen` e `EditScheduleScreen`.
-4. Implementar notificacoes in-app do fluxo de trocas e escalas, com geracao no backend e inbox real no app.
+1. Aplicar no Supabase remoto a migration `20260512000125_allow_event_managers_to_manage_event_setlists.sql`.
+2. Revisar UX final de evento + sala em uso real no app.
+3. Validar em uso real a permissao granular de criacao/edicao de eventos e setlists.
+4. Confirmar no Supabase remoto a fase atual de salas, especialmente catalogo padrao e read-model diario com dados reais.
+5. Refinar a UI administrativa de permissao granular se o uso real pedir filtros ou escopo extra.
+6. Implementar notificacoes in-app do fluxo de trocas, escalas e eventos privados.

@@ -1,6 +1,6 @@
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Search } from "lucide-react-native";
+import { Plus, Search } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -10,32 +10,43 @@ import {
 } from "react-native";
 import { Text, TextInput } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Plus } from "lucide-react-native";
 import EventCard from "../../components/card/EventCard";
 import HeaderSecondary from "../../components/Header/HeaderSecondary";
 import { RootStackParamList } from "../../navigation/AppNavigator";
-import { useEventStore } from "../../stores/useEventStore";
 import { useAuthStore } from "../../stores/useAuthStore";
+import { useEventStore } from "../../stores/useEventStore";
 import { Event } from "../../types/models";
+import { canManageEvents as canManageEventsForProfile } from "../../utils/eventPermissions";
 import { formatDateTime } from "../../utils/formatDate";
+import { toInformationalEventViewModel } from "../../utils/eventPresentation";
+import {
+  compareEventDatesByFilter,
+  matchesEventTimeFilter,
+} from "../../utils/eventFilters";
 
-type Filter = "todos" | "proximos" | "passados";
+type Filter = "current" | "past";
+
+function pluralizeEvents(count: number) {
+  return `${count} ${count === 1 ? "evento" : "eventos"}`;
+}
 
 export default function EventsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const [activeFilter, setActiveFilter] = useState<Filter>("todos");
+  const [activeFilter, setActiveFilter] = useState<Filter>("current");
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  
-  const { events, isLoadingEvents, fetchUpcomingEvents } = useEventStore();
+
   const { profile } = useAuthStore();
-  const canManageEvents = profile?.role === "admin" || profile?.role === "leader";
+  const { allEvents, isLoadingAllEvents, fetchEvents } = useEventStore();
+  const canManageEvents = canManageEventsForProfile(profile);
 
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    fetchUpcomingEvents();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      void fetchEvents(true);
+    }, [fetchEvents]),
+  );
 
   useEffect(() => {
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
@@ -47,78 +58,142 @@ export default function EventsScreen() {
     };
   }, [search]);
 
-
-
   const filteredEvents = useMemo(() => {
     const now = new Date().getTime();
-    return events.filter((e) => {
-      const eventTime = new Date(e.start_at).getTime();
-      const matchesFilter =
-        activeFilter === "todos" ||
-        (activeFilter === "proximos" && eventTime >= now) ||
-        (activeFilter === "passados" && eventTime < now);
-      const matchesSearch =
-        !debouncedSearch || e.title.toLowerCase().includes(debouncedSearch.toLowerCase());
-      return matchesFilter && matchesSearch;
-    });
-  }, [events, activeFilter, debouncedSearch]);
+    const normalizedSearch = debouncedSearch.trim().toLowerCase();
 
-  const handleLoadMore = useCallback(() => {
-    // Para simplificar agora, o fetch traz tudo. Paginação real seria no Supabase.
-  }, []);
+    return allEvents
+      .filter((event) => {
+        const matchesFilter = matchesEventTimeFilter(event, activeFilter, now);
+        const matchesSearch =
+          !normalizedSearch ||
+          event.title.toLowerCase().includes(normalizedSearch);
+
+        return matchesFilter && matchesSearch;
+      })
+      .sort((left, right) =>
+        compareEventDatesByFilter(left, right, activeFilter),
+      );
+  }, [activeFilter, allEvents, debouncedSearch]);
 
   const filters: { key: Filter; label: string }[] = useMemo(
     () => [
-      { key: "todos", label: "Todos" },
-      { key: "proximos", label: "Próximos" },
-      { key: "passados", label: "Passados" },
+      { key: "current", label: "Próximos" },
+      { key: "past", label: "Anteriores" },
     ],
     [],
   );
+  const resultsSummaryLabel = useMemo(() => {
+    const normalizedSearch = debouncedSearch.trim();
+
+    if (normalizedSearch) {
+      return `${pluralizeEvents(filteredEvents.length)} para "${normalizedSearch}"`;
+    }
+
+    return `${pluralizeEvents(filteredEvents.length)} • ${
+      activeFilter === "past" ? "Anteriores" : "Próximos"
+    }`;
+  }, [activeFilter, debouncedSearch, filteredEvents.length]);
 
   const renderItem = useCallback(
-    ({ item }: { item: Event }) => (
-      <EventCard
-        title={item.title}
-        date={formatDateTime(item.start_at)}
-        location={item.location || ''}
-        description={item.description || undefined}
-        showActions={false}
-        onDetails={() => navigation.navigate("EventDetails", {
-          event: item
-        })}
-      />
-    ),
+    ({ item }: { item: Event }) => {
+      const viewModel = toInformationalEventViewModel(item);
+
+      return (
+        <EventCard
+          title={viewModel.title}
+          date={formatDateTime(viewModel.startAt)}
+          category={viewModel.category}
+          startAt={viewModel.startAt}
+          endAt={viewModel.endAt}
+          location={viewModel.location}
+          description={viewModel.description}
+          showActions={false}
+          onDetails={() =>
+            navigation.navigate("EventDetails", {
+              event: item,
+            })
+          }
+        />
+      );
+    },
     [navigation],
   );
 
   const keyExtractor = useCallback((item: Event) => item.id, []);
 
-  const ListFooter = useCallback(() => null, []);
-
   const ListEmpty = useCallback(() => {
-    if (isLoadingEvents) return null;
+    if (isLoadingAllEvents) return null;
+
+    const hasSearch = debouncedSearch.trim().length > 0;
+    const emptyMessage = hasSearch
+      ? "Nenhum evento encontrado para a busca atual."
+      : activeFilter === "past"
+        ? "Nenhum evento anterior encontrado."
+        : "Nenhum próximo evento encontrado.";
+
     return (
       <View className="items-center justify-center py-16 px-10">
-        <Text style={{ color: "#888", fontSize: 16, textAlign: 'center' }}>
-          Nenhum evento encontrado.
+        <Text style={{ color: "#888", fontSize: 16, textAlign: "center" }}>
+          {emptyMessage}
         </Text>
+        {hasSearch ? (
+          <TouchableOpacity
+            onPress={() => {
+              setSearch("");
+              setActiveFilter("current");
+            }}
+            style={{
+              marginTop: 14,
+              paddingHorizontal: 16,
+              paddingVertical: 10,
+              borderRadius: 999,
+              backgroundColor: "#111827",
+            }}
+          >
+            <Text style={{ color: "#fff", fontWeight: "700" }}>
+              Limpar busca e voltar para próximos
+            </Text>
+          </TouchableOpacity>
+        ) : activeFilter === "past" ? (
+          <TouchableOpacity
+            onPress={() => setActiveFilter("current")}
+            style={{
+              marginTop: 14,
+              paddingHorizontal: 16,
+              paddingVertical: 10,
+              borderRadius: 999,
+              backgroundColor: "#111827",
+            }}
+          >
+            <Text style={{ color: "#fff", fontWeight: "700" }}>Voltar para próximos</Text>
+          </TouchableOpacity>
+        ) : null}
       </View>
     );
-  }, [isLoadingEvents]);
+  }, [activeFilter, debouncedSearch, isLoadingAllEvents]);
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={["top", "left", "right"]}>
+    <SafeAreaView
+      className="flex-1 bg-white"
+      edges={["top", "left", "right"]}
+    >
       <HeaderSecondary
-        title="Todos os Eventos"
+        title="Eventos"
         onBack={() => navigation.goBack()}
         rightIcon={canManageEvents ? <Plus size={22} color="#000" /> : undefined}
         onRightPress={canManageEvents ? () => navigation.navigate("CreateEvent") : undefined}
       />
 
       <View className="px-5">
-        {/* Search */}
-        <View className="flex-row items-center bg-gray-100 rounded-xl border border-gray-200 px-3 mb-4">
+        <View
+          className="flex-row items-center rounded-xl px-3 mb-4"
+          style={{
+            backgroundColor: "#f9fafb",
+            borderWidth: 1,
+            borderColor: "#e5e7eb",
+          }}
+        >
           <Search size={18} color="#888" />
           <TextInput
             placeholder="Buscar evento..."
@@ -135,36 +210,45 @@ export default function EventsScreen() {
           />
         </View>
 
-        {/* Filters */}
         <View className="flex-row gap-2 mb-4">
-          {filters.map((f) => (
+          {filters.map((filter) => (
             <TouchableOpacity
-              key={f.key}
-              onPress={() => setActiveFilter(f.key)}
+              key={filter.key}
+              onPress={() => setActiveFilter(filter.key)}
               style={{
                 paddingVertical: 8,
                 paddingHorizontal: 18,
                 borderRadius: 10,
-                backgroundColor: activeFilter === f.key ? "#000" : "#f3f4f6",
-                borderWidth: activeFilter === f.key ? 0 : 1,
+                backgroundColor: activeFilter === filter.key ? "#000" : "#f3f4f6",
+                borderWidth: activeFilter === filter.key ? 0 : 1,
                 borderColor: "#e5e7eb",
               }}
             >
               <Text
                 style={{
-                  color: activeFilter === f.key ? "#fff" : "#222",
-                  fontWeight: activeFilter === f.key ? "bold" : "normal",
+                  color: activeFilter === filter.key ? "#fff" : "#222",
+                  fontWeight: activeFilter === filter.key ? "bold" : "normal",
                   fontSize: 14,
                 }}
               >
-                {f.label}
+                {filter.label}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
+
+        <Text
+          style={{
+            color: "#6b7280",
+            fontSize: 13,
+            marginBottom: 14,
+          }}
+        >
+          {resultsSummaryLabel}
+        </Text>
       </View>
 
-      {isLoadingEvents ? (
+      {isLoadingAllEvents ? (
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color="#000" />
         </View>
@@ -179,9 +263,6 @@ export default function EventsScreen() {
             paddingTop: 4,
           }}
           showsVerticalScrollIndicator={false}
-          onEndReached={handleLoadMore}
-          onEndReachedThreshold={0.3}
-          ListFooterComponent={ListFooter}
           ListEmptyComponent={ListEmpty}
         />
       )}

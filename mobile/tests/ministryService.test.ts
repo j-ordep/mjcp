@@ -152,3 +152,40 @@ test("saveMinistryMemberCapabilities inserts the expected payload", async () => 
     ],
   ]);
 });
+
+test("searchRegisteredUsers keeps admin hidden in ministry search", async () => {
+  const supabaseModulePath = require.resolve("../src/lib/supabase");
+  const profileServiceModulePath = require.resolve("../src/services/profileService");
+  const ministryServiceModulePath = require.resolve("../src/services/ministryService");
+  const searchCalls: unknown[][] = [];
+
+  delete require.cache[ministryServiceModulePath];
+  delete require.cache[profileServiceModulePath];
+  require.cache[supabaseModulePath] = ({
+    id: supabaseModulePath,
+    filename: supabaseModulePath,
+    loaded: true,
+    exports: { supabase: {} },
+    children: [],
+    paths: [],
+  } as unknown) as NodeJS.Module;
+  require.cache[profileServiceModulePath] = ({
+    id: profileServiceModulePath,
+    filename: profileServiceModulePath,
+    loaded: true,
+    exports: {
+      searchProfiles: (...args: unknown[]) => {
+        searchCalls.push(args);
+        return Promise.resolve({ data: [], error: null });
+      },
+    },
+    children: [],
+    paths: [],
+  } as unknown) as NodeJS.Module;
+
+  const { searchRegisteredUsers } = require("../src/services/ministryService") as typeof import("../src/services/ministryService");
+  const result = await searchRegisteredUsers("Ana");
+
+  assert.equal(result.error, null);
+  assert.deepEqual(searchCalls[0], ["Ana", { excludeRoles: ["admin"] }]);
+});

@@ -139,10 +139,7 @@ export default function BlockDatesScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
       <View className="flex-1 bg-white">
-        <HeaderSecondary
-          title="Bloquear Datas"
-          onBack={handleBack}
-        />
+        <HeaderSecondary title="Bloquear Datas" onBack={handleBack} />
 
         <View className="px-5 mt-10">
           <Text

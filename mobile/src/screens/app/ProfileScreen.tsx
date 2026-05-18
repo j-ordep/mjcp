@@ -1,11 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  ScrollView,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, Alert, ScrollView, TouchableOpacity, View } from "react-native";
 import { ShieldCheck } from "lucide-react-native";
 import { Avatar, Divider, Text } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -43,10 +37,7 @@ export default function ProfileScreen({ navigation }) {
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={["top", "left", "right"]}>
-      <ProfileHeader
-        onBack={handleBack}
-        onMenu={() => setShowMenu(true)}
-      />
+      <ProfileHeader onBack={handleBack} onMenu={() => setShowMenu(true)} />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ padding: 2 }}
@@ -100,7 +91,7 @@ export default function ProfileScreen({ navigation }) {
         {profile?.role === "admin" ? (
           <View className="mt-8 px-6">
             <Text style={{ fontWeight: "bold", fontSize: 16, marginBottom: 12 }}>
-              Administração
+              Administracao
             </Text>
             <TouchableOpacity
               onPress={() => navigation.navigate("ManageEventPermissions")}
@@ -126,7 +117,7 @@ export default function ProfileScreen({ navigation }) {
                 <ShieldCheck size={20} color="#fff" />
               </View>
               <Text style={{ fontWeight: "700", fontSize: 16, marginBottom: 4 }}>
-                Permissões globais de eventos
+                Permissoes globais de eventos
               </Text>
               <Text style={{ color: "#6b7280", lineHeight: 20 }}>
                 Gerencie quem pode criar, editar e excluir eventos em todo o app.

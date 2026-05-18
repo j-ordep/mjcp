@@ -40,11 +40,12 @@ ON CONFLICT (ministry_id, name) DO NOTHING;
 -- ────────────────────────────────────────────────────────
 
 INSERT INTO public.rooms (name, capacity, description) VALUES
-  ('Salão Principal', 300, 'Auditório principal da igreja'),
-  ('Sala de Reunião A', 20, 'Sala para reuniões pequenas'),
-  ('Sala de Reunião B', 20, 'Sala para reuniões pequenas'),
-  ('Sala Infantil', 50, 'Espaço para o ministério infantil'),
-  ('Estúdio', 10, 'Estúdio de gravação e ensaio')
+  ('Sala 1', 0, 'Sala de apoio'),
+  ('Sala 2', 0, 'Sala de apoio'),
+  ('Sala 3', 0, 'Sala de apoio'),
+  ('Sala 4', 0, 'Sala de apoio'),
+  (U&'Casa de Miss\00F5es', 0, U&'Espa\00E7o de apoio'),
+  ('Templo', 0, U&'Espa\00E7o principal')
 ON CONFLICT DO NOTHING;
 
 -- ────────────────────────────────────────────────────────
@@ -61,3 +62,4 @@ INSERT INTO public.songs (title, artist, key, bpm, category) VALUES
   ('Tua Graça me Basta', 'Fernandinho', 'F', 78, 'adoracao'),
   ('Me Ajoelho', 'Vineyard', 'G', 60, 'adoracao')
 ON CONFLICT DO NOTHING;
+

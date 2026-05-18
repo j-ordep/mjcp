@@ -29,6 +29,7 @@ interface AssignmentPickerModalProps {
   ministryName?: string | null;
   memberSearch: string;
   filteredMembers: MinistryMemberOption[];
+  assignedMemberIds: string[];
   roles: MinistryRoleOption[];
   selectedMemberId: string | null;
   selectedRoleId: string | null;
@@ -49,6 +50,7 @@ export default function AssignmentPickerModal({
   ministryName,
   memberSearch,
   filteredMembers,
+  assignedMemberIds,
   roles,
   selectedMemberId,
   selectedRoleId,
@@ -188,20 +190,26 @@ export default function AssignmentPickerModal({
                   ) : (
                     filteredMembers.map((member) => {
                       const selected = selectedMemberId === member.user_id;
+                      const isAlreadyAssigned = assignedMemberIds.includes(member.user_id);
                       return (
                         <TouchableOpacity
                           key={member.user_id}
-                          onPress={() => onSelectMember(member.user_id)}
-                          activeOpacity={0.85}
+                          onPress={() => {
+                            if (isAlreadyAssigned) return;
+                            onSelectMember(member.user_id);
+                          }}
+                          activeOpacity={isAlreadyAssigned ? 1 : 0.85}
+                          disabled={isAlreadyAssigned}
                           style={{
                             borderWidth: 1.5,
-                            borderColor: selected ? "#111827" : "#e5e7eb",
+                            borderColor: selected ? "#111827" : isAlreadyAssigned ? "#d1d5db" : "#e5e7eb",
                             borderRadius: 16,
                             padding: 12,
                             marginBottom: 10,
-                            backgroundColor: selected ? "#f9fafb" : "#fff",
+                            backgroundColor: selected ? "#f9fafb" : isAlreadyAssigned ? "#f3f4f6" : "#fff",
                             flexDirection: "row",
                             alignItems: "center",
+                            opacity: isAlreadyAssigned ? 0.55 : 1,
                           }}
                         >
                           <View
@@ -209,7 +217,7 @@ export default function AssignmentPickerModal({
                               width: 42,
                               height: 42,
                               borderRadius: 21,
-                              backgroundColor: "#111827",
+                              backgroundColor: isAlreadyAssigned ? "#9ca3af" : "#111827",
                               alignItems: "center",
                               justifyContent: "center",
                               marginRight: 12,
@@ -223,7 +231,20 @@ export default function AssignmentPickerModal({
                             <Text style={{ fontWeight: "700" }}>{member.full_name}</Text>
                             <Text style={{ color: "#6b7280", fontSize: 13 }}>Toque para selecionar</Text>
                           </View>
-                          {selected ? (
+                          {isAlreadyAssigned ? (
+                            <View
+                              style={{
+                                backgroundColor: "#e5e7eb",
+                                borderRadius: 999,
+                                paddingHorizontal: 10,
+                                paddingVertical: 5,
+                              }}
+                            >
+                              <Text style={{ color: "#374151", fontWeight: "600", fontSize: 12 }}>
+                                Ja escalado
+                              </Text>
+                            </View>
+                          ) : selected ? (
                             <View
                               style={{
                                 backgroundColor: "#111827",

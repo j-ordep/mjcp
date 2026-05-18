@@ -1,6 +1,6 @@
 # MJCP Mobile - Runbook de aplicacao remota no Supabase
 
-Data de consolidacao: 2026-04-19 (America/Sao_Paulo)
+Data de consolidacao: 2026-04-27 (America/Sao_Paulo)
 
 > Este arquivo organiza o que precisa ser aplicado no projeto Supabase remoto para alinhar o ambiente com o estado atual do repositorio.
 > Fonte primaria: `supabase/migrations/*.sql`.
@@ -16,6 +16,14 @@ Aplicar no Supabase remoto as migrations locais pendentes que fecham o fluxo pri
 3. `20260412000110_add_swap_request_notifications.sql`
 4. `20260413000113_restrict_member_assignment_status_updates.sql`
 5. `20260413000114_add_schedule_assignment_status_index.sql`
+6. `20260423000115_align_schedule_read_only_with_event_start_time.sql`
+7. `20260423000116_simplify_event_read_policy.sql`
+8. `20260426000117_prevent_duplicate_member_schedule_assignments.sql`
+9. `20260427000118_add_event_category.sql`
+10. `20260428000119_add_private_event_audiences.sql`
+11. `20260509000123_add_event_management_permission.sql`
+12. `20260511000124_add_profile_event_management_permission_rpc.sql`
+13. `20260512000125_allow_event_managers_to_manage_event_setlists.sql`
 
 ---
 
@@ -56,7 +64,7 @@ Aplicar no Supabase remoto as migrations locais pendentes que fecham o fluxo pri
 
 - substitui a policy do proprio membro por uma versao com restricao temporal
 - impacto funcional:
-  - membro so pode atualizar o proprio assignment antes do dia do evento
+  - membro so pode atualizar o proprio assignment antes de `start_at`
   - protege o backend contra bypass do bloqueio ja existente na UI
 
 ### `20260413000114_add_schedule_assignment_status_index.sql`
@@ -68,6 +76,82 @@ Aplicar no Supabase remoto as migrations locais pendentes que fecham o fluxo pri
 
 ---
 
+### `20260423000115_align_schedule_read_only_with_event_start_time.sql`
+
+- alinha policies e funcoes do dominio de escala ao instante exato de inicio do evento
+- impacto funcional:
+  - admin/leader so podem criar, editar ou excluir `events`, `schedules` e `schedule_assignments` antes de `start_at`
+  - o proprio membro so pode atualizar o assignment antes de `start_at`
+  - criacao, aceite e cancelamento de swap passam a bloquear exatamente em `start_at`
+
+### `20260423000116_simplify_event_read_policy.sql`
+
+- simplifica a leitura de eventos para nao depender de escala, ministerio ou participacao
+- impacto funcional:
+  - eventos continuam informativos e iguais para todos os usuarios autenticados
+  - evita recursao residual entre policies de `events` e `schedules`
+
+### `20260426000117_prevent_duplicate_member_schedule_assignments.sql`
+
+- cria indice auxiliar por `(schedule_id, user_id)`
+- cria trigger para impedir que o mesmo membro seja escalado mais de uma vez na mesma escala
+- impacto funcional:
+  - reforca no banco a regra ja sinalizada pela UI
+  - bloqueia novas duplicidades sem apagar registros historicos existentes
+
+### `20260427000118_add_event_category.sql`
+
+- adiciona `events.category` com valores em portugues:
+  - `geral`
+  - `culto`
+  - `ensino`
+  - `jovens`
+  - `oração`
+  - `reunião`
+  - `especial`
+- impacto funcional:
+  - permite badges informativos na tela de eventos e nos detalhes
+  - nao altera permissao, escala, participacao ou regras de RLS
+
+### `20260428000119_add_private_event_audiences.sql`
+
+- cria a tabela `event_audiences`
+- redefine a leitura de `events` para permitir:
+  - eventos publicos para todos os usuarios autenticados
+  - eventos privados apenas para `admin` e usuarios explicitamente vinculados
+- impacto funcional:
+  - `CreateEventScreen` pode escolher membros quando o evento nao e publico
+  - a visibilidade deixa de depender de convencao de frontend e passa a ser garantida por RLS
+
+### `20260509000123_add_event_management_permission.sql`
+
+- adiciona `profiles.can_manage_events`
+- cria a helper `public.can_manage_events()`
+- atualiza policies de escrita de `events`
+- atualiza policies de `event_audiences`
+- redefine a leitura de eventos privados para incluir gestores de evento
+- redefine a RPC `save_event_with_optional_room_reservation` para aceitar gestores de evento
+- recria defensivamente `public.is_event_editable_before_start(...)` caso o remoto ainda nao tenha essa helper
+- impacto funcional:
+  - usuarios autorizados por flag podem criar/editar/excluir eventos sem virar `admin`
+  - a permissao tambem cobre audiencia privada e reserva opcional de sala no mesmo fluxo
+  - prepara o backend para diferenciar claramente `admin` de gestores globais de evento
+
+### `20260511000124_add_profile_event_management_permission_rpc.sql`
+
+- cria a RPC `set_profile_event_management_permission`
+- cria trigger defensiva para impedir alteracao indevida de `profiles.can_manage_events`
+- impacto funcional:
+  - `admin` pode conceder/revogar a flag pelo app sem abrir SQL
+  - usuarios comuns continuam sem poder elevar a propria permissao
+
+### `20260512000125_allow_event_managers_to_manage_event_setlists.sql`
+
+- redefine a policy de escrita de `event_setlists` para usar `public.can_manage_events()`
+- impacto funcional:
+  - quem ja pode gerenciar eventos passa a conseguir editar setlists sem precisar virar `admin`
+  - leitura autenticada de `event_setlists` continua igual
+
 ## 3. Ordem recomendada de aplicacao
 
 Aplicar exatamente nesta ordem:
@@ -77,6 +161,14 @@ Aplicar exatamente nesta ordem:
 3. `20260412000110_add_swap_request_notifications.sql`
 4. `20260413000113_restrict_member_assignment_status_updates.sql`
 5. `20260413000114_add_schedule_assignment_status_index.sql`
+6. `20260423000115_align_schedule_read_only_with_event_start_time.sql`
+7. `20260423000116_simplify_event_read_policy.sql`
+8. `20260426000117_prevent_duplicate_member_schedule_assignments.sql`
+9. `20260427000118_add_event_category.sql`
+10. `20260428000119_add_private_event_audiences.sql`
+11. `20260509000123_add_event_management_permission.sql`
+12. `20260511000124_add_profile_event_management_permission_rpc.sql`
+13. `20260512000125_allow_event_managers_to_manage_event_setlists.sql`
 
 ### Motivo da ordem
 
@@ -85,6 +177,11 @@ Aplicar exatamente nesta ordem:
 - `20260412000110` redefine RPCs e trigger do fluxo de swap e fica mais seguro depois da base acima
 - `20260413000113` endurece a confirmacao do proprio membro
 - `20260413000114` e apenas performance e pode entrar por ultimo
+- `20260423000115` faz o alinhamento final da janela de read-only para bloquear exatamente em `start_at`
+- `20260428000119` deve entrar depois da simplificacao de leitura de eventos, porque especializa a visibilidade publica/privada do dominio
+- `20260509000123` fecha a permissao granular de eventos por cima da modelagem ja consolidada de audiencia privada e sala opcional
+- `20260511000124` fecha a operacao segura de grant/revoke da flag no proprio app
+- `20260512000125` alinha `event_setlists` com a mesma permissao granular ja adotada no dominio de eventos
 
 ### Pre-requisito critico
 
@@ -103,7 +200,7 @@ Na raiz do projeto:
 ```powershell
 supabase --version
 supabase login
-supabase link --project-ref ifiksgchvjiuqhttazvv
+supabase link --project-ref YOUR_SUPABASE_PROJECT_REF
 supabase migration list
 ```
 
@@ -137,7 +234,7 @@ Observacao:
 Antes de confirmar a aplicacao:
 
 - conferir que o projeto linkado e o correto:
-  - `ifiksgchvjiuqhttazvv`
+  - `YOUR_SUPABASE_PROJECT_REF`
 - conferir que `20260404000104_harden_rls_and_integrity.sql` ja esta aplicada no remoto
 - conferir se o ambiente remoto ja possui a base anterior de swap:
   - `20260410000107_swap_request_acceptance_flow.sql`
@@ -191,6 +288,83 @@ where tablename = 'schedule_assignments'
   and indexname = 'schedule_assignments_user_status_idx';
 ```
 
+### 6.4 Conferir categoria de eventos
+
+```sql
+select column_name, data_type, column_default
+from information_schema.columns
+where table_schema = 'public'
+  and table_name = 'events'
+  and column_name = 'category';
+```
+
+```sql
+select conname, pg_get_constraintdef(oid) as definition
+from pg_constraint
+where conrelid = 'public.events'::regclass
+  and conname = 'events_category_check';
+```
+
+### 6.5 Conferir permissao granular de eventos
+
+```sql
+select column_name, data_type, column_default
+from information_schema.columns
+where table_schema = 'public'
+  and table_name = 'profiles'
+  and column_name = 'can_manage_events';
+```
+
+```sql
+select proname
+from pg_proc
+where proname in (
+  'can_manage_events',
+  'save_event_with_optional_room_reservation'
+);
+```
+
+```sql
+select policyname, cmd
+from pg_policies
+where schemaname = 'public'
+  and tablename in ('events', 'event_audiences', 'event_setlists')
+order by tablename, policyname;
+```
+
+### 6.6 Grant / revoke da flag
+
+Listar perfis:
+
+```sql
+select id, full_name, email, role, can_manage_events
+from public.profiles
+order by full_name nulls last, email nulls last;
+```
+
+Conceder permissao:
+
+```sql
+update public.profiles
+set can_manage_events = true
+where id = '00000000-0000-0000-0000-000000000000';
+```
+
+Revogar permissao:
+
+```sql
+update public.profiles
+set can_manage_events = false
+where id = '00000000-0000-0000-0000-000000000000';
+```
+
+Observacoes:
+
+- no app, `admin` agora pode usar a tela `Permissoes de eventos` para fazer grant/revoke sem SQL
+- depois de grant/revoke, pedir novo bootstrap do app:
+  - reiniciar o app, ou
+  - sair e entrar novamente, para recarregar `profile`
+
 ---
 
 ## 7. Validacao funcional manual
@@ -216,13 +390,22 @@ Depois do `db push`, validar nesta ordem:
      - assignment permanece `pending`
      - notificacao de `accepted`
 
-4. tentar abrir, cancelar ou aceitar no dia do evento ou depois
+4. tentar abrir, cancelar ou aceitar em `start_at` ou depois
    - esperado:
      - operacao bloqueada no backend
 
-5. tentar confirmar o proprio assignment no dia do evento ou depois
+5. tentar confirmar o proprio assignment em `start_at` ou depois
    - esperado:
      - operacao bloqueada no backend
+
+6. autenticar como usuario com `can_manage_events = true` e sem role `admin`
+   - esperado:
+     - CTA de criar evento aparece
+     - botao de editar evento aparece no detalhe
+     - usuario consegue criar/editar evento publico
+     - usuario consegue criar/editar evento privado
+     - usuario consegue salvar audiencia privada e sala opcional
+     - usuario nao precisa virar `admin` para isso
 
 ---
 
@@ -253,9 +436,15 @@ Depois do `db push`, validar nesta ordem:
 
 ### Risco 5 - regra temporal de lider/admin
 
-- `20260412000111` ainda usa `e.start_at::date >= current_date` nas policies gerenciais
-- isso significa que leader/admin continuam podendo editar no proprio dia do evento no backend
-- o app ja caminha para read-only no proprio dia em varios pontos, entao essa assimetria precisa ser validada por produto
+- sem `20260423000115`, o remoto pode continuar com regras antigas baseadas no dia do evento
+- isso cria assimetria com o estado atual do repo, que bloqueia exatamente em `start_at`
+- por isso o alinhamento do remoto precisa incluir explicitamente a migration de `2026-04-23`
+
+### Risco 6 - flag concedida mas app com profile stale
+
+- a concessao de `can_manage_events` e manual nesta fase
+- se o app nao recarregar o `profile`, a UI pode continuar escondendo os CTAs
+- por isso a validacao manual precisa incluir refresh do app ou novo login
 
 ---
 
@@ -303,6 +492,7 @@ Este runbook nao cobre:
 - validacoes de data ainda pendentes em `events` e `room_reservations`
 - novos indices alem de `schedule_assignments (user_id, status)`
 - melhorias de notificacao de copy/frequencia
-- mudancas documentais ou de UI
+- evolucoes futuras da UI administrativa para grant/revoke de `profiles.can_manage_events`
+- proximas evolucoes de UI fora da tela informativa de eventos
 
 Esses itens continuam no backlog e no `docs/NEXT_STEPS_PLAN.md`.

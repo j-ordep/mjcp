@@ -25,7 +25,12 @@ O `MJCP Mobile` e um app de gestao de igreja e ministerios com foco em:
 
 O dominio mais maduro hoje e `escala`.
 
-- `evento` e superficie informativa e comum a todos os usuarios
+- `evento` e superficie informativa
+- eventos publicos sao visiveis para todos os usuarios autenticados
+- eventos privados sao visiveis para:
+  - `admin`
+  - usuarios com `profiles.can_manage_events = true`
+  - audiencia selecionada em `event_audiences`, quando houver
 - `escala` e o fluxo operacional de quem participa de ministerio e funcao
 - a regra de dados `schedule belongs to event` continua valida
 - a experiencia do usuario deve deixar claro quando ele esta em `Eventos` e quando esta em `Escalas`
@@ -48,8 +53,44 @@ O dominio mais maduro hoje e `escala`.
 **Confirmado no codigo**
 
 - `EventsScreen` e tela informativa
-- `EventDetailsScreen` deve permanecer informativa
-- criacao e edicao de evento continuam sendo privilegio de `leader` e `admin`
+- `EventDetailsScreen` e tela informativa
+- ambas agora reutilizam o mesmo contrato canonico de apresentacao informativa (`toInformationalEventViewModel`) para card e detalhe
+- `EventsScreen` lista proximos eventos e historico real
+- `Proximos` e `Anteriores` agora classificam pelo fim efetivo do evento (`end_at`, com fallback em `start_at`) e mantem ordenacao por `start_at`
+- criacao e edicao de evento agora usam permissao granular global:
+  - `admin`
+  - usuarios com `profiles.can_manage_events = true`
+- a concessao/revogacao dessa permissao agora pode ser feita por `admin` no app; o SQL manual continua como fallback operacional
+- eventos possuem categoria informativa simples em `events.category`, com valores em portugues
+- eventos podem ser publicos ou privados; quando privados, a visibilidade fica restrita a `event_audiences`
+- no MVP atual, `event_audiences` tambem representa a lista de convite/convocacao do evento
+- reuniao continua sendo `evento`, sem entidade propria
+- `EBD` continua coberta por `ensino`, sem categoria separada nesta fase
+- a edicao de evento reidrata o estado canonico do backend por `eventId`, incluindo a audiencia privada selecionada
+- o payload de edicao aberto a partir de `EventDetailsScreen` agora e saneado por whitelist, mantendo o dominio de evento puramente informativo
+- admins tambem podem ser adicionados explicitamente na audiencia de eventos privados, preservando a lista de destinatarios escolhidos para evolucoes futuras como notificacoes
+- a UI de eventos segue o tema claro minimalista do app: preto, branco e cinzas
+- salas entraram no fluxo de forma opcional e controlada:
+  - `CreateEventScreen` permite vincular uma sala quando houver uma unica data
+  - `RoomsScreen` cria reservas independentes reais
+  - `RoomsScreen` agora mostra agenda diaria por sala com reservas do dia, badge `Evento` e resumo simples de escalas vinculadas
+  - o vinculo estrutural usa `room_reservations.event_id` opcional, e nao `events.room_id`
+  - `location` textual continua existindo em paralelo
+  - os nomes de sala continuam vindo de `rooms` no banco, nao de mock local
+  - o catalogo padrao foi normalizado com migration segura para:
+    - `Sala 1`
+    - `Sala 2`
+    - `Sala 3`
+    - `Sala 4`
+    - `Casa de Missoes`
+    - `Templo`
+  - a UI nao exibe mais lotacao/capacidade, embora `capacity` ainda exista no schema
+- mesmo para `admin`, detalhe de evento continua informativo; escalas vinculadas seguem concentradas em `ScheduleScreen` / `EditScheduleScreen`
+
+**PENDENTE DE DEFINICAO**
+
+- definir metadados extras do detalhe de evento, como link de transmissao/video
+- revisar UX final de evento + sala em uso real no app, agora que integracao opcional ja existe
 
 **Direcao validada**
 
@@ -67,11 +108,11 @@ O dominio mais maduro hoje e `escala`.
 - member atua apenas no que e dele
 - o filtro `Proximas` ordena escalas pela `data do evento` em ordem crescente
 - o filtro `Anteriores` ordena escalas pela `data do evento` em ordem decrescente, mantendo a escala que aconteceu mais recentemente no topo do historico
+- o backend agora bloqueia novo assignment duplicado do mesmo membro na mesma escala
 
-**Pontos ainda para fechar**
+**Pontos ainda para evoluir**
 
-- revisar todos os estados de historico e somente leitura no dia do evento ou depois
-- garantir consistencia de bloqueios entre tela, service e backend
+- confirmar no Supabase remoto que as migrations mais recentes de `start_at`, leitura informativa de eventos e bloqueio de duplicidade em escala foram aplicadas
 - ampliar cobertura de testes do service layer
 
 ### Trocas
@@ -98,13 +139,27 @@ O dominio mais maduro hoje e `escala`.
 
 - aplicar migrations remotas
 - fechar copy final e comportamento complementar de notificacoes
+- evoluir notificacoes para:
+  - usuarios escolhidos em eventos privados
+  - usuarios adicionados a uma escala
 
 ### Salas, musicas e setlists
 
 **Confirmado no repo**
 
-- ha estrutura inicial no banco e telas no app
-- esses modulos ainda nao sao o foco principal da rodada atual
+- `RoomsScreen` ja funciona com:
+  - disponibilidade por janela
+  - agenda diaria por sala
+  - reserva avulsa real
+  - cancelamento da propria reserva avulsa ativa
+- `BlockDatesScreen` ja persiste indisponibilidades reais do usuario em `blocked_dates`
+- a integracao com escala continua warning-only e reaproveita `getAssignmentWarningsForSchedule`
+- `MusicScreen` deixou de usar arrays mockados:
+  - carrega catalogo real de `songs`
+  - mostra o setlist real do proximo evento via `event_setlists`
+  - permite edicao simples do setlist do proximo evento para quem gerencia eventos
+- pendencia operacional remota desta frente:
+  - aplicar `20260512000125_allow_event_managers_to_manage_event_setlists.sql`
 
 ---
 
@@ -113,13 +168,13 @@ O dominio mais maduro hoje e `escala`.
 ## P0 - Fechar o fluxo de escalas
 
 - [x] Revisar historico e somente leitura em todos os pontos centrais do fluxo de escala
-  - `ScheduleScreen`, `EditScheduleScreen` e `scheduleService` agora usam a mesma regra por dia-calendario
-  - a UX gerencial passou a sinalizar e bloquear alteracoes no dia do evento ou depois dele
+  - `ScheduleScreen`, `EditScheduleScreen` e `scheduleService` agora usam a mesma regra baseada em `start_at`
+  - a UX gerencial passou a sinalizar e bloquear alteracoes exatamente em `start_at` ou depois
 - [x] Validar que toda acao operacional continue fora do dominio de evento
   - `EventsScreen` e `EventDetailsScreen` seguem como superficies informativas, sem confirmar/trocar/status/equipe
 - [~] Cobrir `scheduleService` com testes unitarios
   - ja coberto nesta rodada:
-    - bloqueio de criacao no dia do evento
+    - bloqueio de criacao em `start_at` ou depois
     - criacao/upsert quando o evento ainda e editavel
     - bloqueio de remocao de assignment em read-only
   - ainda falta ampliar para cards, warnings e regras adicionais do service layer
@@ -131,12 +186,16 @@ O dominio mais maduro hoje e `escala`.
 
 ## P1 - Banco, integridade e ambiente
 
-1. Aplicar no Supabase remoto as migrations locais pendentes:
-   - `20260412000110_add_swap_request_notifications.sql`
-   - `20260412000111_fix_schedule_rls_recursion.sql`
-   - `20260412000112_reset_assignment_confirmation_on_swap_request.sql`
-   - `20260413000113_restrict_member_assignment_status_updates.sql`
-   - `20260413000114_add_schedule_assignment_status_index.sql`
+1. Confirmar no Supabase remoto as migrations mais recentes:
+   - `20260423000115_align_schedule_read_only_with_event_start_time.sql`
+   - `20260423000116_simplify_event_read_policy.sql`
+   - `20260426000117_prevent_duplicate_member_schedule_assignments.sql`
+   - `20260427000118_add_event_category.sql`
+   - `20260428000119_add_private_event_audiences.sql`
+   - `20260509000123_add_event_management_permission.sql`
+   - `20260511000124_add_profile_event_management_permission_rpc.sql`
+   - `20260512000125_allow_event_managers_to_manage_event_setlists.sql`
+   - migrations de notificacoes de swap, se ainda nao estiverem aplicadas no projeto remoto
 2. Implementar validacoes de data ainda pendentes no banco:
    - `events.end_at > start_at` quando `end_at` existir
    - `room_reservations.end_at > start_at`
@@ -146,9 +205,10 @@ O dominio mais maduro hoje e `escala`.
 
 ## P1 - Consolidar dominio de eventos como informativo
 
-1. Padronizar um payload/DTO informativo de evento para card e detalhe
+1. Manter o contrato canonico informativo compartilhado entre card e detalhe, sem reintroduzir payload fragmentado por tela
 2. Garantir que `EventsScreen` nao varie por assignment, participacao, ministerio ou papel
-3. Manter em eventos apenas metadados de contexto como:
+3. Manter `EventsScreen` com proximos eventos e historico real, sem acoes operacionais de escala
+4. Manter em eventos apenas metadados de contexto como:
    - titulo
    - data/hora
    - local
@@ -160,7 +220,12 @@ O dominio mais maduro hoje e `escala`.
 1. Revisar `src/types/database.types.ts` para reduzir fragilidade de tipagem
 2. Padronizar timezone e datas no app com persistencia em UTC e formatacao no client
 3. Fechar loading, error e empty states nas telas principais
-4. Retomar salas, musicas e setlists apenas depois da estabilizacao do fluxo principal
+4. Validar em uso real a nova UI admin de grant/revoke de `profiles.can_manage_events`
+5. Confirmar operacao remota da Fase 4 do core de eventos:
+   - validar no Supabase remoto a migration `20260504000122_normalize_room_catalog.sql`
+   - confirmar no banco o catalogo padrao de salas
+   - validar o read-model diario de salas com dados reais
+6. Depois retomar musicas e setlists; salas ja entraram no fluxo principal basico desta fase
 
 ---
 
@@ -175,7 +240,7 @@ O dominio mais maduro hoje e `escala`.
 ### Riscos principais
 
 - divergencia entre o que esta documentado e o que ja mudou no codigo
-- regras temporais funcionando no client, mas ainda nao refletidas 100% no ambiente remoto
+- regras temporais ja alinhadas em `start_at` no repo local, mas ainda dependentes de aplicacao completa no ambiente remoto
 - cobertura de testes ainda concentrada em utils e mapeadores, com pouco service layer
 
 ### Regras de trabalho para a proxima rodada
@@ -211,6 +276,7 @@ O dominio mais maduro hoje e `escala`.
 Ao retomar o trabalho, iniciar por esta ordem:
 
 1. revisar `docs/TASKS.md` e este arquivo
-2. fechar os itens restantes de `escala`
-3. expandir testes unitarios do service layer
-4. so depois entrar em `eventos`, `notificacoes` e demais modulos
+2. revisar `docs/EVENT_CORE_PHASE2_IMPLEMENTATION_PLAN.md`
+3. validar remoto das migrations e catalogo de salas
+4. definir a proxima fase de `eventos` a partir do uso real da permissao granular e da UX de salas
+5. depois retomar `notificacoes` e demais modulos
