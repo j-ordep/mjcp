@@ -1,7 +1,7 @@
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { ArrowRight, Plus, RefreshCcw, Search } from "lucide-react-native";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -54,6 +54,7 @@ export default function ScheduleScreen() {
   const [selectedSwapAssignmentId, setSelectedSwapAssignmentId] = useState<string | null>(null);
   const [swapAssignments, setSwapAssignments] = useState<SwapAssignmentOption[]>([]);
   const [swapCandidates, setSwapCandidates] = useState<SwapCandidateOption[]>([]);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [pendingSwapRequestByAssignmentId, setPendingSwapRequestByAssignmentId] = useState<
     Record<string, string>
   >({});
@@ -74,37 +75,6 @@ export default function ScheduleScreen() {
   );
   const hasManageableScope = isAdmin || leaderMinistryIds.length > 0;
   const canCreate = hasManageableScope;
-
-  useFocusEffect(
-    useCallback(() => {
-      let isActive = true;
-
-      const load = async () => {
-        if (!session?.user?.id) return;
-
-        await fetchUserMinistries(true);
-        if (!isActive) return;
-
-        const refreshedUserMinistries = useMinistryStore.getState().userMinistries;
-        const refreshedLeaderMinistryIds = refreshedUserMinistries
-          .filter((ministry) => ministry.is_leader)
-          .map((ministry) => ministry.id);
-
-        await fetchScheduleCards({
-          userId: session.user.id,
-          isAdmin,
-          leaderMinistryIds: isAdmin ? [] : refreshedLeaderMinistryIds,
-          forceRefresh: true,
-        });
-      };
-
-      void load();
-
-      return () => {
-        isActive = false;
-      };
-    }, [fetchScheduleCards, fetchUserMinistries, isAdmin, session?.user?.id]),
-  );
 
   const filteredSchedules = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
@@ -155,28 +125,69 @@ export default function ScheduleScreen() {
     setSwapCandidates(data ?? []);
   }, []);
 
+  const loadPendingSwapRequests = useCallback(async (cards: ScheduleCard[]) => {
+    const assignmentIds = cards.flatMap((schedule) =>
+      schedule.my_assignments.map((assignment) => assignment.id),
+    );
+
+    const { data, error } = await getOwnPendingSwapRequestsForAssignments(assignmentIds);
+    if (error) {
+      setPendingSwapRequestByAssignmentId({});
+      return;
+    }
+
+    const nextMap = Object.fromEntries(
+      (data ?? []).map((request) => [request.from_assignment_id, request.id]),
+    );
+    setPendingSwapRequestByAssignmentId(nextMap);
+  }, []);
+
+  const refreshScheduleData = useCallback(
+    async (withRefreshIndicator = false) => {
+      if (!session?.user?.id) return;
+
+      if (withRefreshIndicator) {
+        setIsRefreshing(true);
+      }
+
+      await fetchUserMinistries(true);
+
+      const refreshedUserMinistries = useMinistryStore.getState().userMinistries;
+      const refreshedLeaderMinistryIds = refreshedUserMinistries
+        .filter((ministry) => ministry.is_leader)
+        .map((ministry) => ministry.id);
+
+      await fetchScheduleCards({
+        userId: session.user.id,
+        isAdmin,
+        leaderMinistryIds: isAdmin ? [] : refreshedLeaderMinistryIds,
+        forceRefresh: true,
+      });
+
+      await loadPendingSwapRequests(useScheduleStore.getState().scheduleCards);
+
+      if (withRefreshIndicator) {
+        setIsRefreshing(false);
+      }
+    },
+    [
+      fetchScheduleCards,
+      fetchUserMinistries,
+      isAdmin,
+      loadPendingSwapRequests,
+      session?.user?.id,
+    ],
+  );
+
   useFocusEffect(
     useCallback(() => {
-      const loadPendingSwapRequests = async () => {
-        const assignmentIds = scheduleCards.flatMap((schedule) =>
-          schedule.my_assignments.map((assignment) => assignment.id),
-        );
-
-        const { data, error } = await getOwnPendingSwapRequestsForAssignments(assignmentIds);
-        if (error) {
-          setPendingSwapRequestByAssignmentId({});
-          return;
-        }
-
-        const nextMap = Object.fromEntries(
-          (data ?? []).map((request) => [request.from_assignment_id, request.id]),
-        );
-        setPendingSwapRequestByAssignmentId(nextMap);
-      };
-
-      void loadPendingSwapRequests();
-    }, [scheduleCards]),
+      void refreshScheduleData(false);
+    }, [refreshScheduleData]),
   );
+
+  useEffect(() => {
+    void loadPendingSwapRequests(scheduleCards);
+  }, [loadPendingSwapRequests, scheduleCards]);
 
   const handleOpenSwapForAssignments = useCallback(
     async (assignments: SwapAssignmentOption[]) => {
@@ -374,6 +385,10 @@ export default function ScheduleScreen() {
     );
   }, [activeFilter, isLoadingMinistries, isLoadingSchedules, search, viewMode]);
 
+  const isInitialLoading =
+    scheduleCards.length === 0 &&
+    (isLoadingSchedules || (profile?.role === "leader" && isLoadingMinistries));
+
   return (
     <SafeAreaView className="flex-1 bg-white" edges={["top", "left", "right"]}>
       <HeaderSecondary
@@ -475,7 +490,7 @@ export default function ScheduleScreen() {
         </View>
       </View>
 
-      {isLoadingSchedules || (profile?.role === "leader" && isLoadingMinistries) ? (
+      {isInitialLoading ? (
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color="#000" />
         </View>
@@ -489,6 +504,8 @@ export default function ScheduleScreen() {
             paddingBottom: 32,
             paddingTop: 4,
           }}
+          refreshing={isRefreshing}
+          onRefresh={() => void refreshScheduleData(true)}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={ListEmpty}
         />

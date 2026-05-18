@@ -1,9 +1,15 @@
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Calendar, CalendarX, RefreshCw } from "lucide-react-native";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { formatDateTime } from "../../utils/formatDate";
-import { ScrollView, TouchableOpacity, View, ActivityIndicator } from "react-native";
+import {
+  ScrollView,
+  TouchableOpacity,
+  View,
+  ActivityIndicator,
+  RefreshControl,
+} from "react-native";
 import { Text } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import MiniCard from "../../components/card/MiniCard";
@@ -18,6 +24,7 @@ import { getProfileAvatarUri } from "../../utils/profileAvatar";
 
 export default function HomeScreen() {
   const [modalVisible, setModalVisible] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { events, isLoadingEvents, fetchUpcomingEvents } = useEventStore();
   const { profile } = useAuthStore();
   const navigation =
@@ -26,6 +33,12 @@ export default function HomeScreen() {
   // Carrega os dados ao montar a tela
   useEffect(() => {
     fetchUpcomingEvents();
+  }, [fetchUpcomingEvents]);
+
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    await fetchUpcomingEvents(true);
+    setIsRefreshing(false);
   }, [fetchUpcomingEvents]);
 
 
@@ -51,6 +64,12 @@ export default function HomeScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 24, paddingTop: 2 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={() => void handleRefresh()}
+          />
+        }
       >
         {/* 4 MiniCards — grid 2x2 */}
         <View className="flex-row gap-3 mb-2">
