@@ -1,6 +1,12 @@
 import { Calendar as CalendarIcon, Clock } from "lucide-react-native";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Alert, ScrollView, TouchableOpacity, View } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Alert,
+  RefreshControl,
+  ScrollView,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { Chip, Text, TextInput } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import RoomCard from "../../components/card/RoomCard";
@@ -138,6 +144,7 @@ export default function RoomsScreen({ navigation }) {
   const [isLoadingDailyAgenda, setIsLoadingDailyAgenda] = useState(false);
   const [roomsError, setRoomsError] = useState<string | null>(null);
   const [dailyAgendaError, setDailyAgendaError] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [submittingRoomId, setSubmittingRoomId] = useState<string | null>(null);
   const [cancellingReservationId, setCancellingReservationId] = useState<string | null>(null);
   const availabilityRequestIdRef = useRef(0);
@@ -210,6 +217,20 @@ export default function RoomsScreen({ navigation }) {
 
     setIsLoadingDailyAgenda(false);
   };
+
+  const refreshAll = useCallback(async () => {
+    setIsRefreshing(true);
+    await Promise.all([
+      loadRooms(
+        getRefreshAvailabilityWindow({
+          latestWindow: reservationWindowRef.current,
+          fallbackWindow: reservationWindow,
+        }),
+      ),
+      loadDailyAgenda(selectedDateISO),
+    ]);
+    setIsRefreshing(false);
+  }, [reservationWindow, selectedDateISO]);
 
   useEffect(() => {
     void loadRooms();
@@ -350,6 +371,12 @@ export default function RoomsScreen({ navigation }) {
           paddingBottom: 32,
         }}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={() => void refreshAll()}
+          />
+        }
       >
         <View style={{ marginBottom: 16 }}>
           <Text style={{ color: "#6b7280", fontSize: 13, fontWeight: "700", marginBottom: 8 }}>
