@@ -23,6 +23,21 @@ Objetivo imediato: sair do prototipo e fechar o fluxo principal de "Criacao de E
 - Eventos sao apenas informativos; a operacao de escala nao deve depender da tela de evento
 - Datas nao podem ficar em branco em formularios; quando nao houver valor inicial, o padrao deve ser a data/hora atual do sistema no momento da criacao/carregamento do formulario, ja selecionada no campo
 
+Atualizacao de hygiene/POC (2026-05-15):
+- [x] Remover fallbacks externos de avatar do fluxo de perfil/home
+- [x] Remover CTA enganoso de troca de foto no perfil
+- [x] Remover acoes placeholder do menu de perfil (`Compartilhar perfil`, `Configuracoes de Notificacao`)
+- [x] Trocar o bloco mockado de atividades recentes por um resumo real e explicito da POC no perfil
+- [x] Formatar telefone no perfil para leitura humana
+- [x] Resetar `CalendarModal` ao reabrir apos cancelamento
+- [x] Travar `BlockDatesScreen` durante salvamento
+- [x] Tornar a troca completa da setlist atomica via RPC (`20260515000126_add_replace_event_setlist_rpc.sql`)
+- [ ] Padronizar mensagens de erro para nao expor texto bruto do Supabase diretamente em alerts
+- [ ] Limpar strings com mojibake/encoding quebrado nas telas e services mais visiveis
+- [~] Adicionar guardrails explicitos para `.env` publico incompleto (`EXPO_PUBLIC_SUPABASE_*`, `EXPO_PUBLIC_YOUTUBE_API_KEY`)
+  - ja fechado parcialmente para `EXPO_PUBLIC_YOUTUBE_API_KEY`: `YoutubeCarousel` ignora placeholders publicos e nao faz fetch inutil sem chave real
+  - ainda falta endurecer validacoes/feedback para `EXPO_PUBLIC_SUPABASE_*` e outros pontos criticos de bootstrap
+
 ---
 
 ## P0 (Critico) - Permissoes e Integridade
@@ -412,7 +427,7 @@ Contexto: eventos sao informativos para todos; escala e o fluxo operacional de q
     - escala = servico/funcao, nunca lista de participantes
   - referencia consolidada: `docs/EVENT_CORE_PLAN.md`
 
-- [ ] Fechar reuniao como configuracao de evento, nao como modulo proprio
+- [x] Fechar reuniao como configuracao de evento, nao como modulo proprio
   - manter categoria `reunião`
   - manter publico/privado
   - manter audiencia selecionada no proprio evento
@@ -458,7 +473,14 @@ Contexto: eventos sao informativos para todos; escala e o fluxo operacional de q
       - criacao com normalizacao de range e termino padrao
       - categoria padrao `geral` para eventos sem categoria explicita
       - atualizacao sem sobrescrever `start_at` ao alterar apenas `end_at`
+    - cobertura ampliada para `src/services/musicService.ts` com cenarios de:
+      - troca completa da setlist via RPC transacional `replace_event_setlist`
+      - propagacao de erro da RPC sem reler setlist potencialmente stale
     - cobertura adicionada para `src/utils/eventCategory.ts` com categorias em portugues e fallback para `geral`
+    - cobertura adicionada para `src/utils/profileAvatar.ts` com:
+      - iniciais padrao para avatar local
+      - filtro de `avatar_url` vazio/placeholders
+      - formatacao de telefone para leitura humana
   - Proximos alvos naturais:
     - expandir `scheduleService` para warnings, cards e validacoes adicionais
     - expandir `ministryService` para fluxos restantes
