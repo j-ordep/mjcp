@@ -169,11 +169,14 @@ export default function MusicScreen() {
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
-    await loadScreen({
-      preserveDraft: isEditingSetlist,
-      showLoading: false,
-    });
-    setIsRefreshing(false);
+    try {
+      await loadScreen({
+        preserveDraft: isEditingSetlist,
+        showLoading: false,
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
   }, [isEditingSetlist, loadScreen]);
 
   useEffect(() => {
