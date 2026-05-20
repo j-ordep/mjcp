@@ -150,24 +150,27 @@ export default function ScheduleScreen() {
         setIsRefreshing(true);
       }
 
-      await fetchUserMinistries(true);
+      try {
+        await fetchUserMinistries(true);
 
-      const refreshedUserMinistries = useMinistryStore.getState().userMinistries;
-      const refreshedLeaderMinistryIds = refreshedUserMinistries
-        .filter((ministry) => ministry.is_leader)
-        .map((ministry) => ministry.id);
+        const refreshedUserMinistries =
+          useMinistryStore.getState().userMinistries;
+        const refreshedLeaderMinistryIds = refreshedUserMinistries
+          .filter((ministry) => ministry.is_leader)
+          .map((ministry) => ministry.id);
 
-      await fetchScheduleCards({
-        userId: session.user.id,
-        isAdmin,
-        leaderMinistryIds: isAdmin ? [] : refreshedLeaderMinistryIds,
-        forceRefresh: true,
-      });
+        await fetchScheduleCards({
+          userId: session.user.id,
+          isAdmin,
+          leaderMinistryIds: isAdmin ? [] : refreshedLeaderMinistryIds,
+          forceRefresh: true,
+        });
 
-      await loadPendingSwapRequests(useScheduleStore.getState().scheduleCards);
-
-      if (withRefreshIndicator) {
-        setIsRefreshing(false);
+        await loadPendingSwapRequests(useScheduleStore.getState().scheduleCards);
+      } finally {
+        if (withRefreshIndicator) {
+          setIsRefreshing(false);
+        }
       }
     },
     [

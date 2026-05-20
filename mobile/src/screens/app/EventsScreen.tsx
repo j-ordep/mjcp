@@ -48,10 +48,12 @@ export default function EventsScreen() {
       setIsRefreshing(true);
     }
 
-    await fetchEvents(true);
-
-    if (withRefreshIndicator) {
-      setIsRefreshing(false);
+    try {
+      await fetchEvents(true);
+    } finally {
+      if (withRefreshIndicator) {
+        setIsRefreshing(false);
+      }
     }
   }, [fetchEvents]);
 

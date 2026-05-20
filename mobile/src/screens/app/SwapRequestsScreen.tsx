@@ -86,8 +86,11 @@ export default function SwapRequestsScreen() {
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
-    await loadRequests(false);
-    setIsRefreshing(false);
+    try {
+      await loadRequests(false);
+    } finally {
+      setIsRefreshing(false);
+    }
   }, [loadRequests]);
 
   const handleAccept = (item: SwapRequestReviewItem) => {

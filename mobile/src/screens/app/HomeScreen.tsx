@@ -37,8 +37,11 @@ export default function HomeScreen() {
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
-    await fetchUpcomingEvents(true);
-    setIsRefreshing(false);
+    try {
+      await fetchUpcomingEvents(true);
+    } finally {
+      setIsRefreshing(false);
+    }
   }, [fetchUpcomingEvents]);
 
 
