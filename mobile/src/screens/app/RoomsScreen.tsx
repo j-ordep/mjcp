@@ -220,16 +220,19 @@ export default function RoomsScreen({ navigation }) {
 
   const refreshAll = useCallback(async () => {
     setIsRefreshing(true);
-    await Promise.all([
-      loadRooms(
-        getRefreshAvailabilityWindow({
-          latestWindow: reservationWindowRef.current,
-          fallbackWindow: reservationWindow,
-        }),
-      ),
-      loadDailyAgenda(selectedDateISO),
-    ]);
-    setIsRefreshing(false);
+    try {
+      await Promise.all([
+        loadRooms(
+          getRefreshAvailabilityWindow({
+            latestWindow: reservationWindowRef.current,
+            fallbackWindow: reservationWindow,
+          }),
+        ),
+        loadDailyAgenda(selectedDateISO),
+      ]);
+    } finally {
+      setIsRefreshing(false);
+    }
   }, [reservationWindow, selectedDateISO]);
 
   useEffect(() => {
