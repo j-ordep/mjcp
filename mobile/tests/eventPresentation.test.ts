@@ -7,7 +7,7 @@ import {
 
 test("toInformationalEventViewModel returns canonical data for event surfaces", () => {
   const event = {
-    title: "ReuniÃ£o de obreiros",
+    title: "Reuni\u00e3o de obreiros",
     category: "reuni\u00e3o",
     description: null,
     location: null,
@@ -16,12 +16,12 @@ test("toInformationalEventViewModel returns canonical data for event surfaces", 
   };
 
   assert.deepEqual(toInformationalEventViewModel(event), {
-    title: "ReuniÃ£o de obreiros",
+    title: "Reuni\u00e3o de obreiros",
     category: "reuni\u00e3o",
     startAt: "2026-05-01T19:00:00.000Z",
     endAt: "2026-05-01T21:00:00.000Z",
-    location: "NÃ£o informado",
-    description: "Sem descriÃ§Ã£o.",
+    location: "N\u00e3o informado",
+    description: "Sem descri\u00e7\u00e3o.",
   });
 });
 
@@ -40,8 +40,8 @@ test("toInformationalEventViewModel applies fallbacks and normalizes missing end
     category: "ensino",
     startAt: "2026-05-04T19:30:00.000Z",
     endAt: null,
-    location: "NÃ£o informado",
-    description: "Sem descriÃ§Ã£o.",
+    location: "N\u00e3o informado",
+    description: "Sem descri\u00e7\u00e3o.",
   });
 });
 
