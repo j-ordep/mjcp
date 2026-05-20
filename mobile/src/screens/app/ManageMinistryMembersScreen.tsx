@@ -370,7 +370,7 @@ export default function ManageMinistryMembersScreen() {
             <View style={{ backgroundColor: "#f9fafb", borderRadius: 18, padding: 16 }}>
               <Text style={{ fontWeight: "600", marginBottom: 4 }}>Nenhum membro neste ministerio</Text>
               <Text style={{ color: "#6b7280" }}>
-                Adicione usuarios acima para depois conseguir escal�-los na tela de cria��o de escala.
+                Adicione usuários acima para depois conseguir escalá-los na tela de criação de escala.
               </Text>
             </View>
           ) : (
@@ -439,7 +439,7 @@ export default function ManageMinistryMembersScreen() {
               <Text style={{ fontWeight: "700", marginBottom: 10 }}>Funções</Text>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 18 }}>
                 {roles.length === 0 ? (
-                  <Text style={{ color: "#888" }}>Nenhuma fun��o cadastrada neste minist�rio.</Text>
+                  <Text style={{ color: "#888" }}>Nenhuma função cadastrada neste ministério.</Text>
                 ) : (
                   roles.map((role) => {
                     const selected = selectedRoleIds.includes(role.id);
