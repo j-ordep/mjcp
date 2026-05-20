@@ -128,11 +128,14 @@ export default function ManageEventPermissionsScreen({ navigation }: Props) {
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
-    await loadProfiles(0, false, {
-      preserveProfilesOnError: true,
-      showLoading: false,
-    });
-    setIsRefreshing(false);
+    try {
+      await loadProfiles(0, false, {
+        preserveProfilesOnError: true,
+        showLoading: false,
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
   }, [loadProfiles]);
 
   const handleTogglePermission = async (target: EventPermissionProfile) => {
