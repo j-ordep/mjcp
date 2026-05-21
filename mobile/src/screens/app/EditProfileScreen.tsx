@@ -65,7 +65,10 @@ export default function EditProfileScreen({ navigation }) {
     setIsLoading(false);
 
     if (error) {
-      Alert.alert("Erro ao salvar perfil", error);
+      Alert.alert(
+        "Erro ao salvar perfil",
+        "Seus dados nao foram atualizados. Tente novamente em alguns instantes.",
+      );
       return;
     }
 

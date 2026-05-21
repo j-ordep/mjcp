@@ -21,6 +21,7 @@
     "src/utils/scheduleCardMappers.ts",
     "src/utils/scheduleRules.ts",
     "src/utils/scheduleParticipation.ts",
+    "src/stores/**/*.ts",
     "tests/**/*.ts"
   ]
 }

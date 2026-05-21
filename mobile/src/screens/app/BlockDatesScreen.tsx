@@ -57,7 +57,7 @@ export default function BlockDatesScreen() {
     setIsLoading(false);
 
     if (result.error) {
-      Alert.alert("Nao foi possivel carregar", result.error, [
+      Alert.alert("Nao foi possivel carregar", "Tente novamente em alguns instantes.", [
         { text: "Voltar", onPress: () => navigation.goBack() },
       ]);
       return;
@@ -128,7 +128,10 @@ export default function BlockDatesScreen() {
     setIsSaving(false);
 
     if (result.error) {
-      Alert.alert("Nao foi possivel salvar", result.error);
+      Alert.alert(
+        "Nao foi possivel salvar",
+        "Suas datas bloqueadas nao foram atualizadas. Tente novamente em alguns instantes.",
+      );
       return;
     }
 

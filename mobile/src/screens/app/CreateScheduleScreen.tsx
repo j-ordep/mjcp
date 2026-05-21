@@ -104,7 +104,10 @@ export default function CreateScheduleScreen() {
     setIsSaving(false);
 
     if (error) {
-      Alert.alert("Nao foi possivel salvar a escala", error);
+      Alert.alert(
+        "Nao foi possivel salvar a escala",
+        "Tente novamente em alguns instantes.",
+      );
       return;
     }
 

@@ -1,5 +1,11 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, ScrollView, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { ShieldCheck } from "lucide-react-native";
 import { Avatar, Divider, Text } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -213,7 +219,10 @@ export default function ProfileScreen({ navigation }) {
         onLogout={async () => {
           const { error } = await signOut();
           if (error) {
-            Alert.alert("Erro ao sair", error);
+            Alert.alert(
+              "Erro ao sair",
+              "Nao foi possivel encerrar a sessao. Tente novamente em alguns instantes.",
+            );
           }
         }}
       />
