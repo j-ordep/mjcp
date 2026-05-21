@@ -33,7 +33,10 @@ Atualizacao de hygiene/POC (2026-05-15):
 - [x] Travar `BlockDatesScreen` durante salvamento
 - [x] Tornar a troca completa da setlist atomica via RPC (`20260515000126_add_replace_event_setlist_rpc.sql`)
 - [ ] Padronizar mensagens de erro para nao expor texto bruto do Supabase diretamente em alerts
-- [ ] Limpar strings com mojibake/encoding quebrado nas telas e services mais visiveis
+- [x] Limpar strings com mojibake/encoding quebrado nas telas e services mais visiveis
+  - Atualizacao em 2026-05-20:
+    - varredura local cobriu `src`, `tests`, `docs` e `supabase`
+    - strings corrompidas restantes foram normalizadas em testes/documentacao e na tela de gestao de membros
 - [~] Adicionar guardrails explicitos para `.env` publico incompleto (`EXPO_PUBLIC_SUPABASE_*`, `EXPO_PUBLIC_YOUTUBE_API_KEY`)
   - ja fechado parcialmente para `EXPO_PUBLIC_YOUTUBE_API_KEY`: `YoutubeCarousel` ignora placeholders publicos e nao faz fetch inutil sem chave real
   - ainda falta endurecer validacoes/feedback para `EXPO_PUBLIC_SUPABASE_*` e outros pontos criticos de bootstrap
@@ -79,9 +82,12 @@ Atualizacao de hygiene/POC (2026-05-15):
   - Pendencia operacional:
     - aplicar no Supabase remoto a migration que alinhou a janela final de read-only em `start_at`
 
-- [ ] Validacoes de data no banco
-  - [ ] `events`: `end_at` deve ser > `start_at` quando `end_at` nao for nulo
-  - [ ] `room_reservations`: `end_at > start_at`
+- [~] Validacoes de data no banco
+  - [x] `events`: `end_at` deve ser > `start_at` quando `end_at` nao for nulo
+  - [x] `room_reservations`: `end_at > start_at`
+  - Atualizacao em 2026-05-20:
+    - migration local `20260520000127_add_temporal_integrity_constraints.sql` adiciona constraints `NOT VALID`, protegendo novas escritas sem bloquear deploy por dados historicos
+    - pendente operacional: validar/limpar dados historicos e executar `VALIDATE CONSTRAINT` no Supabase remoto
   - Regra de produto confirmada em 2026-04-05:
     - `events.start_at` e obrigatorio
     - nao permitir criar evento com `start_at` no passado

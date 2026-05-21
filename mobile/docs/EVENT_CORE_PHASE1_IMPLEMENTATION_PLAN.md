@@ -68,7 +68,7 @@ test("ensino remains the category that covers EBD", () => {
 
 Run: `npm run test:build && node .tests-dist/tests/eventCategory.test.js`
 
-Expected: FAIL porque `eventCategory.ts` e o teste atual ainda carregam valores com encoding quebrado (`oraÃ§Ã£o`, `reuniÃ£o`).
+Expected: FAIL porque `eventCategory.ts` e o teste atual ainda carregavam valores com encoding quebrado (`oracao`, `reuniao`).
 
 - [ ] **Step 3: Implementar a correção mínima**
 
