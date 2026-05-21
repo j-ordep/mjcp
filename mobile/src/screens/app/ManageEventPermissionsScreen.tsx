@@ -1,5 +1,10 @@
-import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Alert, ScrollView, View } from "react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  RefreshControl,
+  ScrollView,
+  View,
+} from "react-native";
 import { Avatar, Switch, Text, TextInput } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Search, ShieldCheck } from "lucide-react-native";
@@ -44,8 +49,10 @@ export default function ManageEventPermissionsScreen({ navigation }: Props) {
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [savingProfileId, setSavingProfileId] = useState<string | null>(null);
+  const [screenError, setScreenError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!profile) return;
@@ -69,13 +76,21 @@ export default function ManageEventPermissionsScreen({ navigation }: Props) {
     return () => clearTimeout(timer);
   }, [isAdmin, search]);
 
-  const loadProfiles = async (nextPage: number, append: boolean) => {
+  const loadProfiles = useCallback(async (
+    nextPage: number,
+    append: boolean,
+    options?: { preserveProfilesOnError?: boolean; showLoading?: boolean },
+  ) => {
     const currentRequestId = requestIdRef.current + 1;
     requestIdRef.current = currentRequestId;
+    const preserveProfilesOnError = options?.preserveProfilesOnError ?? false;
+    const showLoading = options?.showLoading ?? !append;
+
+    setScreenError(null);
 
     if (append) {
       setIsLoadingMore(true);
-    } else {
+    } else if (showLoading) {
       setIsLoading(true);
     }
 
@@ -91,15 +106,15 @@ export default function ManageEventPermissionsScreen({ navigation }: Props) {
 
     if (append) {
       setIsLoadingMore(false);
-    } else {
+    } else if (showLoading) {
       setIsLoading(false);
     }
 
     if (error) {
-      Alert.alert(
-        "Nao foi possivel carregar os perfis",
-        "Tente novamente em alguns instantes.",
-      );
+      if (!append && !preserveProfilesOnError) {
+        setProfiles([]);
+      }
+      setScreenError(error);
       return;
     }
 
@@ -109,13 +124,31 @@ export default function ManageEventPermissionsScreen({ navigation }: Props) {
     );
     setPage(nextPage);
     setHasMore(hasMore);
-  };
+  }, [search]);
+
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await loadProfiles(0, false, {
+        preserveProfilesOnError: true,
+        showLoading: false,
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [loadProfiles]);
 
   const handleTogglePermission = async (target: EventPermissionProfile) => {
-    if (target.role === "admin" || target.id === profile?.id) {
+    if (
+      target.role === "admin" ||
+      target.id === profile?.id ||
+      savingProfileId !== null ||
+      isRefreshing
+    ) {
       return;
     }
 
+    setScreenError(null);
     setSavingProfileId(target.id);
 
     const nextValue = !target.can_manage_events;
@@ -127,10 +160,7 @@ export default function ManageEventPermissionsScreen({ navigation }: Props) {
     setSavingProfileId(null);
 
     if (error) {
-      Alert.alert(
-        "Nao foi possivel atualizar a permissao",
-        "Tente novamente em alguns instantes.",
-      );
+      setScreenError(error);
       return;
     }
 
@@ -175,6 +205,12 @@ export default function ManageEventPermissionsScreen({ navigation }: Props) {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ padding: 20, paddingBottom: 32 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={() => void handleRefresh()}
+          />
+        }
       >
         <View
           style={{
@@ -253,6 +289,30 @@ export default function ManageEventPermissionsScreen({ navigation }: Props) {
               {profiles.length} visiveis
             </Text>
           </View>
+
+          {screenError ? (
+            <View
+              style={{
+                borderRadius: 18,
+                borderWidth: 1,
+                borderColor: "#fecaca",
+                backgroundColor: "#fef2f2",
+                padding: 16,
+                marginBottom: 14,
+              }}
+            >
+              <Text style={{ color: "#991b1b", lineHeight: 20, marginBottom: 12 }}>
+                {screenError}
+              </Text>
+              <DefaultButton
+                variant="outline"
+                onPress={() => void loadProfiles(0, false)}
+                disabled={isLoading || isLoadingMore || savingProfileId !== null}
+              >
+                Tentar novamente
+              </DefaultButton>
+            </View>
+          ) : null}
 
           {isLoading ? (
             <View style={{ paddingVertical: 24 }}>
@@ -399,7 +459,7 @@ export default function ManageEventPermissionsScreen({ navigation }: Props) {
                             value={item.can_manage_events || isBuiltInAdmin}
                             onValueChange={() => handleTogglePermission(item)}
                             color="#000"
-                            disabled={isReadOnly}
+                            disabled={isReadOnly || savingProfileId !== null || isRefreshing}
                           />
                         )}
                       </View>
@@ -452,8 +512,9 @@ export default function ManageEventPermissionsScreen({ navigation }: Props) {
               {hasMore ? (
                 <View style={{ marginTop: 8 }}>
                   <DefaultButton
-                    onPress={() => loadProfiles(page + 1, true)}
+                    onPress={() => void loadProfiles(page + 1, true)}
                     isLoading={isLoadingMore}
+                    disabled={savingProfileId !== null || isRefreshing}
                   >
                     Carregar mais perfis
                   </DefaultButton>
