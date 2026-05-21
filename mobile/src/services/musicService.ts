@@ -162,29 +162,15 @@ export async function replaceEventSetlist(input: {
   }>;
 }) {
   try {
-    const { error: deleteError } = await supabase
-      .from("event_setlists")
-      .delete()
-      .eq("event_id", input.eventId);
+    const { error } = await supabase.rpc("replace_event_setlist", {
+      p_event_id: input.eventId,
+      p_items: input.items.map((item) => ({
+        song_id: item.song_id,
+        song_key: item.song_key ?? null,
+      })),
+    });
 
-    if (deleteError) throw deleteError;
-
-    if (input.items.length === 0) {
-      return { data: [] as EventSetlistSong[], error: null };
-    }
-
-    const { error: insertError } = await supabase
-      .from("event_setlists")
-      .insert(
-        input.items.map((item, index) => ({
-          event_id: input.eventId,
-          song_id: item.song_id,
-          song_key: item.song_key ?? null,
-          position: index + 1,
-        })),
-      );
-
-    if (insertError) throw insertError;
+    if (error) throw error;
 
     const setlistResult = await getEventSetlist(input.eventId);
 

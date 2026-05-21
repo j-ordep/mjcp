@@ -91,6 +91,16 @@ O dominio principal hoje e o fluxo de escalas.
   - o catalogo agora vem de `songs`
   - o proximo setlist agora vem de `event_setlists`
   - usuarios com permissao de gerenciar eventos agora conseguem editar de forma simples o setlist do proximo evento
+  - a troca completa do setlist agora acontece via RPC transacional `replace_event_setlist`, evitando apagar a setlist atual em caso de falha parcial
+- o perfil deixou de depender de fallbacks externos de avatar:
+  - `HeaderPrimary`, `ProfileScreen` e `EditProfileScreen` agora usam apenas `avatar_url` real ou iniciais locais
+  - a edicao de perfil nao exibe mais CTA falso para trocar foto
+- `BottomSheetMenu` deixou de expor acoes placeholder de compartilhar perfil e configuracoes de notificacao
+- `ProfileScreen` trocou os cards mockados de atividade por um resumo simples com dados reais da POC
+- `ProfileScreen` passou a formatar telefone de forma legivel no resumo do usuario
+- `CalendarModal` volta a abrir sincronizado com a data real do formulario, sem reaproveitar selecao cancelada da abertura anterior
+- `BlockDatesScreen` agora trava interacoes durante o salvamento para evitar perda silenciosa de alteracoes
+- `YoutubeCarousel` ja ignora placeholders publicos de `EXPO_PUBLIC_YOUTUBE_API_KEY`, evitando requests inuteis enquanto o `.env` ainda nao estiver configurado
 - Ao tocar em uma escala a partir de `ScheduleScreen`, admin, lider e membro agora abrem a mesma tela `EditScheduleScreen`:
   - admin/lider entram em modo gerencial
   - membro entra em modo de acompanhamento da propria participacao, sem acoes administrativas
@@ -204,9 +214,12 @@ O modelo atual e:
 - A direcao atual para salas e reservas passa a ser concreta nesta fase: usar `room_reservations.event_id` opcional em vez de `events.room_id`.
 - Ao aplicar as migrations remotas de salas, conferir tambem a normalizacao do catalogo em `20260504000122_normalize_room_catalog.sql`.
 - A migration remota adicional desta rodada e `20260512000125_allow_event_managers_to_manage_event_setlists.sql`, para liberar escrita de `event_setlists` a quem ja pode gerenciar eventos.
+- A migration remota adicional da rodada atual e `20260515000126_add_replace_event_setlist_rpc.sql`, para tornar a troca completa da setlist atomica no banco.
 - O banco continua persistindo enums em ingles por compatibilidade de schema, mas a UI deve exibir status em pt-BR.
 - As migrations mais recentes a confirmar/aplicar no Supabase remoto incluem:
   - `20260423000115_align_schedule_read_only_with_event_start_time.sql`
   - `20260423000116_simplify_event_read_policy.sql`
   - `20260426000117_prevent_duplicate_member_schedule_assignments.sql`
   - `20260427000118_add_event_category.sql`
+  - `20260512000125_allow_event_managers_to_manage_event_setlists.sql`
+  - `20260515000126_add_replace_event_setlist_rpc.sql`

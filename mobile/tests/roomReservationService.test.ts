@@ -522,7 +522,7 @@ test("cancelStandaloneRoomReservation blocks reservations linked to an event", a
 
   assert.equal(
     result.error,
-    "Esta reserva estÃ¡ vinculada a um evento e nÃ£o pode ser cancelada por aqui.",
+    "Esta reserva est\u00e1 vinculada a um evento e n\u00e3o pode ser cancelada por aqui.",
   );
   assert.equal(calls.updates.length, 0);
 });

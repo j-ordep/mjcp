@@ -47,8 +47,8 @@ export function toInformationalEventViewModel(
     category: normalizeEventCategory(event.category),
     startAt: event.start_at,
     endAt: event.end_at ?? null,
-    location: event.location?.trim() || "NÃ£o informado",
-    description: event.description?.trim() || "Sem descriÃ§Ã£o.",
+    location: event.location?.trim() || "Não informado",
+    description: event.description?.trim() || "Sem descrição.",
   };
 }
 

@@ -48,9 +48,10 @@
   - admin gerencia tudo
   - lider gerencia escalas/assignments do proprio ministerio (policy adicionada em `20260312000103_add_leader_policies.sql`)
   - membro atualiza apenas seu assignment (confirmacao/estado)
-- Evento em dois modos de visualizacao:
-  - card simples quando usuario nao esta escalado
-  - card detalhado quando usuario esta escalado
+- Eventos hoje formam uma superficie informativa propria:
+  - `EventsScreen` lista eventos futuros e historico
+  - `EventDetailsScreen` permanece informativa
+  - confirmacao, troca e equipe escalada ficam fora do dominio de evento
 
 ## 6) Diretrizes tecnicas identificadas (confirmadas)
 - Stack:
@@ -60,10 +61,11 @@
   - banco usado para armazenamento, integridade e RLS
 - Estado atual do codigo:
   - autenticacao Supabase ja existe de forma parcial (`authService`, `AppNavigator`, `useAuthStore`)
-  - `CreateScheduleScreen` ainda placeholder
-  - confirmacao/troca ainda com `TODO` nas telas
+  - `CreateScheduleScreen` ja implementada no fluxo atual de criacao de escala
+  - confirmacao e troca ja estao implementadas em `ScheduleScreen`, `EditScheduleScreen` e `SwapRequestsScreen`
+  - permissao global de eventos (`profiles.can_manage_events`) ja possui fluxo administrativo no app
 - Tipagem:
-  - `src/types/database.types.ts` esta vazio no estado atual (lacuna tecnica).
+  - `src/types/database.types.ts` ja esta populado; a pendencia atual e revisar cobertura e reduzir fragilidades remanescentes.
 
 ## 7) Seguranca e dados sensiveis (obrigatorio)
 - Nunca commitar:
