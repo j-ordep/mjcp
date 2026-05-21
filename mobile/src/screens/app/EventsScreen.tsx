@@ -35,6 +35,7 @@ export default function EventsScreen() {
   const [activeFilter, setActiveFilter] = useState<Filter>("current");
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const { profile } = useAuthStore();
   const { allEvents, isLoadingAllEvents, fetchEvents } = useEventStore();
@@ -42,10 +43,24 @@ export default function EventsScreen() {
 
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const refreshEvents = useCallback(async (withRefreshIndicator = false) => {
+    if (withRefreshIndicator) {
+      setIsRefreshing(true);
+    }
+
+    try {
+      await fetchEvents(true);
+    } finally {
+      if (withRefreshIndicator) {
+        setIsRefreshing(false);
+      }
+    }
+  }, [fetchEvents]);
+
   useFocusEffect(
     useCallback(() => {
-      void fetchEvents(true);
-    }, [fetchEvents]),
+      void refreshEvents(false);
+    }, [refreshEvents]),
   );
 
   useEffect(() => {
@@ -173,6 +188,8 @@ export default function EventsScreen() {
     );
   }, [activeFilter, debouncedSearch, isLoadingAllEvents]);
 
+  const isInitialLoading = isLoadingAllEvents && allEvents.length === 0;
+
   return (
     <SafeAreaView
       className="flex-1 bg-white"
@@ -248,7 +265,7 @@ export default function EventsScreen() {
         </Text>
       </View>
 
-      {isLoadingAllEvents ? (
+      {isInitialLoading ? (
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color="#000" />
         </View>
@@ -262,6 +279,8 @@ export default function EventsScreen() {
             paddingBottom: 32,
             paddingTop: 4,
           }}
+          refreshing={isRefreshing}
+          onRefresh={() => void refreshEvents(true)}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={ListEmpty}
         />
