@@ -16,6 +16,7 @@ interface FetchScheduleCardsInput {
 
 interface ScheduleState {
   scheduleCards: ScheduleCard[];
+  scheduleCardsCacheKey: string | null;
   viewMode: ScheduleViewMode;
   isLoadingSchedules: boolean;
   error: string | null;
@@ -25,6 +26,7 @@ interface ScheduleState {
 
 export const useScheduleStore = create<ScheduleState>((set, get) => ({
   scheduleCards: [],
+  scheduleCardsCacheKey: null,
   viewMode: "personal",
   isLoadingSchedules: false,
   error: null,
@@ -36,11 +38,26 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
     forceRefresh = false,
   }) => {
     if (!userId) return;
-    if (!forceRefresh && get().scheduleCards.length > 0) return;
-
-    set({ isLoadingSchedules: true, error: null });
-
     const shouldUseManageableView = isAdmin || leaderMinistryIds.length > 0;
+    const cacheKey = [
+      userId,
+      shouldUseManageableView ? "manageable" : "personal",
+      isAdmin ? "admin" : leaderMinistryIds.slice().sort().join(","),
+    ].join("|");
+    const currentState = get();
+    if (!forceRefresh && currentState.scheduleCardsCacheKey === cacheKey) return;
+
+    set({
+      isLoadingSchedules: true,
+      error: null,
+      scheduleCards:
+        currentState.scheduleCardsCacheKey === cacheKey
+          ? currentState.scheduleCards
+          : [],
+      scheduleCardsCacheKey:
+        currentState.scheduleCardsCacheKey === cacheKey ? cacheKey : null,
+    });
+
     const result = shouldUseManageableView
       ? await getManageableScheduleCards(
           userId,
@@ -53,18 +70,25 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
         error: result.error,
         isLoadingSchedules: false,
         scheduleCards: [],
+        scheduleCardsCacheKey: null,
       });
       return;
     }
 
     set({
       scheduleCards: result.data ?? [],
+      scheduleCardsCacheKey: cacheKey,
       viewMode: shouldUseManageableView ? "manageable" : "personal",
       isLoadingSchedules: false,
     });
   },
 
   clearScheduleCards: () => {
-    set({ scheduleCards: [], error: null, viewMode: "personal" });
+    set({
+      scheduleCards: [],
+      scheduleCardsCacheKey: null,
+      error: null,
+      viewMode: "personal",
+    });
   },
 }));

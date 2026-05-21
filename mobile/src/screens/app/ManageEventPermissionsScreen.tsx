@@ -96,7 +96,10 @@ export default function ManageEventPermissionsScreen({ navigation }: Props) {
     }
 
     if (error) {
-      Alert.alert("Erro", error);
+      Alert.alert(
+        "Nao foi possivel carregar os perfis",
+        "Tente novamente em alguns instantes.",
+      );
       return;
     }
 
@@ -124,7 +127,10 @@ export default function ManageEventPermissionsScreen({ navigation }: Props) {
     setSavingProfileId(null);
 
     if (error) {
-      Alert.alert("Erro", error);
+      Alert.alert(
+        "Nao foi possivel atualizar a permissao",
+        "Tente novamente em alguns instantes.",
+      );
       return;
     }
 

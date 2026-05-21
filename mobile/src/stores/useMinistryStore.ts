@@ -9,6 +9,7 @@ import { useAuthStore } from "./useAuthStore";
 
 interface MinistryState {
   userMinistries: UserMinistry[];
+  userMinistriesUserId: string | null;
   allMinistries: Ministry[];
   isLoadingMinistries: boolean;
   error: string | null;
@@ -18,24 +19,43 @@ interface MinistryState {
 
 export const useMinistryStore = create<MinistryState>((set, get) => ({
   userMinistries: [],
+  userMinistriesUserId: null,
   allMinistries: [],
   isLoadingMinistries: false,
   error: null,
 
   fetchUserMinistries: async (forceRefresh = false) => {
-    if (!forceRefresh && get().userMinistries.length > 0) return;
-
     const session = useAuthStore.getState().session;
-    if (!session?.user?.id) return;
+    const userId = session?.user?.id;
+    if (!userId) {
+      set({ userMinistries: [], userMinistriesUserId: null });
+      return;
+    }
 
-    set({ isLoadingMinistries: true, error: null });
+    const currentState = get();
+    if (!forceRefresh && currentState.userMinistriesUserId === userId) return;
 
-    const { data, error } = await getUserMinistries(session.user.id);
+    set({
+      isLoadingMinistries: true,
+      error: null,
+      userMinistries:
+        currentState.userMinistriesUserId === userId
+          ? currentState.userMinistries
+          : [],
+      userMinistriesUserId:
+        currentState.userMinistriesUserId === userId ? userId : null,
+    });
+
+    const { data, error } = await getUserMinistries(userId);
 
     if (error) {
       set({ error, isLoadingMinistries: false });
     } else {
-      set({ userMinistries: data || [], isLoadingMinistries: false });
+      set({
+        userMinistries: data || [],
+        userMinistriesUserId: userId,
+        isLoadingMinistries: false,
+      });
     }
   },
 
