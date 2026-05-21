@@ -243,7 +243,10 @@ export default function RoomsScreen({ navigation }) {
     setSubmittingRoomId(null);
 
     if (error) {
-      Alert.alert("Erro ao reservar", error);
+      Alert.alert(
+        "Erro ao reservar",
+        "A reserva nao foi criada. Tente novamente em alguns instantes.",
+      );
       return;
     }
 
@@ -277,7 +280,10 @@ export default function RoomsScreen({ navigation }) {
               setCancellingReservationId(null);
 
               if (error) {
-                Alert.alert("Erro ao cancelar", error);
+                Alert.alert(
+                  "Erro ao cancelar",
+                  "A reserva nao foi cancelada. Tente novamente em alguns instantes.",
+                );
                 return;
               }
 

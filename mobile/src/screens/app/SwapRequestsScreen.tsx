@@ -34,7 +34,10 @@ export default function SwapRequestsScreen() {
     const { data, error } = await getVisibleSwapRequests();
 
     if (error) {
-      Alert.alert("Erro", error);
+      Alert.alert(
+        "Nao foi possivel carregar as trocas",
+        "Tente novamente em alguns instantes.",
+      );
       setIsLoading(false);
       return;
     }
@@ -84,7 +87,10 @@ export default function SwapRequestsScreen() {
             setIsActingId(null);
 
             if (error) {
-              Alert.alert("Nao foi possivel aceitar", error);
+              Alert.alert(
+                "Nao foi possivel aceitar",
+                "A troca nao foi aceita. Tente novamente em alguns instantes.",
+              );
               return;
             }
 
@@ -103,7 +109,10 @@ export default function SwapRequestsScreen() {
       setIsActingId(null);
 
       if (error) {
-        Alert.alert("Erro", error);
+        Alert.alert(
+          "Nao foi possivel cancelar",
+          "A solicitacao de troca nao foi cancelada. Tente novamente em alguns instantes.",
+        );
         return;
       }
 

@@ -147,7 +147,10 @@ export default function ScheduleScreen() {
 
     const { data, error } = await getSwapCandidatesForAssignment(assignmentId);
     if (error) {
-      Alert.alert("Nao foi possivel carregar candidatos", error);
+      Alert.alert(
+        "Nao foi possivel carregar candidatos",
+        "Tente novamente em alguns instantes.",
+      );
       setSwapCandidates([]);
       return;
     }
@@ -188,7 +191,10 @@ export default function ScheduleScreen() {
         );
 
       if (error) {
-        Alert.alert("Nao foi possivel verificar a troca", error);
+        Alert.alert(
+          "Nao foi possivel verificar a troca",
+          "Tente novamente em alguns instantes.",
+        );
         return;
       }
 
@@ -257,7 +263,10 @@ export default function ScheduleScreen() {
               void (async () => {
                 const { error } = await cancelOwnSwapRequest(pendingOwnSwapRequestId);
                 if (error) {
-                  Alert.alert("Nao foi possivel cancelar", error);
+                  Alert.alert(
+                    "Nao foi possivel cancelar",
+                    "A solicitacao de troca nao foi cancelada. Tente novamente em alguns instantes.",
+                  );
                   return;
                 }
 
@@ -292,7 +301,10 @@ export default function ScheduleScreen() {
             });
 
             if (error) {
-              Alert.alert("Nao foi possivel confirmar", error);
+              Alert.alert(
+                "Nao foi possivel confirmar",
+                "Sua presenca nao foi confirmada. Tente novamente em alguns instantes.",
+              );
               return;
             }
 
@@ -519,7 +531,10 @@ export default function ScheduleScreen() {
           setIsSavingSwapRequest(false);
 
           if (error) {
-            Alert.alert("Nao foi possivel solicitar troca", error);
+            Alert.alert(
+              "Nao foi possivel solicitar troca",
+              "Sua solicitacao de troca nao foi enviada. Tente novamente em alguns instantes.",
+            );
             return;
           }
 
