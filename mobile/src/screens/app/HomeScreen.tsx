@@ -1,4 +1,4 @@
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Calendar, CalendarX, RefreshCw } from "lucide-react-native";
 import { useState, useEffect, useCallback } from "react";
@@ -20,6 +20,7 @@ import NotificationsModal from "../../components/utils/NotificationsModal";
 import { RootStackParamList } from "../../navigation/AppNavigator";
 import { useAuthStore } from "../../stores/useAuthStore";
 import { useEventStore } from "../../stores/useEventStore";
+import { useNotificationStore } from "../../stores/useNotificationStore";
 import { getProfileAvatarUri } from "../../utils/profileAvatar";
 
 export default function HomeScreen() {
@@ -27,6 +28,13 @@ export default function HomeScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { events, isLoadingEvents, fetchUpcomingEvents } = useEventStore();
   const { profile } = useAuthStore();
+  const unreadCount = useNotificationStore((state) => state.unreadCount);
+  const refreshNotifications = useNotificationStore(
+    (state) => state.refreshNotifications,
+  );
+  const refreshUnreadCount = useNotificationStore(
+    (state) => state.refreshUnreadCount,
+  );
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
@@ -38,11 +46,21 @@ export default function HomeScreen() {
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
     try {
-      await fetchUpcomingEvents(true);
+      await Promise.all([
+        fetchUpcomingEvents(true),
+        refreshNotifications(),
+        refreshUnreadCount(),
+      ]);
     } finally {
       setIsRefreshing(false);
     }
-  }, [fetchUpcomingEvents]);
+  }, [fetchUpcomingEvents, refreshNotifications, refreshUnreadCount]);
+
+  useFocusEffect(
+    useCallback(() => {
+      void Promise.all([refreshNotifications(), refreshUnreadCount()]);
+    }, [refreshNotifications, refreshUnreadCount]),
+  );
 
 
 
@@ -62,6 +80,7 @@ export default function HomeScreen() {
         onAvatarPress={() => navigation.navigate("Profile")}
         avatarUri={getProfileAvatarUri(profile?.avatar_url)}
         avatarLabel={profile?.full_name ?? ""}
+        notificationUnreadCount={unreadCount}
       />
 
       <ScrollView

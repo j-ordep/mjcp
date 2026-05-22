@@ -44,6 +44,10 @@ O dominio principal hoje e o fluxo de escalas.
 - O app agora possui leitura real da inbox de notificacoes pela tabela `notifications`:
   - `NotificationsModal` deixou de ser mockado
   - existe `notificationService` para listar e marcar notificacoes como lidas
+  - existe `useNotificationStore` como fonte de verdade da inbox no cliente
+  - a Home exibe badge de nao lidas no sino
+  - a inbox recebe `INSERT` e `UPDATE` em realtime filtrados por `user_id`
+  - tocar em uma notificacao navega para `SwapRequests` ou `EditSchedule`, conforme o payload
 - O fluxo de criacao de escala foi separado da montagem da equipe:
   - `CreateScheduleScreen` cria o contexto da escala
   - `EditScheduleScreen` faz a montagem da equipe e operacao da escala
@@ -115,7 +119,7 @@ O dominio principal hoje e o fluxo de escalas.
 
 ### PENDENTE DE DEFINICAO
 
-- Estrategia final de notificacoes operacionais do fluxo de escalas e trocas
+- Notificacoes de evento privado e reserva de sala ainda seguem fora do escopo atual
 - Estrategia futura de retencao/limpeza de escalas antigas
 
 ### INFORMACAO INSUFICIENTE
@@ -201,7 +205,8 @@ O modelo atual e:
 - A verdade atual do dominio esta nas migrations e no service layer.
 - `docs/TASKS.md` e `docs/ROADMAP.md` servem como mapa de trabalho, nao como fonte primaria.
 - A UX do modal de adicionar membro foi alinhada ao padrao do modal central de troca; o fluxo nao usa mais visual de bottom sheet nesse ponto.
-- O backend de notificacoes de swap foi preparado em migration nova e depende de aplicacao no projeto Supabase para produzir notificacoes reais.
+- O backend de notificacoes de swap foi preparado em migration local e depende de aplicacao no projeto Supabase para produzir notificacoes reais.
+- O backend de notificacao de `schedule.assigned` tambem foi preparado em migration local e depende da aplicacao remota para gerar a inbox completa.
 - Nao colocar observacoes, `notes` ou `note` em nenhum lugar da escala.
 - O acesso primario ao fluxo de trocas deve sair de `ScheduleScreen`, nao da Home.
 - A confirmacao de presenca e a solicitacao/cancelamento de troca nao usam mais alerts nativos de sucesso; o feedback principal agora e o proprio estado da interface.
@@ -223,3 +228,4 @@ O modelo atual e:
   - `20260427000118_add_event_category.sql`
   - `20260512000125_allow_event_managers_to_manage_event_setlists.sql`
   - `20260515000126_add_replace_event_setlist_rpc.sql`
+  - `20260522000128_add_schedule_assignment_notifications.sql`

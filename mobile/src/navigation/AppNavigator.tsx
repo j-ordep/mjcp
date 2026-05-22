@@ -24,6 +24,7 @@ import SignInScreen from "../screens/auth/SignInScreen";
 import SignUpScreen from "../screens/auth/SignUpScreen";
 import { getProfile } from "../services/profileService";
 import { useAuthStore } from "../stores/useAuthStore";
+import { useNotificationStore } from "../stores/useNotificationStore";
 
 export type RootStackParamList = {
   SignIn: undefined;
@@ -83,6 +84,16 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 export default function AppNavigator() {
   const { session, isLoading, setSession, setProfile, setLoading } =
     useAuthStore();
+  const bootstrapNotifications = useNotificationStore(
+    (state) => state.bootstrap,
+  );
+  const connectNotificationRealtime = useNotificationStore(
+    (state) => state.connectRealtime,
+  );
+  const disconnectNotificationRealtime = useNotificationStore(
+    (state) => state.disconnectRealtime,
+  );
+  const clearNotifications = useNotificationStore((state) => state.clear);
 
   useEffect(() => {
     let isMounted = true;
@@ -140,6 +151,29 @@ export default function AppNavigator() {
       subscription.unsubscribe();
     };
   }, [setLoading, setProfile, setSession]);
+
+  useEffect(() => {
+    const userId = session?.user?.id;
+
+    if (!userId) {
+      void disconnectNotificationRealtime();
+      clearNotifications();
+      return;
+    }
+
+    void bootstrapNotifications(userId);
+    void connectNotificationRealtime(userId);
+
+    return () => {
+      void disconnectNotificationRealtime();
+    };
+  }, [
+    bootstrapNotifications,
+    clearNotifications,
+    connectNotificationRealtime,
+    disconnectNotificationRealtime,
+    session?.user?.id,
+  ]);
 
   if (isLoading) {
     return (
