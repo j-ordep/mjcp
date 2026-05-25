@@ -343,6 +343,7 @@ test("getRoomsDailyAgenda groups daily reservations per room and attaches linked
   assert.deepEqual(calls.scheduleIns[0], ["event_id", ["event-1"]]);
   assert.equal(result.data?.[0].agenda.length, 1);
   assert.equal(result.data?.[0].agenda[0].isEventLinked, true);
+  assert.equal(result.data?.[0].agenda[0].reservedBy, "user-1");
   assert.deepEqual(result.data?.[0].agenda[0].linkedScheduleSummary, {
     schedulesCount: 2,
     assignmentsCount: 3,

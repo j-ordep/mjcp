@@ -123,3 +123,32 @@ export function canCancelStandaloneRoomReservation(input: {
     input.reservation.reserved_by === input.currentUserId
   );
 }
+
+export function canCancelStandaloneRoomAgendaItem(input: {
+  currentUserId: string | null | undefined;
+  reservation:
+    | {
+        id?: string;
+        roomId?: string;
+        startAt?: string;
+        endAt?: string;
+        purpose?: string | null;
+        category?: string | null;
+        eventId: string | null;
+        isEventLinked?: boolean;
+        linkedScheduleSummary?: unknown;
+        reservedBy: string;
+      }
+    | null
+    | undefined;
+}) {
+  const reservation = input.reservation;
+
+  return (
+    typeof input.currentUserId === "string" &&
+    input.currentUserId.length > 0 &&
+    reservation != null &&
+    reservation.eventId == null &&
+    reservation.reservedBy === input.currentUserId
+  );
+}
