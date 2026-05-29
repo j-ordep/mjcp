@@ -665,7 +665,7 @@ export default function EditScheduleScreen() {
                     isLoading={isConfirmingPresence}
                     disabled={isOwnParticipationReadOnly || !hasPendingOwnAssignments}
                   >
-                    {hasPendingOwnAssignments ? "Confirmar presenca" : "Presenca confirmada"}
+                    {hasPendingOwnAssignments ? "Confirmar" : "Confirmado"}
                   </DefaultButton>
                 </View>
               </View>
