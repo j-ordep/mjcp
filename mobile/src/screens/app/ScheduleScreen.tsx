@@ -263,7 +263,7 @@ export default function ScheduleScreen() {
           showActions={showOwnActions}
           swapLabel={hasPendingOwnSwapRequest ? "Cancelar troca" : "Preciso trocar"}
           swapVariant={hasPendingOwnSwapRequest ? "destructive" : "outline"}
-          confirmLabel={hasPendingOwnAssignments ? "Confirmar presenca" : "Presenca confirmada"}
+          confirmLabel={hasPendingOwnAssignments ? "Confirmar" : "Confirmado"}
           confirmDisabled={confirmDisabled}
           swapDisabled={swapDisabled}
           actionHint={actionHint}
