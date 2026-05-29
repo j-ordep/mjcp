@@ -9,7 +9,7 @@ import {
   TouchableOpacity as RNTouchableOpacity,
   View,
 } from "react-native";
-import { Button, Chip, Divider, Switch, Text, TextInput } from "react-native-paper";
+import { Button, Checkbox, Chip, Divider, Switch, Text, TextInput } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Calendar } from "react-native-calendars";
 import { Calendar as CalendarIcon, Clock, Search, Sparkles, X } from "lucide-react-native";
@@ -34,6 +34,12 @@ import {
 } from "../../services/profileService";
 import { useAuthStore } from "../../stores/useAuthStore";
 import { useEventStore } from "../../stores/useEventStore";
+import {
+  collapseCalendarSelectionToSingleDate,
+  createCalendarSelectionMark,
+  type CalendarSelectionMark,
+  toggleCalendarDateSelection,
+} from "../../utils/eventCalendarSelection";
 import {
   createLocalDateTime,
   formatLocalDateKey,
@@ -87,12 +93,7 @@ const PRESETS = [
   },
 ];
 
-type CalendarSelection = {
-  selected: boolean;
-  selectedColor: string;
-};
-
-function getEventDateLabel(selectedDays: Record<string, CalendarSelection>) {
+function getEventDateLabel(selectedDays: Record<string, CalendarSelectionMark>) {
   const dates = Object.keys(selectedDays);
 
   if (dates.length === 0) return "Selecione a data";
@@ -228,9 +229,10 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
   const [audiencePage, setAudiencePage] = useState(0);
   const [hasMoreAudience, setHasMoreAudience] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
-  const [selectedDays, setSelectedDays] = useState<Record<string, CalendarSelection>>(() => {
+  const [allowMultipleDates, setAllowMultipleDates] = useState(false);
+  const [selectedDays, setSelectedDays] = useState<Record<string, CalendarSelectionMark>>(() => {
     const todayKey = formatLocalDateKey(getNow());
-    return { [todayKey]: { selected: true, selectedColor: "#000" } };
+    return { [todayKey]: createCalendarSelectionMark() };
   });
   const [rooms, setRooms] = useState<RoomAvailability[]>([]);
   const [isLoadingRooms, setIsLoadingRooms] = useState(false);
@@ -241,6 +243,7 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
   const [isRoomSelectionAutoCleared, setIsRoomSelectionAutoCleared] = useState(false);
 
   const selectedDateKeys = useMemo(() => Object.keys(selectedDays), [selectedDays]);
+  const isMultipleDateSelectionEnabled = !isEdit && allowMultipleDates;
   const singleSelectedDateKey =
     selectedDateKeys.length === 1 ? selectedDateKeys[0] : null;
   const roomWindow = useMemo(
@@ -267,7 +270,8 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
     setTime(`${hours}:${minutes}`);
 
     const dateKey = event.start_at.split("T")[0];
-    setSelectedDays({ [dateKey]: { selected: true, selectedColor: "#000" } });
+    setAllowMultipleDates(false);
+    setSelectedDays({ [dateKey]: createCalendarSelectionMark() });
   };
 
   useEffect(() => {
@@ -528,16 +532,30 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
   };
 
   const onDayPress = (day: { dateString: string }) => {
-    const dateString = day.dateString;
-    const nextSelectedDays = isEdit ? {} : { ...selectedDays };
+    setSelectedDays((current) =>
+      toggleCalendarDateSelection({
+        selectedDays: current,
+        dateString: day.dateString,
+        allowMultipleDates: isMultipleDateSelectionEnabled,
+        isEdit,
+      }),
+    );
+  };
 
-    if (nextSelectedDays[dateString]) {
-      delete nextSelectedDays[dateString];
-    } else {
-      nextSelectedDays[dateString] = { selected: true, selectedColor: "#000" };
-    }
+  const handleToggleMultipleDates = () => {
+    if (isEdit) return;
 
-    setSelectedDays(nextSelectedDays);
+    setAllowMultipleDates((current) => {
+      const nextValue = !current;
+
+      if (!nextValue) {
+        setSelectedDays((previousSelection) =>
+          collapseCalendarSelectionToSingleDate(previousSelection),
+        );
+      }
+
+      return nextValue;
+    });
   };
 
   const handleTimeChange = (text: string) => {
@@ -1407,10 +1425,18 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
             >
               <View>
                 <Text style={{ fontWeight: "bold", fontSize: 16 }}>
-                  {isEdit ? "Alterar Data" : "Selecione as Datas"}
+                  {isEdit
+                    ? "Alterar Data"
+                    : isMultipleDateSelectionEnabled
+                      ? "Selecione as Datas"
+                      : "Selecione a Data"}
                 </Text>
                 <Text style={{ fontSize: 12, color: "#666" }}>
-                  {isEdit ? "Toque para escolher um novo dia" : "Toque para selecionar vários dias"}
+                  {isEdit
+                    ? "Toque para escolher um novo dia"
+                    : isMultipleDateSelectionEnabled
+                      ? "Toque para selecionar ou remover várias datas"
+                      : "Por padrão, apenas uma data fica ativa por vez"}
                 </Text>
               </View>
 
@@ -1418,6 +1444,32 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
                 <X size={24} color="#000" />
               </RNTouchableOpacity>
             </View>
+
+            {!isEdit ? (
+              <RNTouchableOpacity
+                onPress={handleToggleMultipleDates}
+                activeOpacity={0.8}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  paddingHorizontal: 10,
+                  paddingBottom: 10,
+                }}
+              >
+                <View style={{ flex: 1, paddingRight: 12 }}>
+                  <Text style={{ fontWeight: "700", color: "#111827" }}>
+                    Permitir múltiplas datas
+                  </Text>
+                  <Text style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>
+                    Desativado por padrão para manter a criação mais simples.
+                  </Text>
+                </View>
+                <Checkbox
+                  status={isMultipleDateSelectionEnabled ? "checked" : "unchecked"}
+                />
+              </RNTouchableOpacity>
+            ) : null}
 
             <Calendar
               onDayPress={onDayPress}
@@ -1436,7 +1488,9 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
               onPress={() => setShowCalendar(false)}
               style={{ marginTop: 10, backgroundColor: "#000" }}
             >
-              Confirmar {selectedDateKeys.length} data(s)
+              {isMultipleDateSelectionEnabled && selectedDateKeys.length > 1
+                ? `Confirmar ${selectedDateKeys.length} datas`
+                : "Confirmar data"}
             </Button>
           </View>
         </RNTouchableOpacity>
