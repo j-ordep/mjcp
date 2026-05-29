@@ -520,15 +520,15 @@ Contexto: eventos sao informativos para todos; escala e o fluxo operacional de q
 ## P2 (Medio) - Notificacoes
 
 - [ ] Criar notificacao ao:
-  - novo assignment criado
-    - incluir notificacao direta ao usuario escalado quando entrar em uma escala
+  - [x] novo assignment criado
+    - notificacao direta ao usuario escalado quando entrar em uma escala
   - evento privado criado/atualizado para audiencia selecionada
     - usuarios escolhidos manualmente devem poder receber notificacao no futuro
-  - [~] swap request criado/atualizado
-  - [~] swap request criado para:
+  - [x] swap request criado/atualizado
+  - [x] swap request criado para:
     - membros elegiveis do mesmo ministerio e mesma funcao
     - lider responsavel pela escala
-  - [~] acompanhamento operacional do lider:
+  - [x] acompanhamento operacional do lider:
     - quando o pedido for criado
     - quando alguem assumir a troca
     - quando o pedido for cancelado
@@ -540,11 +540,17 @@ Contexto: eventos sao informativos para todos; escala e o fluxo operacional de q
       - `created`
       - `accepted`
       - `cancelled`
+    - existe migration local para emitir notificacao de `schedule.assigned` ao criar assignment
     - existe `notificationService` para:
       - listar notificacoes
       - marcar uma como lida
       - marcar todas como lidas
+      - assinar notificacoes por realtime
     - `NotificationsModal` agora usa a tabela `notifications`
+    - a Home agora mostra badge de nao lidas e reidrata a inbox por focus/modal
+    - a navegacao contextual da inbox abre:
+      - `SwapRequests`
+      - `EditSchedule`
 
   - PENDENTE DE DEFINICAO:
     - copy final de titulo/corpo por tipo
@@ -555,9 +561,10 @@ Contexto: eventos sao informativos para todos; escala e o fluxo operacional de q
       - `20260412000110_add_swap_request_notifications.sql`
       - `20260412000111_fix_schedule_rls_recursion.sql`
       - `20260412000112_reset_assignment_confirmation_on_swap_request.sql`
+      - `20260522000128_add_schedule_assignment_notifications.sql`
 
-- [ ] Integrar realtime para notificar (opcional)
-  - `notifications` ja tem tabela + modal real no app
+- [x] Integrar realtime para inbox de notificacoes
+  - `notifications` agora tem tabela, modal real, badge de nao lidas e assinatura Supabase Realtime por `user_id`
 
 ### Plano tecnico recomendado para notificacoes de swap
 

@@ -16,6 +16,7 @@ interface QueryBuilder {
   single: MockFn;
   maybeSingle: MockFn;
   order: MockFn;
+  limit: MockFn;
   gte: MockFn;
   neq: MockFn;
   then: PromiseLike<{
@@ -51,6 +52,7 @@ export function createQueryBuilder(
   builder.eq = (..._args: any[]) => builder;
   builder.in = (..._args: any[]) => builder;
   builder.order = (..._args: any[]) => builder;
+  builder.limit = (..._args: any[]) => builder;
   builder.gte = (..._args: any[]) => builder;
   builder.neq = (..._args: any[]) => builder;
   builder.upsert = (..._args: any[]) => {

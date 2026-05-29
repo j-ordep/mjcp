@@ -1,13 +1,47 @@
+import type { RealtimeChannel } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
-import type { Notification } from "../types/models";
+import type {
+  NotificationType,
+  TableRow,
+} from "../types/database.types";
+import {
+  parseNotificationPayload,
+  type NotificationPayload,
+} from "../types/notifications";
 
-export interface AppNotification extends Notification {
-  user_id: string;
+export type NotificationRecord = TableRow<"notifications">;
+
+export interface AppNotification extends NotificationRecord {
+  payload: NotificationPayload | null;
+}
+
+interface NotificationRealtimeHandlers {
+  userId: string;
+  onInsert?: (notification: AppNotification) => void;
+  onUpdate?: (notification: AppNotification) => void;
 }
 
 function getErrorMessage(error: unknown) {
   if (error instanceof Error) return error.message;
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof error.message === "string"
+  ) {
+    return error.message;
+  }
   return "Ocorreu um erro inesperado.";
+}
+
+function normalizeNotificationRecord(record: NotificationRecord): AppNotification {
+  return {
+    ...record,
+    payload: parseNotificationPayload(
+      record.type as NotificationType,
+      record.data,
+    ),
+  };
 }
 
 export async function getNotifications(limit: number = 50) {
@@ -21,7 +55,7 @@ export async function getNotifications(limit: number = 50) {
     if (error) throw error;
 
     return {
-      data: (data ?? []) as AppNotification[],
+      data: ((data ?? []) as NotificationRecord[]).map(normalizeNotificationRecord),
       error: null,
     };
   } catch (error: unknown) {
@@ -76,4 +110,42 @@ export async function getUnreadNotificationsCount() {
   } catch (error: unknown) {
     return { data: null, error: getErrorMessage(error) };
   }
+}
+
+export function subscribeToNotifications({
+  userId,
+  onInsert,
+  onUpdate,
+}: NotificationRealtimeHandlers) {
+  const channel = supabase
+    .channel(`notifications:${userId}`)
+    .on(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "notifications",
+        filter: `user_id=eq.${userId}`,
+      },
+      (payload: { new: NotificationRecord }) => {
+        onInsert?.(normalizeNotificationRecord(payload.new));
+      },
+    )
+    .on(
+      "postgres_changes",
+      {
+        event: "UPDATE",
+        schema: "public",
+        table: "notifications",
+        filter: `user_id=eq.${userId}`,
+      },
+      (payload: { new: NotificationRecord }) => {
+        onUpdate?.(normalizeNotificationRecord(payload.new));
+      },
+    )
+    .subscribe();
+
+  return {
+    unsubscribe: () => supabase.removeChannel(channel as RealtimeChannel),
+  };
 }
