@@ -204,6 +204,8 @@ Decisao atualizada em 2026-04-07:
   - Ajuste de UX em 2026-04-12:
     - remover alerts nativos de sucesso apos confirmar presenca
     - o feedback principal passa a ser a atualizacao imediata do CTA e do status na propria tela
+  - Ajuste de UX em 2026-05-25:
+    - encurtar o CTA principal para `Confirmar` / `Confirmado`, evitando quebra desigual dos botoes em `ScheduleScreen` e `EditScheduleScreen`
 
 - [~] Solicitar troca (membro)
   - Decisao atualizada em 2026-04-10:
@@ -302,6 +304,7 @@ Decisao atualizada em 2026-04-07:
   - `room_reservations.event_id` passa a ser o vinculo estrutural opcional entre evento e sala
   - `save_event_with_optional_room_reservation` salva evento + audiencia + reserva opcional em transacao
   - `CreateEventScreen` agora permite sala opcional com disponibilidade real por janela para evento de data unica
+  - `CreateEventScreen` agora mantem data unica por padrao e so habilita multiplas datas quando o usuario marca explicitamente `Permitir multiplas datas` no modal do calendario
   - `RoomsScreen` deixou de ser mock e passou a criar reservas independentes reais
   - a reconciliacao de sala em edicao protege contra limpeza indevida ao mudar e voltar janela/horario
 
