@@ -75,6 +75,10 @@ O dominio principal hoje e o fluxo de escalas.
   - todas as reservas ativas do dia
   - badge `Evento` quando a reserva veio de `room_reservations.event_id`
   - resumo simples somente leitura das escalas vinculadas ao evento
+- `RoomsScreen` agora mantem a superficie principal mais limpa:
+  - a tela principal ficou focada na agenda do dia
+  - o fluxo de reserva avulsa abre um modal dedicado por sala
+  - titulo, categoria, data e horario da reserva deixaram de aparecer no topo como pseudo-filtros
 - `RoomsScreen` agora tambem permite cancelar a propria reserva avulsa ativa, sem tocar em reservas vinculadas a evento
 - se a leitura de `schedules` falhar por permissao/RLS, a agenda diaria continua carregando e apenas omite o resumo de escalas
 - o vinculo estrutural entre evento e sala nesta fase passa por `room_reservations.event_id`, sem introduzir `events.room_id`

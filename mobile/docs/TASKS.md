@@ -615,6 +615,27 @@ Contexto: eventos sao informativos para todos; escala e o fluxo operacional de q
   - mostrar badge `Evento` quando `room_reservations.event_id` estiver preenchido
   - mostrar cronograma simples separado das escalas vinculadas ao evento
 - [x] Permitir cancelamento da propria reserva avulsa sem cancelar reserva vinculada a evento
+- [x] Simplificar a UX de filtros e reserva na `RoomsScreen`
+  - remover do topo da tela os campos de `titulo`, `categoria`, `data` e `hora` quando eles estiverem servindo como pseudo-filtros
+  - manter na superficie principal apenas os filtros realmente necessarios para navegar pelas salas/agenda
+  - mover os dados da reserva para um fluxo dedicado acionado por `Reservar`
+  - esse fluxo pode abrir nova tela ou modal, desde que concentre:
+    - `titulo`
+    - `categoria`
+    - `data`
+    - `hora`
+  - objetivo de produto:
+    - limpar a UI
+    - deixar a tela mais minimalista e facil de entender
+    - reduzir confusao entre `filtro` e `formulario de criacao`
+  - checkpoint em 2026-05-25:
+    - implementacao conduzida em branch isolada
+    - extraidos e testados utilitarios puros do formulario de reserva em `src/utils/roomReservationForm.ts`
+    - adicionada regra utilitaria para cancelamento de reserva avulsa pela agenda do dia
+  - fechamento:
+    - `RoomsScreen` agora ficou centrada na agenda do dia
+    - o fluxo de `Reservar` abre um modal dedicado por sala
+    - o cancelamento da propria reserva avulsa continua disponivel dentro da agenda do card
 
 ---
 

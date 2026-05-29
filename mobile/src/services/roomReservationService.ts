@@ -34,6 +34,7 @@ export interface LinkedRoomScheduleSummary {
 export interface RoomDailyAgendaItem {
   id: string;
   roomId: string;
+  reservedBy: string;
   startAt: string;
   endAt: string;
   purpose: string | null;
@@ -305,6 +306,7 @@ export async function getRoomsDailyAgenda(dateKey: string) {
       roomAgenda.push({
         id: reservation.id,
         roomId: reservation.room_id,
+        reservedBy: reservation.reserved_by,
         startAt: reservation.start_at,
         endAt: reservation.end_at,
         purpose: reservation.purpose,
