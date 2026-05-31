@@ -101,8 +101,11 @@ export default function ManageMinistryMembersScreen() {
         setMinistries(next);
         if (!selectedMinistryId && next.length > 0) setSelectedMinistryId(next[0].id);
       }
-    } catch (error: any) {
-      Alert.alert("Erro", error.message ?? "Nao foi possivel carregar ministerios.");
+    } catch {
+      Alert.alert(
+        "Nao foi possivel carregar ministerios",
+        "Tente novamente em alguns instantes.",
+      );
     } finally {
       setIsLoadingMinistries(false);
     }
@@ -121,8 +124,11 @@ export default function ManageMinistryMembersScreen() {
 
       setMembers(membersResult.data ?? []);
       setRoles(rolesResult.data ?? []);
-    } catch (error: any) {
-      Alert.alert("Erro", error.message ?? "Nao foi possivel carregar os membros do ministerio.");
+    } catch {
+      Alert.alert(
+        "Nao foi possivel carregar os membros",
+        "Tente novamente em alguns instantes.",
+      );
     } finally {
       setIsLoadingMembers(false);
     }
@@ -134,7 +140,10 @@ export default function ManageMinistryMembersScreen() {
     setIsSearchingUsers(false);
 
     if (error) {
-      Alert.alert("Erro", error);
+      Alert.alert(
+        "Nao foi possivel buscar usuarios",
+        "Tente novamente em alguns instantes.",
+      );
       return;
     }
 
@@ -213,8 +222,11 @@ export default function ManageMinistryMembersScreen() {
       await runUserSearch(search);
       closeEditor();
       Alert.alert("Sucesso", selectedUser ? "Usuario adicionado ao ministerio." : "Membro atualizado com sucesso.");
-    } catch (error: any) {
-      Alert.alert("Erro", error.message ?? "Nao foi possivel salvar o membro.");
+    } catch {
+      Alert.alert(
+        "Nao foi possivel salvar o membro",
+        "Tente novamente em alguns instantes.",
+      );
     } finally {
       setIsSaving(false);
     }
@@ -237,7 +249,10 @@ export default function ManageMinistryMembersScreen() {
             setIsSaving(false);
 
             if (result.error) {
-              Alert.alert("Erro", result.error);
+              Alert.alert(
+                "Nao foi possivel remover o membro",
+                "Tente novamente em alguns instantes.",
+              );
               return;
             }
 

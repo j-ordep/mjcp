@@ -209,8 +209,8 @@ O modelo atual e:
 - A verdade atual do dominio esta nas migrations e no service layer.
 - `docs/TASKS.md` e `docs/ROADMAP.md` servem como mapa de trabalho, nao como fonte primaria.
 - A UX do modal de adicionar membro foi alinhada ao padrao do modal central de troca; o fluxo nao usa mais visual de bottom sheet nesse ponto.
-- O backend de notificacoes de swap foi preparado em migration local e depende de aplicacao no projeto Supabase para produzir notificacoes reais.
-- O backend de notificacao de `schedule.assigned` tambem foi preparado em migration local e depende da aplicacao remota para gerar a inbox completa.
+- O backend de notificacoes de swap ja esta operacional no projeto Supabase remoto e produz notificacoes reais na inbox in-app.
+- O backend de notificacao de `schedule.assigned` tambem ja esta operacional no remoto, completando a inbox em tempo real desta rodada.
 - Nao colocar observacoes, `notes` ou `note` em nenhum lugar da escala.
 - O acesso primario ao fluxo de trocas deve sair de `ScheduleScreen`, nao da Home.
 - A confirmacao de presenca e a solicitacao/cancelamento de troca nao usam mais alerts nativos de sucesso; o feedback principal agora e o proprio estado da interface.
@@ -232,4 +232,3 @@ O modelo atual e:
   - `20260427000118_add_event_category.sql`
   - `20260512000125_allow_event_managers_to_manage_event_setlists.sql`
   - `20260515000126_add_replace_event_setlist_rpc.sql`
-  - `20260522000128_add_schedule_assignment_notifications.sql`

@@ -398,6 +398,25 @@ test("getEvents queries all events ordered by start date", { concurrency: false 
   assert.deepEqual(calls.gte, []);
 });
 
+test("getUpcomingEvents hides technical backend errors behind a friendly fallback", { concurrency: false }, async () => {
+  const { supabaseMock } = createEventQueryMock({
+    error: {
+      message: 'new row violates row-level security policy for table "events"',
+    },
+  });
+  const { getUpcomingEvents } = loadServiceModule<EventService>(
+    "../src/services/eventService",
+    supabaseMock,
+  );
+
+  const result = await getUpcomingEvents();
+
+  assert.equal(
+    result.error,
+    "Nao foi possivel carregar os eventos. Tente novamente em alguns instantes.",
+  );
+});
+
 test("getEventById queries a single event by id", { concurrency: false }, async () => {
   const { calls, supabaseMock } = createEventQueryMock({
     data: {

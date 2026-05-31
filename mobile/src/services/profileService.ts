@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { UserProfile } from '../types/models';
 import { mapSearchableUsers, type SearchableUserLike } from '../utils/ministryMappers';
+import { getGenericUserFacingError, getRawErrorMessage } from '../utils/userFacingErrors';
 
 export interface SearchableProfile {
   id: string;
@@ -26,16 +27,7 @@ interface EventPermissionProfileLike extends SearchableUserLike {
 }
 
 function getErrorMessage(error: unknown) {
-  if (error instanceof Error) return error.message;
-  if (
-    typeof error === 'object' &&
-    error !== null &&
-    'message' in error &&
-    typeof error.message === 'string'
-  ) {
-    return error.message;
-  }
-  return 'Erro inesperado.';
+  return getRawErrorMessage(error) || 'Erro inesperado.';
 }
 
 function normalizeUserProfile(data: Partial<UserProfile> | null) {
@@ -110,9 +102,15 @@ export async function getProfile(userId: string) {
 
     if (error) throw error;
     return { profile: normalizeUserProfile(data as Partial<UserProfile> | null), error: null };
-  } catch (error: any) {
-    console.error('Erro ao buscar perfil:', error.message);
-    return { profile: null, error: error.message };
+  } catch (error: unknown) {
+    console.error('Erro ao buscar perfil:', getRawErrorMessage(error));
+    return {
+      profile: null,
+      error: getGenericUserFacingError(
+        error,
+        'Nao foi possivel carregar seu perfil. Tente novamente em alguns instantes.',
+      ),
+    };
   }
 }
 
@@ -125,9 +123,14 @@ export async function updateProfile(userId: string, updates: Partial<UserProfile
 
     if (error) throw error;
     return { error: null };
-  } catch (error: any) {
-    console.error('Erro ao atualizar perfil:', error.message);
-    return { error: error.message };
+  } catch (error: unknown) {
+    console.error('Erro ao atualizar perfil:', getRawErrorMessage(error));
+    return {
+      error: getGenericUserFacingError(
+        error,
+        'Nao foi possivel salvar seu perfil. Tente novamente em alguns instantes.',
+      ),
+    };
   }
 }
 
@@ -183,7 +186,14 @@ export async function listProfilesPage({
       error: null,
     };
   } catch (error: unknown) {
-    return { data: null, hasMore: false, error: getErrorMessage(error) };
+    return {
+      data: null,
+      hasMore: false,
+      error: getGenericUserFacingError(
+        error,
+        'Nao foi possivel carregar os perfis. Tente novamente em alguns instantes.',
+      ),
+    };
   }
 }
 
@@ -210,7 +220,14 @@ export async function listProfilesForEventPermissionPage(
       error: null,
     };
   } catch (error: unknown) {
-    return { data: null, hasMore: false, error: getErrorMessage(error) };
+    return {
+      data: null,
+      hasMore: false,
+      error: getGenericUserFacingError(
+        error,
+        'Nao foi possivel carregar os perfis. Tente novamente em alguns instantes.',
+      ),
+    };
   }
 }
 
@@ -236,7 +253,13 @@ export async function getProfilesByIds(userIds: string[]) {
       error: null,
     };
   } catch (error: unknown) {
-    return { data: null, error: getErrorMessage(error) };
+    return {
+      data: null,
+      error: getGenericUserFacingError(
+        error,
+        'Nao foi possivel carregar os perfis. Tente novamente em alguns instantes.',
+      ),
+    };
   }
 }
 
@@ -262,6 +285,12 @@ export async function setProfileEventManagementPermission(
       error: null,
     };
   } catch (error: unknown) {
-    return { data: null, error: getErrorMessage(error) };
+    return {
+      data: null,
+      error: getGenericUserFacingError(
+        error,
+        'Nao foi possivel atualizar esta permissao. Tente novamente em alguns instantes.',
+      ),
+    };
   }
 }

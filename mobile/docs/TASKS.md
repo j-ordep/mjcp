@@ -556,13 +556,6 @@ Contexto: eventos sao informativos para todos; escala e o fluxo operacional de q
     - copy final de titulo/corpo por tipo
     - se elegiveis devem receber notificacao de encerramento quando outra pessoa assumir a vaga
 
-  - Pendencia operacional:
-    - aplicar no Supabase remoto as migrations locais ainda pendentes:
-      - `20260412000110_add_swap_request_notifications.sql`
-      - `20260412000111_fix_schedule_rls_recursion.sql`
-      - `20260412000112_reset_assignment_confirmation_on_swap_request.sql`
-      - `20260522000128_add_schedule_assignment_notifications.sql`
-
 - [x] Integrar realtime para inbox de notificacoes
   - `notifications` agora tem tabela, modal real, badge de nao lidas e assinatura Supabase Realtime por `user_id`
 
