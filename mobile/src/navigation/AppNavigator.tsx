@@ -17,6 +17,7 @@ import EventDetailsScreen from "../screens/app/EventDetailsScreen";
 import EventsScreen from "../screens/app/EventsScreen";
 import ManageMinistryMembersScreen from "../screens/app/ManageMinistryMembersScreen";
 import ManageEventPermissionsScreen from "../screens/app/ManageEventPermissionsScreen";
+import MusicDetailsScreen from "../screens/app/MusicDetailsScreen";
 import ScheduleScreen from "../screens/app/ScheduleScreen";
 import ProfileScreen from "../screens/app/ProfileScreen";
 import SwapRequestsScreen from "../screens/app/SwapRequestsScreen";
@@ -59,6 +60,9 @@ export type RootStackParamList = {
   CreateSchedule: undefined;
   EditSchedule: {
     scheduleId: string;
+  };
+  MusicDetails: {
+    songId: string;
   };
   ManageMinistryMembers:
     | {
@@ -221,6 +225,10 @@ export default function AppNavigator() {
             <Stack.Screen
               name="EditSchedule"
               component={EditScheduleScreen}
+            />
+            <Stack.Screen
+              name="MusicDetails"
+              component={MusicDetailsScreen}
             />
             <Stack.Screen
               name="ManageMinistryMembers"

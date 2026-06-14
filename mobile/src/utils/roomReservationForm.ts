@@ -1,4 +1,8 @@
-import { getDefaultEndAt } from "./eventDate";
+import {
+  buildUtcRangeFromLocalForm,
+  createLocalDateTime,
+  getDefaultEndAt,
+} from "./eventDate";
 
 export const DEFAULT_ROOM_RESERVATION_START_TIME = "19:00";
 
@@ -74,28 +78,21 @@ export function buildRoomReservationWindow(
   startTime: string,
   endTime: string,
 ) {
-  if (
-    !isValidRoomReservationTimeValue(startTime) ||
-    !isValidRoomReservationTimeValue(endTime)
-  ) {
+  if (!isValidRoomReservationTimeValue(startTime) || !isValidRoomReservationTimeValue(endTime)) {
     return null;
   }
 
-  const startDate = new Date(`${dateKey}T${startTime}:00`);
-  const endDate = new Date(`${dateKey}T${endTime}:00`);
+  const result = buildUtcRangeFromLocalForm({
+    dateKey,
+    startTime,
+    endTime,
+  });
 
-  if (
-    Number.isNaN(startDate.getTime()) ||
-    Number.isNaN(endDate.getTime()) ||
-    endDate.getTime() <= startDate.getTime()
-  ) {
+  if (!result.data || result.error) {
     return null;
   }
 
-  return {
-    startAt: startDate.toISOString(),
-    endAt: endDate.toISOString(),
-  };
+  return result.data;
 }
 
 export function getDefaultRoomReservationEndTime(
@@ -103,7 +100,7 @@ export function getDefaultRoomReservationEndTime(
   startTime = DEFAULT_ROOM_RESERVATION_START_TIME,
 ) {
   return new Date(
-    getDefaultEndAt(new Date(`${dateKey}T${startTime}:00`)),
+    getDefaultEndAt(createLocalDateTime(dateKey, startTime)),
   )
     .toLocaleTimeString("pt-BR", {
       hour: "2-digit",

@@ -1,27 +1,26 @@
 # MJCP Mobile - Tarefas e Melhorias (Backlog)
 
-Data: 2026-04-05 (America/Sao_Paulo)
+Data: 2026-06-14 (America/Sao_Paulo)
 
 Referencia rapida:
-- plano consolidado da proxima rodada: `docs/NEXT_STEPS_PLAN.md`
-- plano da rodada para transformar o app em POC usavel: `docs/POC_USABLE_PLAN.md`
+- backlog vivo desta rodada: `docs/TASKS.md`
+- contexto atual real do app: `docs/CONTEXT.md`
+- horizonte de produto: `docs/ROADMAP.md`
 - plano consolidado do core de eventos: `docs/EVENT_CORE_PLAN.md`
-- plano tecnico da fase 1 do core de eventos: `docs/EVENT_CORE_PHASE1_IMPLEMENTATION_PLAN.md`
-- plano tecnico da fase 2 do core de eventos: `docs/EVENT_CORE_PHASE2_IMPLEMENTATION_PLAN.md`
-- plano pequeno da agenda diaria de salas: `docs/ROOMS_SCREEN_DAY_AGENDA_PLAN.md`
+- modelo de escalas e dominio: `docs/scheduling_model.md`
+- referencia estrutural do sistema: `docs/system_design.md`
 - referencia da mudanca de read-only para bloqueio em `start_at`: `docs/SCHEDULE_READ_ONLY_BY_HOUR_PLAN.md`
 - ideia futura de cadastro de visitante: `docs/VISITOR_REGISTRATION_IDEA.md`
 - ideia futura de fluxo de escola biblica: `docs/BIBLE_SCHOOL_IDEA.md`
 - historico documental e registros de rodadas: `docs/history/README.md`
+- planos arquivados de rodadas anteriores: `docs/history/`
 - aplicacao remota no Supabase: `docs/SUPABASE_REMOTE_RUNBOOK.md`
 
-Objetivo imediato: sair do prototipo e fechar o fluxo principal de "Criacao de Escalas" com regra:
-- Admin pode criar/gerenciar tudo
-- Lider so cria/gerencia escalas da(s) sua(s) area(s)/ministerio(s)
-- Lider tambem pode se auto-escalar no proprio ministerio, desde que respeite as mesmas validacoes de membro/funcao da escala
-- Membro apenas visualiza e interage com o que for dele (confirmar/trocar)
-- Eventos sao apenas informativos; a operacao de escala nao deve depender da tela de evento
-- Datas nao podem ficar em branco em formularios; quando nao houver valor inicial, o padrao deve ser a data/hora atual do sistema no momento da criacao/carregamento do formulario, ja selecionada no campo
+Objetivo imediato desta rodada:
+- aterrar bootstrap/env e reduzir falhas previsiveis logo na abertura do app
+- manter o fluxo principal de eventos + escalas consistente em datas, timezone e read-only
+- fechar a proxima feature visivel de baixo risco no dominio de musicas
+- manter `docs/TASKS.md`, `docs/CONTEXT.md` e `docs/ROADMAP.md` como fonte viva, arquivando planos antigos em `docs/history/`
 
 Atualizacao de hygiene/POC (2026-05-15):
 - [x] Remover fallbacks externos de avatar do fluxo de perfil/home
@@ -32,14 +31,20 @@ Atualizacao de hygiene/POC (2026-05-15):
 - [x] Resetar `CalendarModal` ao reabrir apos cancelamento
 - [x] Travar `BlockDatesScreen` durante salvamento
 - [x] Tornar a troca completa da setlist atomica via RPC (`20260515000126_add_replace_event_setlist_rpc.sql`)
-- [ ] Padronizar mensagens de erro para nao expor texto bruto do Supabase diretamente em alerts
+- [x] Padronizar mensagens de erro para nao expor texto bruto do Supabase diretamente em alerts
+  - fechamento:
+    - `userFacingErrors` centraliza sanitizacao para auth, perfil e eventos
+    - a UX continua em `Alert.alert`, mas sem vazar texto tecnico do backend para o usuario final
 - [x] Limpar strings com mojibake/encoding quebrado nas telas e services mais visiveis
   - Atualizacao em 2026-05-20:
     - varredura local cobriu `src`, `tests`, `docs` e `supabase`
     - strings corrompidas restantes foram normalizadas em testes/documentacao e na tela de gestao de membros
-- [~] Adicionar guardrails explicitos para `.env` publico incompleto (`EXPO_PUBLIC_SUPABASE_*`, `EXPO_PUBLIC_YOUTUBE_API_KEY`)
+- [x] Adicionar guardrails explicitos para `.env` publico incompleto (`EXPO_PUBLIC_SUPABASE_*`, `EXPO_PUBLIC_YOUTUBE_API_KEY`)
   - ja fechado parcialmente para `EXPO_PUBLIC_YOUTUBE_API_KEY`: `YoutubeCarousel` ignora placeholders publicos e nao faz fetch inutil sem chave real
-  - ainda falta endurecer validacoes/feedback para `EXPO_PUBLIC_SUPABASE_*` e outros pontos criticos de bootstrap
+  - fechamento:
+    - `App.tsx` agora valida `EXPO_PUBLIC_SUPABASE_URL` e `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` antes de montar o fluxo autenticado
+    - o app mostra tela amigavel de configuracao em vez de quebrar silenciosamente no bootstrap
+    - `src/lib/publicEnv.ts` virou o contrato unico para leitura segura desse env publico
 
 ---
 
@@ -79,9 +84,6 @@ Atualizacao de hygiene/POC (2026-05-15):
   - Atualizacao em 2026-04-13:
     - nova migration local `20260413000113_restrict_member_assignment_status_updates.sql`
     - a policy do proprio membro agora exige que o evento ainda esteja antes de `start_at`
-  - Pendencia operacional:
-    - aplicar no Supabase remoto a migration que alinhou a janela final de read-only em `start_at`
-
 - [~] Validacoes de data no banco
   - [x] `events`: `end_at` deve ser > `start_at` quando `end_at` nao for nulo
   - [x] `room_reservations`: `end_at > start_at`
@@ -97,8 +99,6 @@ Atualizacao de hygiene/POC (2026-05-15):
   - [x] `schedule_assignments (user_id, status)`
     - Atualizacao em 2026-04-13:
       - nova migration local `20260413000114_add_schedule_assignment_status_index.sql`
-    - Pendencia operacional:
-      - aplicar a migration nova no Supabase remoto
   - [ ] `schedules (event_id, ministry_id)` (ja existe UNIQUE, mas pode precisar index explicito dependendo do Postgres/plano)
   - [ ] `events (start_at)` ja existe; avaliar `events (end_at)`
 
@@ -503,7 +503,7 @@ Contexto: eventos sao informativos para todos; escala e o fluxo operacional de q
     - `EventDetailsScreen` ja usa props tipadas do navigator
     - `EventDetails` no navigator ja aceita payload menor do que `Event`, reduzindo casts frageis no fluxo de escalas
 
-- [ ] Padronizar timezone e datas
+- [~] Padronizar timezone e datas
   - Hoje eventos sao criados usando `new Date(...).toISOString()` (ok para TIMESTAMPTZ)
   - Definir padrao:
     - app assume fuso local da igreja
@@ -514,16 +514,20 @@ Contexto: eventos sao informativos para todos; escala e o fluxo operacional de q
     - a regra de read-only agora bloqueia exatamente em `start_at`
     - `start_at` deve ser tratado como instante absoluto no app e no banco
     - ver referencia de implementacao em `docs/SCHEDULE_READ_ONLY_BY_HOUR_PLAN.md`
+  - Atualizacao em 2026-06-14:
+    - `src/utils/eventDate.ts` agora concentra a conversao `formulario local -> UTC ISO` em `buildUtcRangeFromLocalForm(...)`
+    - `CreateEventScreen` deixou de reidratar a data por `split("T")` e passou a usar o valor local formatado do `Date`
+    - `roomReservationForm` reaproveita o mesmo contrato base para montar janelas locais em UTC
+  - Ainda falta:
+    - aplicar o mesmo padrao em outros formularios que ainda criem/editem datas fora do fluxo principal
 
 ---
 
 ## P2 (Medio) - Notificacoes
 
-- [ ] Criar notificacao ao:
+- [~] Expandir notificacoes alem do fluxo operacional atual
   - [x] novo assignment criado
     - notificacao direta ao usuario escalado quando entrar em uma escala
-  - evento privado criado/atualizado para audiencia selecionada
-    - usuarios escolhidos manualmente devem poder receber notificacao no futuro
   - [x] swap request criado/atualizado
   - [x] swap request criado para:
     - membros elegiveis do mesmo ministerio e mesma funcao
@@ -532,15 +536,17 @@ Contexto: eventos sao informativos para todos; escala e o fluxo operacional de q
     - quando o pedido for criado
     - quando alguem assumir a troca
     - quando o pedido for cancelado
-  - reserva de sala criada/cancelada
-  - (opcional) confirmacao/declinio
+  - [ ] evento privado criado/atualizado para audiencia selecionada
+    - usuarios escolhidos manualmente devem poder receber notificacao no futuro
+  - [ ] reserva de sala criada/cancelada
+  - [ ] (opcional) confirmacao/declinio
 
   - Estado atual confirmado no codigo:
-    - existe migration local para emitir notificacoes de swap no backend:
+    - o backend remoto ja emite notificacoes de swap no backend:
       - `created`
       - `accepted`
       - `cancelled`
-    - existe migration local para emitir notificacao de `schedule.assigned` ao criar assignment
+    - o backend remoto tambem emite notificacao de `schedule.assigned` ao criar assignment
     - existe `notificationService` para:
       - listar notificacoes
       - marcar uma como lida
@@ -634,10 +640,29 @@ Contexto: eventos sao informativos para todos; escala e o fluxo operacional de q
 
 ## P2 (Medio) - Musicas e Setlists
 
-- [ ] Implementar tela de musica individual (letra/cifra via URL)
+- [x] Implementar tela de musica individual (letra/cifra via URL)
+  - `MusicDetailsScreen` agora abre a partir do catalogo e do proximo setlist
+  - o detalhe mostra metadados basicos e link externo amigavel quando `lyrics_url` existir
 - [x] Implementar setlist por evento (`event_setlists` + ordenacao)
   - entregue em modo simples no `MusicScreen`, focado no proximo evento
   - permissao de escrita alinhada por migration com `can_manage_events`
+
+---
+
+## Higiene documental
+
+- [x] Arquivar planos antigos que nao orientam mais a execucao presente
+  - movidos para `docs/history/`:
+    - `NEXT_STEPS_PLAN.md`
+    - `POC_USABLE_PLAN.md`
+    - `EVENT_CORE_PHASE1_IMPLEMENTATION_PLAN.md`
+    - `EVENT_CORE_PHASE2_IMPLEMENTATION_PLAN.md`
+    - `ROOMS_SCREEN_DAY_AGENDA_PLAN.md`
+- [~] Manter a raiz de `docs/` restrita a backlog vivo, contexto atual, horizonte de produto e referencias operacionais
+  - concluido nesta rodada:
+    - `TASKS.md`, `CONTEXT.md` e `ROADMAP.md` passam a refletir o estado real mais recente
+  - ainda revisar futuramente:
+    - se `EVENT_CORE_PLAN.md` continua vivo na raiz ou se tambem deve virar historico consolidado
 
 ---
 

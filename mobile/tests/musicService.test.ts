@@ -6,6 +6,8 @@ type MusicService = typeof import("../src/services/musicService");
 
 function createSongsMock(config: {
   songs?: unknown[];
+  songById?: unknown | null;
+  songByIdError?: { message: string } | null;
   eventSetlists?: unknown[];
   eventSetlistDeleteError?: { message: string } | null;
   eventSetlistInsertError?: { message: string } | null;
@@ -13,6 +15,7 @@ function createSongsMock(config: {
 }) {
   const calls = {
     songsOrders: [] as unknown[][],
+    songsEqs: [] as unknown[][],
     eventSetlistSelects: [] as unknown[][],
     eventSetlistOrders: [] as unknown[][],
     eventSetlistEqs: [] as unknown[][],
@@ -22,18 +25,41 @@ function createSongsMock(config: {
   };
 
   let eventSetlistOperation: "select" | "delete" | "insert" | null = null;
+  let songsOperation: "list" | "single" = "list";
 
   const songsBuilder: any = {
     select: () => songsBuilder,
     order: (...args: unknown[]) => {
+      songsOperation = "list";
       calls.songsOrders.push(args);
       return songsBuilder;
     },
-    then: (onfulfilled: (value: { data: unknown[]; error: null }) => unknown) =>
-      Promise.resolve({
+    eq: (...args: unknown[]) => {
+      songsOperation = "single";
+      calls.songsEqs.push(args);
+      return songsBuilder;
+    },
+    single: () => songsBuilder,
+    then: (
+      onfulfilled: (
+        value:
+          | { data: unknown[]; error: null }
+          | { data: unknown; error: { message: string } | null },
+      ) => unknown,
+      onrejected?: (reason: unknown) => unknown,
+    ) => {
+      if (songsOperation === "single") {
+        return Promise.resolve({
+          data: config.songById ?? null,
+          error: config.songByIdError ?? null,
+        }).then(onfulfilled, onrejected);
+      }
+
+      return Promise.resolve({
         data: config.songs ?? [],
         error: null,
-      }).then(onfulfilled),
+      }).then(onfulfilled, onrejected);
+    },
   };
 
   const eventSetlistsBuilder: any = {
@@ -150,6 +176,32 @@ test("getSongsCatalog loads songs ordered by title", async () => {
   assert.equal(result.error, null);
   assert.equal(result.data?.[0]?.title, "A Ele a Gloria");
   assert.deepEqual(calls.songsOrders[0], ["title", { ascending: true }]);
+});
+
+test("getSongById loads a single song by id", async () => {
+  const { calls, supabaseMock } = createSongsMock({
+    songById: {
+      id: "song-42",
+      title: "Meu Refugio",
+      artist: "Equipe",
+      key: "E",
+      bpm: 76,
+      category: "louvor",
+      lyrics_url: "https://example.com/refugio",
+      created_at: "2026-05-01T00:00:00.000Z",
+    },
+  });
+
+  const { getSongById } = loadServiceModule<MusicService>(
+    "../src/services/musicService",
+    supabaseMock,
+  );
+
+  const result = await getSongById("song-42");
+
+  assert.equal(result.error, null);
+  assert.equal(result.data?.title, "Meu Refugio");
+  assert.deepEqual(calls.songsEqs[0], ["id", "song-42"]);
 });
 
 test("getNextUpcomingEventSetlist returns the next event with ordered songs", async () => {

@@ -1,5 +1,9 @@
 import { supabase } from "../lib/supabase";
 import type { Event, Song } from "../types/models";
+import {
+  getGenericUserFacingError,
+  getRawErrorMessage,
+} from "../utils/userFacingErrors";
 import { getUpcomingEvents } from "./eventService";
 
 export interface EventSetlistSong {
@@ -73,6 +77,32 @@ export async function getSongsCatalog() {
     };
   } catch (error: unknown) {
     return { data: null, error: getErrorMessage(error) };
+  }
+}
+
+export async function getSongById(songId: string) {
+  try {
+    const { data, error } = await supabase
+      .from("songs")
+      .select("*")
+      .eq("id", songId)
+      .single();
+
+    if (error) throw error;
+
+    return {
+      data: data as Song,
+      error: null,
+    };
+  } catch (error: unknown) {
+    console.error("Erro ao buscar musica por id:", getRawErrorMessage(error));
+    return {
+      data: null,
+      error: getGenericUserFacingError(
+        error,
+        "Nao foi possivel carregar esta musica agora. Tente novamente em alguns instantes.",
+      ),
+    };
   }
 }
 

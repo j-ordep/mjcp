@@ -1,15 +1,15 @@
 # MJCP Mobile - Runbook de aplicacao remota no Supabase
 
-Data de consolidacao: 2026-04-27 (America/Sao_Paulo)
+Data de consolidacao: 2026-06-14 (America/Sao_Paulo)
 
-> Este arquivo organiza o que precisa ser aplicado no projeto Supabase remoto para alinhar o ambiente com o estado atual do repositorio.
+> Este arquivo registra a rodada de aplicacao remota e permanece como checklist historico/operacional das migrations mais sensiveis do projeto.
 > Fonte primaria: `supabase/migrations/*.sql`.
 
 ---
 
 ## 1. Objetivo desta rodada
 
-Aplicar no Supabase remoto as migrations locais pendentes que fecham o fluxo principal de escalas e trocas:
+Este foi o pacote de migrations usado para fechar o fluxo principal de escalas, trocas, setlist e inbox operacional no remoto:
 
 1. `20260412000111_fix_schedule_rls_recursion.sql`
 2. `20260412000112_reset_assignment_confirmation_on_swap_request.sql`
@@ -537,4 +537,4 @@ Este runbook nao cobre:
 - notificacoes futuras de evento privado e reserva de sala
 - proximas evolucoes de UI fora da tela informativa de eventos
 
-Esses itens continuam no backlog e no `docs/NEXT_STEPS_PLAN.md`.
+Esses itens continuam no backlog vivo em `docs/TASKS.md` e no horizonte de produto em `docs/ROADMAP.md`.

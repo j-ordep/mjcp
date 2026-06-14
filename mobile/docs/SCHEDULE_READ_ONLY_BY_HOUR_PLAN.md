@@ -164,7 +164,7 @@ Mudancas:
 
 Atualizar depois da implementacao:
 
-- `docs/NEXT_STEPS_PLAN.md`
+- `docs/ROADMAP.md`
 - `docs/TASKS.md`
 - `docs/CONTEXT.md`
 - `docs/scheduling_model.md`

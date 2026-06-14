@@ -6,6 +6,8 @@ import {
   Search,
   X,
 } from "lucide-react-native";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -17,6 +19,7 @@ import {
 import { Text, TextInput } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import DefaultButton from "../../components/button/DefaultButton";
+import type { RootStackParamList } from "../../navigation/AppNavigator";
 import { getSongsCatalog, getNextUpcomingEventSetlist, replaceEventSetlist } from "../../services/musicService";
 import { useAuthStore } from "../../stores/useAuthStore";
 import type { EventSetlistSong } from "../../services/musicService";
@@ -99,6 +102,8 @@ function SongMeta({ song }: { song: Song }) {
 }
 
 export default function MusicScreen() {
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { profile } = useAuthStore();
   const userCanManageEvents = canManageEvents(profile);
 
@@ -272,6 +277,10 @@ export default function MusicScreen() {
     });
   };
 
+  const openSongDetails = (songId: string) => {
+    navigation.navigate("MusicDetails", { songId });
+  };
+
   const handleSaveSetlist = async () => {
     if (!nextEvent) {
       return;
@@ -430,8 +439,10 @@ export default function MusicScreen() {
 
                 {nextSetlistSongs.length > 0 ? (
                   nextSetlistSongs.map((item) => (
-                    <View
+                    <TouchableOpacity
                       key={item.id}
+                      onPress={() => openSongDetails(item.song.id)}
+                      activeOpacity={0.8}
                       style={{
                         flexDirection: "row",
                         alignItems: "center",
@@ -463,7 +474,7 @@ export default function MusicScreen() {
                           {item.song.artist || "Sem artista"} · Tom {item.song_key || item.song.key || "-"}
                         </Text>
                       </View>
-                    </View>
+                    </TouchableOpacity>
                   ))
                 ) : (
                   <Text style={{ color: "#d1d5db", lineHeight: 20 }}>
@@ -640,13 +651,14 @@ export default function MusicScreen() {
                 <TouchableOpacity
                   key={song.id}
                   onPress={() => {
-                    if (!isEditingSetlist || alreadySelected) {
+                    if (isEditingSetlist && !alreadySelected) {
+                      addSongToDraft(song);
                       return;
                     }
 
-                    addSongToDraft(song);
+                    openSongDetails(song.id);
                   }}
-                  activeOpacity={isEditingSetlist && !alreadySelected ? 0.8 : 1}
+                  activeOpacity={0.8}
                   style={{
                     borderWidth: 1,
                     borderColor: alreadySelected ? "#d1fae5" : "#f3f4f6",

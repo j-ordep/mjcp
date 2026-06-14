@@ -41,10 +41,9 @@ import {
   toggleCalendarDateSelection,
 } from "../../utils/eventCalendarSelection";
 import {
-  createLocalDateTime,
+  buildUtcRangeFromLocalForm,
   formatLocalDateKey,
   formatTimeFromDate,
-  getDefaultEndAt,
   getNow,
 } from "../../utils/eventDate";
 import {
@@ -137,20 +136,12 @@ function isValidTimeValue(value: string) {
 }
 
 function buildSingleEventWindow(dateKey: string, time: string) {
-  if (!isValidTimeValue(time)) {
-    return null;
-  }
+  const result = buildUtcRangeFromLocalForm({
+    dateKey,
+    startTime: time,
+  });
 
-  const startAt = createLocalDateTime(dateKey, time);
-
-  if (Number.isNaN(startAt.getTime())) {
-    return null;
-  }
-
-  return {
-    startAt: startAt.toISOString(),
-    endAt: getDefaultEndAt(startAt).toISOString(),
-  };
+  return result.data;
 }
 
 function formatReservationSummary(room: RoomAvailability, currentEventId?: string) {
@@ -269,7 +260,7 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
     const minutes = String(date.getMinutes()).padStart(2, "0");
     setTime(`${hours}:${minutes}`);
 
-    const dateKey = event.start_at.split("T")[0];
+    const dateKey = formatLocalDateKey(date);
     setAllowMultipleDates(false);
     setSelectedDays({ [dateKey]: createCalendarSelectionMark() });
   };
