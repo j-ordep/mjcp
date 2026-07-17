@@ -22,6 +22,56 @@ Objetivo imediato desta rodada:
 - fechar a proxima feature visivel de baixo risco no dominio de musicas
 - manter `docs/TASKS.md`, `docs/CONTEXT.md` e `docs/ROADMAP.md` como fonte viva, arquivando planos antigos em `docs/history/`
 
+## Fila priorizada desta rodada (reconciliada em 2026-06-14)
+
+### Confirmado no codigo
+
+- [ ] P0 - Fechar brechas de permissao e escopo de dados antes de novas features
+  - travar autoelevacao via `profiles.role` e demais campos privilegiados; a policy antiga ainda permite `UPDATE` do proprio perfil e a trigger nova protege apenas `can_manage_events`
+  - filtrar `notifications` por `user_id` nas leituras e mutacoes do client (`listar`, `marcar uma`, `marcar todas`, `count`)
+  - [x] alinhar RPCs `SECURITY DEFINER` de eventos com bloqueio transacional antes de `start_at` (`save_event_with_optional_room_reservation` + `create_events_with_audiences`)
+  - alinhar RPCs `SECURITY DEFINER` de setlists com a mesma janela temporal das policies (`is_event_editable_before_start(...)`)
+  - restringir o `UPDATE` do proprio `schedule_assignment` a transicoes permitidas de status, em vez de confiar no `UPDATE` generico da linha inteira
+
+- [ ] P1 - Fechar lacunas visiveis do core atual
+  - religar o atalho `Trocas` na Home
+  - corrigir a aba `Minhas` em `SwapRequestsScreen`, que hoje mistura itens de terceiros nao pendentes
+  - propagar erro amigavel real de conflito/sala na `CreateEventScreen`, reaproveitando a sanitizacao ja existente no service layer
+  - decidir exclusao de evento: implementar o fluxo real ou alinhar a copy administrativa para nao prometer `excluir` sem CTA correspondente
+
+- [ ] P1 - Padronizar experiencia operacional das telas principais
+  - loading/error/empty states consistentes em `Home`, `Schedule`, `SwapRequests`, `Rooms`, `Music` e superfices administrativas mais visiveis
+  - manter `pull-to-refresh` e feedback de erro alinhados ao mesmo contrato visual
+  - expandir o contrato compartilhado de datas/timezone para formularios restantes fora do fluxo principal
+
+- [ ] P1 - Ampliar cobertura automatizada para os guardrails novos
+  - testes de `notificationService` e `useNotificationStore` cobrindo escopo por usuario
+  - testes de migrations para hardening de `profiles`, RPCs de eventos/setlists e transicoes de assignment
+  - ampliar cobertura dos services principais antes de abrir outra frente grande
+
+- [ ] P1 - Fechamento operacional remoto
+  - validar constraints `NOT VALID` no Supabase remoto apos saneamento/backfill dos dados historicos
+  - revisar tambem a limpeza de duplicidade legado antes de endurecer novas constraints
+
+### PENDENTE DE DEFINICAO
+
+- fluxo final de `swap_requests`:
+  - o modelo ainda carrega sinais de fluxo antigo (`to_user_id`, `to_assignment_id`, `reviewed_by`)
+  - falta decidir se continuamos somente com `primeiro elegivel assume` ou se havera aprovacao/alvo explicito em alguma etapa
+- politica final de conflitos e indisponibilidade:
+  - hoje continuam como warning operacional no app
+  - ainda falta decidir se algum caso vira bloqueio duro de produto/backend
+- notificacoes futuras fora do fluxo atual:
+  - evento privado para audiencia selecionada
+  - reserva de sala criada/cancelada
+  - copy final por tipo e necessidade de notificacao de encerramento para elegiveis remanescentes
+- estrategia futura de retencao/limpeza de escalas antigas
+
+### INFORMACAO INSUFICIENTE
+
+- estrategia oficial de testes automatizados em CI
+- decisao final sobre metadados extras no detalhe de evento (ex.: video/transmissao)
+
 Atualizacao de hygiene/POC (2026-05-15):
 - [x] Remover fallbacks externos de avatar do fluxo de perfil/home
 - [x] Remover CTA enganoso de troca de foto no perfil

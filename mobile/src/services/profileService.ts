@@ -41,8 +41,7 @@ function normalizeUserProfile(data: Partial<UserProfile> | null) {
   } as UserProfile;
 }
 
-function buildProfilesPageRequest(
-  selectClause: string,
+function buildProfilesPageRpcArgs(
   {
     query = '',
     page = 0,
@@ -53,26 +52,16 @@ function buildProfilesPageRequest(
   const normalizedQuery = query.trim();
   const safePage = Math.max(0, page);
   const safePageSize = Math.max(1, pageSize);
-  const from = safePage * safePageSize;
-  const to = from + safePageSize;
 
-  let request = supabase
-    .from('profiles')
-    .select(selectClause)
-    .order('full_name', { ascending: true })
-    .range(from, to);
-
-  for (const role of excludeRoles) {
-    request = request.neq('role', role);
-  }
-
-  if (normalizedQuery) {
-    request = request.or(
-      `full_name.ilike.%${normalizedQuery}%,email.ilike.%${normalizedQuery}%`,
-    );
-  }
-
-  return { request, safePageSize };
+  return {
+    args: {
+      p_query: normalizedQuery,
+      p_limit: safePageSize + 1,
+      p_offset: safePage * safePageSize,
+      p_excluded_roles: excludeRoles,
+    },
+    safePageSize,
+  };
 }
 
 function mapEventPermissionProfiles(rows: EventPermissionProfileLike[]) {
@@ -85,7 +74,13 @@ function mapEventPermissionProfiles(rows: EventPermissionProfileLike[]) {
 }
 
 function toSearchableUserRows(data: unknown) {
-  return (data ?? []) as unknown as SearchableUserLike[];
+  return ((data ?? []) as Partial<SearchableUserLike>[]).map((row) => ({
+    id: row.id ?? '',
+    full_name: row.full_name ?? null,
+    email: row.email ?? null,
+    avatar_url: row.avatar_url ?? null,
+    role: row.role ?? 'member',
+  })) as SearchableUserLike[];
 }
 
 function toEventPermissionProfileRows(data: unknown) {
@@ -162,17 +157,17 @@ export async function listProfilesPage({
   excludeRoles = [],
 }: ListProfilesPageOptions) {
   try {
-    const { request, safePageSize } = buildProfilesPageRequest(
-      'id,full_name,email,avatar_url,role',
-      {
-        query,
-        page,
-        pageSize,
-        excludeRoles,
-      },
-    );
+    const { args, safePageSize } = buildProfilesPageRpcArgs({
+      query,
+      page,
+      pageSize,
+      excludeRoles,
+    });
 
-    const { data, error } = await request;
+    const { data, error } = await supabase.rpc(
+      'search_visible_profiles',
+      args,
+    );
 
     if (error) throw error;
 
@@ -201,12 +196,12 @@ export async function listProfilesForEventPermissionPage(
   options: ListProfilesPageOptions,
 ) {
   try {
-    const { request, safePageSize } = buildProfilesPageRequest(
-      'id,full_name,email,avatar_url,role,can_manage_events',
-      options,
-    );
+    const { args, safePageSize } = buildProfilesPageRpcArgs(options);
 
-    const { data, error } = await request;
+    const { data, error } = await supabase.rpc(
+      'list_profiles_for_event_permissions',
+      args,
+    );
 
     if (error) throw error;
 
@@ -237,11 +232,12 @@ export async function getProfilesByIds(userIds: string[]) {
       return { data: [] as SearchableProfile[], error: null };
     }
 
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('id,full_name,email,avatar_url,role')
-      .in('id', userIds)
-      .order('full_name', { ascending: true });
+    const { data, error } = await supabase.rpc(
+      'get_visible_profiles_by_ids',
+      {
+        p_user_ids: userIds,
+      },
+    );
 
     if (error) throw error;
 

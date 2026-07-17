@@ -261,32 +261,20 @@ export async function createMultipleEvents(eventsData: Partial<Event>[]) {
       };
     });
 
-    const { data, error } = await supabase
-      .from('events')
-      .insert(normalizedEvents.map((eventData) => buildEventPayload(eventData)))
-      .select();
+    const { data, error } = await supabase.rpc(
+      'create_events_with_audiences',
+      {
+        p_events: normalizedEvents.map((eventData) => ({
+          ...buildEventPayload(eventData),
+          visible_to_user_ids:
+            eventData.is_public === false
+              ? eventData.visible_to_user_ids ?? []
+              : [],
+        })),
+      },
+    );
 
     if (error) throw error;
-
-    const audienceRows = (data ?? []).flatMap((event, index) => {
-      const normalizedEvent = normalizedEvents[index];
-      if (!normalizedEvent || normalizedEvent.is_public !== false) {
-        return [];
-      }
-
-      return (normalizedEvent.visible_to_user_ids ?? []).map((userId) => ({
-        event_id: event.id,
-        user_id: userId,
-      }));
-    });
-
-    if (audienceRows.length > 0) {
-      const { error: audienceError } = await supabase
-        .from('event_audiences')
-        .insert(audienceRows);
-
-      if (audienceError) throw audienceError;
-    }
 
     return { data: data as Event[], error: null };
   } catch (error: unknown) {

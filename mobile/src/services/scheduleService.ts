@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import type { AssignmentStatus, TableRow } from '../types/database.types';
+import { getProfilesByIds } from './profileService';
 import {
   countAssignmentsByStatus,
   isEventDateEditable,
@@ -92,6 +93,38 @@ export interface AssignmentWarningConflict {
 export type AssignmentWarning =
   | AssignmentWarningBlockedDate
   | AssignmentWarningConflict;
+
+interface VisibleProfile {
+  id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+}
+
+async function getVisibleProfileMap(userIds: string[]) {
+  const uniqueUserIds = Array.from(new Set(userIds.filter(Boolean)));
+  if (uniqueUserIds.length === 0) {
+    return { data: new Map<string, VisibleProfile>(), error: null };
+  }
+
+  const result = await getProfilesByIds(uniqueUserIds);
+  if (result.error) {
+    return { data: null, error: result.error };
+  }
+
+  return {
+    data: new Map(
+      (result.data ?? []).map((profile) => [
+        profile.id,
+        {
+          id: profile.id,
+          full_name: profile.full_name,
+          avatar_url: profile.avatar_url,
+        },
+      ]),
+    ),
+    error: null,
+  };
+}
 
 interface ScheduleContext {
   id: string;
@@ -813,17 +846,22 @@ export async function getUpcomingAllSchedules() {
           status,
           ministry_roles (
             name
-          ),
-          profiles (
-            full_name
           )
         )
       `)
       .order('id');
 
     if (error) throw error;
-    
+
     if (!data) return { data: [], error: null };
+
+    const schedules = data as UpcomingAllScheduleRow[];
+    const profileResult = await getVisibleProfileMap(
+      schedules.flatMap((schedule) =>
+        schedule.schedule_assignments.map((assignment) => assignment.user_id),
+      ),
+    );
+    if (profileResult.error) throw new Error(profileResult.error);
 
     const now = new Date().getTime();
     
@@ -831,7 +869,7 @@ export async function getUpcomingAllSchedules() {
     // Como aqui temos MÚLTIPLOS assignments por schedule, vamos achatar ou adaptar
     const formattedData: UpcomingSchedule[] = [];
     
-    (data as UpcomingAllScheduleRow[]).forEach((schedule) => {
+    schedules.forEach((schedule) => {
       const event = firstRelation(schedule.events);
       if (!event) return;
 
@@ -857,7 +895,7 @@ export async function getUpcomingAllSchedules() {
       } else {
         schedule.schedule_assignments.forEach((assignment) => {
           const role = firstRelation(assignment.ministry_roles);
-          const profile = firstRelation(assignment.profiles);
+          const profile = profileResult.data?.get(assignment.user_id) ?? null;
 
           formattedData.push({
             id: assignment.id,
@@ -1246,18 +1284,37 @@ export async function getAssignmentsByEvent(eventId: string): Promise<{ data: As
           ministries (
             name
           )
-        ),
-        profiles (
-          full_name,
-          avatar_url
         )
       `)
       // Filtra pelo event_id via o join !inner — forma robusta para PostgREST
       .eq('schedules.event_id', eventId);
 
     if (error) throw error;
-    // Cast via unknown: PostgREST infere arrays nos joins, interface reflete isso corretamente
-    return { data: (data as unknown) as AssignmentWithDetails[], error: null };
+
+    const assignments = (data ?? []) as unknown as AssignmentWithDetails[];
+    const profileResult = await getVisibleProfileMap(
+      assignments.map((assignment) => assignment.user_id),
+    );
+    if (profileResult.error) throw new Error(profileResult.error);
+
+    return {
+      data: assignments.map((assignment) => {
+        const profile = profileResult.data?.get(assignment.user_id) ?? null;
+
+        return {
+          ...assignment,
+          profiles: profile
+            ? [
+                {
+                  full_name: profile.full_name ?? 'Membro',
+                  avatar_url: profile.avatar_url,
+                },
+              ]
+            : null,
+        };
+      }),
+      error: null,
+    };
   } catch (error: unknown) {
     const message = getErrorMessage(error);
     console.error('Erro ao buscar escalados do evento:', message);
@@ -1485,57 +1542,54 @@ export async function getVisibleSwapRequests(
       ),
     );
 
-    const [assignmentResult, profileResult] = await Promise.all([
-      supabase
-        .from('schedule_assignments')
-        .select(
-          `
-          id,
-          schedule_id,
-          user_id,
-          role_id,
-          status,
-          profiles (
-            full_name,
-            avatar_url
+    const assignmentResult = await supabase
+      .from('schedule_assignments')
+      .select(
+        `
+        id,
+        schedule_id,
+        user_id,
+        role_id,
+        status,
+        ministry_roles (
+          name
+        ),
+        schedules!inner (
+          ministry_id,
+          event_id,
+          events!inner (
+            id,
+            title,
+            start_at
           ),
-          ministry_roles (
+          ministries!inner (
+            id,
             name
-          ),
-          schedules!inner (
-            ministry_id,
-            event_id,
-            events!inner (
-              id,
-              title,
-              start_at
-            ),
-            ministries!inner (
-              id,
-              name
-            )
           )
-        `,
         )
-        .in('id', fromAssignmentIds),
-      profileIds.length > 0
-        ? supabase.from('profiles').select('id,full_name').in('id', profileIds)
-        : Promise.resolve({ data: [], error: null }),
-    ]);
+      `,
+      )
+      .in('id', fromAssignmentIds);
 
     if (assignmentResult.error) throw assignmentResult.error;
-    if (profileResult.error) throw profileResult.error;
+
+    const assignmentRows = (assignmentResult.data ?? []) as SwapAssignmentContextRow[];
+    const profileResult = await getVisibleProfileMap([
+      ...profileIds,
+      ...assignmentRows.map((assignment) => assignment.user_id),
+    ]);
+    if (profileResult.error) throw new Error(profileResult.error);
 
     const assignmentMap = new Map(
-      ((assignmentResult.data ?? []) as SwapAssignmentContextRow[]).map((row) => [row.id, row]),
+      assignmentRows.map((row) => [row.id, row]),
     );
-    const profileMap = new Map(
-      ((profileResult.data ?? []) as SwapProfileRow[]).map((row) => [row.id, row]),
-    );
+    const profileMap = profileResult.data ?? new Map<string, VisibleProfile>();
 
     const mapped = rows.map<SwapRequestReviewItem>((row) => {
       const assignment = assignmentMap.get(row.from_assignment_id) ?? null;
-      const assignmentProfile = assignment?.profiles ? firstRelation(assignment.profiles) : null;
+      const assignmentProfile = assignment
+        ? profileMap.get(assignment.user_id) ?? null
+        : null;
       const assignmentRole = assignment?.ministry_roles
         ? firstRelation(assignment.ministry_roles)
         : null;
@@ -1663,10 +1717,6 @@ export async function getSwapCandidatesForAssignment(assignmentId: string) {
       .select(
         `
         user_id,
-        profiles!inner (
-          full_name,
-          avatar_url
-        ),
         ministry_member_roles!inner (
           role_id
         )
@@ -1678,20 +1728,14 @@ export async function getSwapCandidatesForAssignment(assignmentId: string) {
 
     if (error) throw error;
 
-    const mapped: SwapCandidateOption[] = ((data ?? []) as {
-      user_id: string;
-      profiles:
-        | {
-            full_name: string | null;
-            avatar_url: string | null;
-          }
-        | {
-            full_name: string | null;
-            avatar_url: string | null;
-          }[]
-        | null;
-    }[]).map((row) => {
-      const profile = firstRelation(row.profiles);
+    const candidates = (data ?? []) as { user_id: string }[];
+    const profileResult = await getVisibleProfileMap(
+      candidates.map((candidate) => candidate.user_id),
+    );
+    if (profileResult.error) throw new Error(profileResult.error);
+
+    const mapped: SwapCandidateOption[] = candidates.map((row) => {
+      const profile = profileResult.data?.get(row.user_id) ?? null;
       return {
         user_id: row.user_id,
         full_name: profile?.full_name ?? 'Membro',
@@ -2056,10 +2100,6 @@ export async function getMinistryMembersOptions(ministryId: string) {
       .from('ministry_members')
       .select(`
         user_id,
-        profiles!inner (
-          full_name,
-          avatar_url
-        ),
         ministry_member_roles (
           role_id
         )
@@ -2068,8 +2108,14 @@ export async function getMinistryMembersOptions(ministryId: string) {
 
     if (error) throw error;
 
-    const formatted: MinistryMemberOption[] = ((data ?? []) as MinistryMemberOptionRow[]).map((row) => {
-      const profile = firstRelation(row.profiles);
+    const members = (data ?? []) as MinistryMemberOptionRow[];
+    const profileResult = await getVisibleProfileMap(
+      members.map((member) => member.user_id),
+    );
+    if (profileResult.error) throw new Error(profileResult.error);
+
+    const formatted: MinistryMemberOption[] = members.map((row) => {
+      const profile = profileResult.data?.get(row.user_id) ?? null;
 
       return {
         user_id: row.user_id,
@@ -2094,10 +2140,6 @@ export async function getScheduleAssignmentsDetailed(scheduleId: string) {
         user_id,
         role_id,
         status,
-        profiles (
-          full_name,
-          avatar_url
-        ),
         ministry_roles (
           name
         )
@@ -2107,8 +2149,14 @@ export async function getScheduleAssignmentsDetailed(scheduleId: string) {
 
     if (error) throw error;
 
-    const formatted: ScheduleAssignmentDetailed[] = ((data ?? []) as ScheduleAssignmentDetailedRow[]).map((row) => {
-      const profile = firstRelation(row.profiles);
+    const assignments = (data ?? []) as ScheduleAssignmentDetailedRow[];
+    const profileResult = await getVisibleProfileMap(
+      assignments.map((assignment) => assignment.user_id),
+    );
+    if (profileResult.error) throw new Error(profileResult.error);
+
+    const formatted: ScheduleAssignmentDetailed[] = assignments.map((row) => {
+      const profile = profileResult.data?.get(row.user_id) ?? null;
       const role = firstRelation(row.ministry_roles);
 
       return {
