@@ -3,10 +3,8 @@ import { searchProfiles, type SearchableProfile } from "./profileService";
 import type { TableRow } from "../types/database.types";
 import { Ministry } from "../types/models";
 import {
-  extractAssignmentIds,
   firstRelation,
   mapMinistryMemberWithCapabilities,
-  mapUserMinistries,
 } from "../utils/ministryMappers";
 
 export interface UserMinistry extends Ministry {
@@ -87,10 +85,6 @@ interface MinistryMemberDetailedRow {
       }[]
     | null;
   ministry_member_roles: MinistryMemberCapabilityRow[] | null;
-}
-
-interface MinistryMemberAssignmentRow {
-  id: string;
 }
 
 function getErrorMessage(error: unknown) {
@@ -256,46 +250,12 @@ export async function updateMinistryMemberLeaderStatus(memberId: string, isLeade
 
 export async function removeUserFromMinistry(memberId: string) {
   try {
-    const { data: member, error: memberError } = await supabase
-      .from("ministry_members")
-      .select("id,ministry_id,user_id")
-      .eq("id", memberId)
-      .single<Pick<TableRow<"ministry_members">, "id" | "ministry_id" | "user_id">>();
-
-    if (memberError) throw memberError;
-
-    const { data: assignments, error: assignmentsError } = await supabase
-      .from("schedule_assignments")
-      .select(
-        `
-        id,
-        schedules!inner (
-          ministry_id
-        )
-      `,
-      )
-      .eq("user_id", member.user_id)
-      .eq("schedules.ministry_id", member.ministry_id);
-
-    if (assignmentsError) throw assignmentsError;
-
-    const assignmentIds = ((assignments ?? []) as MinistryMemberAssignmentRow[]).map(
-      (assignment) => assignment.id,
+    const { error } = await supabase.rpc(
+      "remove_ministry_member_preserving_history",
+      {
+        p_member_id: memberId,
+      },
     );
-
-    if (assignmentIds.length > 0) {
-      const { error: deleteAssignmentsError } = await supabase
-        .from("schedule_assignments")
-        .delete()
-        .in("id", assignmentIds);
-
-      if (deleteAssignmentsError) throw deleteAssignmentsError;
-    }
-
-    const { error } = await supabase
-      .from("ministry_members")
-      .delete()
-      .eq("id", memberId);
 
     if (error) throw error;
 
