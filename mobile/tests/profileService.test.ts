@@ -93,12 +93,38 @@ function createProfilePermissionRpcMock(response: {
   };
 }
 
+function createProfilesRpcMock(response: {
+  data?: unknown[];
+  error?: { message: string } | null;
+}) {
+  const calls = {
+    from: [] as string[],
+    rpc: [] as Array<{ fn: string; args: Record<string, unknown> }>,
+  };
+
+  return {
+    calls,
+    supabaseMock: {
+      from: (table: string) => {
+        calls.from.push(table);
+        throw new Error(`Unexpected direct table access: ${table}`);
+      },
+      rpc: async (fn: string, args: Record<string, unknown>) => {
+        calls.rpc.push({ fn, args });
+        return {
+          data: response.data ?? [],
+          error: response.error ?? null,
+        };
+      },
+    },
+  };
+}
+
 test("listProfilesPage loads the first page with 10 members and reports hasMore", async () => {
-  const { calls, supabaseMock } = createProfilesQueryMock({
+  const { calls, supabaseMock } = createProfilesRpcMock({
     data: Array.from({ length: 11 }, (_, index) => ({
       id: `user-${index + 1}`,
       full_name: `Membro ${index + 1}`,
-      email: `membro${index + 1}@example.com`,
       avatar_url: null,
       role: "member",
     })),
@@ -114,14 +140,21 @@ test("listProfilesPage loads the first page with 10 members and reports hasMore"
   assert.equal(result.error, null);
   assert.equal(result.hasMore, true);
   assert.equal(result.data?.length, 10);
-  assert.equal(calls.from[0], "profiles");
-  assert.deepEqual(calls.neq, []);
-  assert.deepEqual(calls.range[0], [0, 10]);
-  assert.deepEqual(calls.or, []);
+  assert.deepEqual(calls.from, []);
+  assert.deepEqual(calls.rpc[0], {
+    fn: "search_visible_profiles",
+    args: {
+      p_query: "",
+      p_limit: 11,
+      p_offset: 0,
+      p_excluded_roles: [],
+    },
+  });
+  assert.equal(result.data?.[0]?.email, null);
 });
 
 test("listProfilesPage can exclude admin profiles when requested", async () => {
-  const { calls, supabaseMock } = createProfilesQueryMock({
+  const { calls, supabaseMock } = createProfilesRpcMock({
     data: [],
   });
 
@@ -137,16 +170,23 @@ test("listProfilesPage can exclude admin profiles when requested", async () => {
   });
 
   assert.equal(result.error, null);
-  assert.deepEqual(calls.neq[0], ["role", "admin"]);
+  assert.deepEqual(calls.rpc[0], {
+    fn: "search_visible_profiles",
+    args: {
+      p_query: "",
+      p_limit: 11,
+      p_offset: 0,
+      p_excluded_roles: ["admin"],
+    },
+  });
 });
 
 test("searchProfiles keeps admin profiles available for event audiences", async () => {
-  const { calls, supabaseMock } = createProfilesQueryMock({
+  const { calls, supabaseMock } = createProfilesRpcMock({
     data: [
       {
         id: "admin-1",
         full_name: "Pastora Ana",
-        email: "ana@example.com",
         avatar_url: null,
         role: "admin",
       },
@@ -162,20 +202,24 @@ test("searchProfiles keeps admin profiles available for event audiences", async 
 
   assert.equal(result.error, null);
   assert.equal(result.data?.[0]?.role, "admin");
-  assert.deepEqual(calls.neq, []);
-  assert.deepEqual(calls.range[0], [0, 30]);
-  assert.deepEqual(calls.or[0], [
-    "full_name.ilike.%Ana%,email.ilike.%Ana%",
-  ]);
+  assert.equal(result.data?.[0]?.email, null);
+  assert.deepEqual(calls.rpc[0], {
+    fn: "search_visible_profiles",
+    args: {
+      p_query: "Ana",
+      p_limit: 31,
+      p_offset: 0,
+      p_excluded_roles: [],
+    },
+  });
 });
 
 test("listProfilesPage applies name search and advances pagination", async () => {
-  const { calls, supabaseMock } = createProfilesQueryMock({
+  const { calls, supabaseMock } = createProfilesRpcMock({
     data: [
       {
         id: "user-11",
         full_name: "Maria Souza",
-        email: "maria@example.com",
         avatar_url: null,
         role: "leader",
       },
@@ -196,10 +240,16 @@ test("listProfilesPage applies name search and advances pagination", async () =>
   assert.equal(result.error, null);
   assert.equal(result.hasMore, false);
   assert.equal(result.data?.[0]?.full_name, "Maria Souza");
-  assert.deepEqual(calls.range[0], [10, 20]);
-  assert.deepEqual(calls.or[0], [
-    "full_name.ilike.%Maria%,email.ilike.%Maria%",
-  ]);
+  assert.equal(result.data?.[0]?.email, null);
+  assert.deepEqual(calls.rpc[0], {
+    fn: "search_visible_profiles",
+    args: {
+      p_query: "Maria",
+      p_limit: 11,
+      p_offset: 10,
+      p_excluded_roles: [],
+    },
+  });
 });
 
 test("getProfile normalizes missing can_manage_events to false", async () => {
@@ -229,7 +279,7 @@ test("getProfile normalizes missing can_manage_events to false", async () => {
 });
 
 test("listProfilesForEventPermissionPage returns current event permission flags", async () => {
-  const { calls, supabaseMock } = createProfilesQueryMock({
+  const { calls, supabaseMock } = createProfilesRpcMock({
     data: [
       {
         id: "user-1",
@@ -260,9 +310,16 @@ test("listProfilesForEventPermissionPage returns current event permission flags"
   });
 
   assert.equal(result.error, null);
-  assert.deepEqual(calls.select[0], [
-    "id,full_name,email,avatar_url,role,can_manage_events",
-  ]);
+  assert.deepEqual(calls.from, []);
+  assert.deepEqual(calls.rpc[0], {
+    fn: "list_profiles_for_event_permissions",
+    args: {
+      p_query: "",
+      p_limit: 11,
+      p_offset: 0,
+      p_excluded_roles: [],
+    },
+  });
   assert.deepEqual(result.data, [
     {
       id: "user-1",
@@ -279,6 +336,57 @@ test("listProfilesForEventPermissionPage returns current event permission flags"
       avatar_url: null,
       role: "member",
       can_manage_events: false,
+    },
+  ]);
+});
+
+test("getProfilesByIds uses the visible-profile lookup without exposing email", async () => {
+  const { calls, supabaseMock } = createProfilesRpcMock({
+    data: [
+      {
+        id: "user-2",
+        full_name: "Marta",
+        avatar_url: null,
+        role: "member",
+      },
+      {
+        id: "user-1",
+        full_name: "Lia",
+        avatar_url: null,
+        role: "leader",
+      },
+    ],
+  });
+
+  const { getProfilesByIds } = loadServiceModule<ProfileService>(
+    "../src/services/profileService",
+    supabaseMock,
+  );
+
+  const result = await getProfilesByIds(["user-1", "user-2"]);
+
+  assert.equal(result.error, null);
+  assert.deepEqual(calls.from, []);
+  assert.deepEqual(calls.rpc[0], {
+    fn: "get_visible_profiles_by_ids",
+    args: {
+      p_user_ids: ["user-1", "user-2"],
+    },
+  });
+  assert.deepEqual(result.data, [
+    {
+      id: "user-1",
+      full_name: "Lia",
+      email: null,
+      avatar_url: null,
+      role: "leader",
+    },
+    {
+      id: "user-2",
+      full_name: "Marta",
+      email: null,
+      avatar_url: null,
+      role: "member",
     },
   ]);
 });

@@ -343,6 +343,29 @@ function createEventRpcMock(config: {
   return { calls, supabaseMock };
 }
 
+function createBatchEventRpcMock(response: MockResponse) {
+  const calls = {
+    from: [] as string[],
+    rpc: [] as Array<{ fn: string; args: Record<string, unknown> }>,
+  };
+
+  const supabaseMock = {
+    from: (table: string) => {
+      calls.from.push(table);
+      throw new Error(`Unexpected direct table access: ${table}`);
+    },
+    rpc: async (fn: string, args: Record<string, unknown>) => {
+      calls.rpc.push({ fn, args });
+      return {
+        data: response.data ?? null,
+        error: response.error ?? null,
+      };
+    },
+  };
+
+  return { calls, supabaseMock };
+}
+
 test("getUpcomingEvents queries public events by end date and start order", { concurrency: false }, async () => {
   const { calls, supabaseMock } = createEventQueryMock({
     data: [
@@ -515,6 +538,82 @@ test("createEvent normalizes dates and uses the default end time", { concurrency
       },
     ],
   ]);
+});
+
+test("createMultipleEvents sends normalized events and audiences to the transactional rpc", { concurrency: false }, async () => {
+  const { calls, supabaseMock } = createBatchEventRpcMock({
+    data: [
+      {
+        id: "event-1",
+        title: "Reuniao interna",
+        category: "geral",
+        start_at: "2099-05-02T19:00:00.000Z",
+        end_at: "2099-05-02T22:00:00.000Z",
+        is_public: false,
+      },
+      {
+        id: "event-2",
+        title: "Culto",
+        category: "culto",
+        start_at: "2099-05-03T19:00:00.000Z",
+        end_at: "2099-05-03T22:00:00.000Z",
+        is_public: true,
+      },
+    ],
+  });
+  const { createMultipleEvents } = loadServiceModule<EventService>(
+    "../src/services/eventService",
+    supabaseMock,
+  );
+
+  const result = await withFixedDate("2026-04-24T10:00:00.000Z", () =>
+    createMultipleEvents([
+      {
+        title: "Reuniao interna",
+        category: "geral",
+        description: "Equipe",
+        location: "Sala 1",
+        is_public: false,
+        visible_to_user_ids: [" user-1 ", "user-1", "", "user-2"],
+        start_at: "2099-05-02T19:00:00.000Z",
+      },
+      {
+        title: "Culto",
+        category: "culto",
+        is_public: true,
+        visible_to_user_ids: ["user-3"],
+        start_at: "2099-05-03T19:00:00.000Z",
+      },
+    ]),
+  );
+
+  assert.equal(result.error, null);
+  assert.deepEqual(calls.from, []);
+  assert.deepEqual(calls.rpc[0], {
+    fn: "create_events_with_audiences",
+    args: {
+      p_events: [
+        {
+          title: "Reuniao interna",
+          category: "geral",
+          description: "Equipe",
+          location: "Sala 1",
+          start_at: "2099-05-02T19:00:00.000Z",
+          end_at: "2099-05-02T22:00:00.000Z",
+          is_public: false,
+          visible_to_user_ids: ["user-1", "user-2"],
+        },
+        {
+          title: "Culto",
+          category: "culto",
+          start_at: "2099-05-03T19:00:00.000Z",
+          end_at: "2099-05-03T22:00:00.000Z",
+          is_public: true,
+          visible_to_user_ids: [],
+        },
+      ],
+    },
+  });
 });
 
 test("updateEvent normalizes date ranges before saving", { concurrency: false }, async () => {

@@ -5,54 +5,15 @@ import {
   loadServiceModule,
 } from "./serviceTestHelpers";
 
-test("removeUserFromMinistry deletes assignments before removing the member", async () => {
-  const callLog: string[] = [];
-  const deletedAssignmentIds: string[][] = [];
-  const deletedMemberIds: string[] = [];
-
+test("removeUserFromMinistry delegates removal and history preservation to the secure rpc", async () => {
+  const rpcCalls: Array<{ fn: string; args: Record<string, unknown> }> = [];
   const supabaseMock = {
     from(table: string) {
-      callLog.push(table);
-
-      if (table === "ministry_members") {
-        const builder = createQueryBuilder({
-          single: {
-            data: {
-              id: "member-1",
-              ministry_id: "ministry-1",
-              user_id: "user-1",
-            },
-          },
-        });
-
-        builder.delete = () => ({
-          eq: async (_field: string, value: string) => {
-            deletedMemberIds.push(value);
-            return { data: null, error: null };
-          },
-        });
-
-        return builder;
-      }
-
-      if (table === "schedule_assignments") {
-        const builder = createQueryBuilder({
-          select: {
-            data: [{ id: "assignment-1" }, { id: "assignment-2" }],
-          },
-        });
-
-        builder.delete = () => ({
-          in: async (_field: string, values: string[]) => {
-            deletedAssignmentIds.push(values);
-            return { data: null, error: null };
-          },
-        });
-
-        return builder;
-      }
-
-      throw new Error(`Unexpected table: ${table}`);
+      throw new Error(`Unexpected direct table access: ${table}`);
+    },
+    rpc: async (fn: string, args: Record<string, unknown>) => {
+      rpcCalls.push({ fn, args });
+      return { data: null, error: null };
     },
   };
 
@@ -65,14 +26,12 @@ test("removeUserFromMinistry deletes assignments before removing the member", as
   const result = await removeUserFromMinistry("member-1");
 
   assert.equal(result.error, null);
-  assert.deepEqual(callLog, [
-    "ministry_members",
-    "schedule_assignments",
-    "schedule_assignments",
-    "ministry_members",
+  assert.deepEqual(rpcCalls, [
+    {
+      fn: "remove_ministry_member_preserving_history",
+      args: { p_member_id: "member-1" },
+    },
   ]);
-  assert.deepEqual(deletedAssignmentIds, [["assignment-1", "assignment-2"]]);
-  assert.deepEqual(deletedMemberIds, ["member-1"]);
 });
 
 test("saveMinistryMemberCapabilities stops after delete when there are no roles", async () => {
