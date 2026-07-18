@@ -5,6 +5,43 @@ import {
   loadServiceModule,
 } from "./serviceTestHelpers";
 
+function loadScheduleServiceWithProfileLookup(
+  supabaseMock: unknown,
+  getProfilesByIds: (userIds: string[]) => Promise<{
+    data: Array<{
+      id: string;
+      full_name: string | null;
+      avatar_url: string | null;
+    }> | null;
+    error: string | null;
+  }>,
+) {
+  const supabaseModulePath = require.resolve("../src/lib/supabase");
+  const profileServiceModulePath = require.resolve("../src/services/profileService");
+  const scheduleServiceModulePath = require.resolve("../src/services/scheduleService");
+
+  delete require.cache[scheduleServiceModulePath];
+  delete require.cache[profileServiceModulePath];
+  require.cache[supabaseModulePath] = ({
+    id: supabaseModulePath,
+    filename: supabaseModulePath,
+    loaded: true,
+    exports: { supabase: supabaseMock },
+    children: [],
+    paths: [],
+  } as unknown) as NodeJS.Module;
+  require.cache[profileServiceModulePath] = ({
+    id: profileServiceModulePath,
+    filename: profileServiceModulePath,
+    loaded: true,
+    exports: { getProfilesByIds },
+    children: [],
+    paths: [],
+  } as unknown) as NodeJS.Module;
+
+  return require("../src/services/scheduleService") as typeof import("../src/services/scheduleService");
+}
+
 test("createScheduleValidated allows creation before event time on the same day", async () => {
   const upsertCalls: unknown[] = [];
   const supabaseMock = {
@@ -1249,4 +1286,89 @@ test("getAssignmentWarningsForSchedule returns blocked date and conflict warning
       end_at: "2026-04-11T21:00:00.000Z",
     },
   ]);
+});
+
+test("getMinistryMembersOptions hydrates names through the visible-profile lookup", async () => {
+  const selections: string[] = [];
+  const profileLookupCalls: string[][] = [];
+  const supabaseMock = {
+    from(table: string) {
+      assert.equal(table, "ministry_members");
+      const builder = createQueryBuilder({
+        select: {
+          data: [
+            {
+              user_id: "user-1",
+              ministry_member_roles: [{ role_id: "role-1" }],
+            },
+          ],
+        },
+      });
+      const select = builder.select;
+      builder.select = (selection: string) => {
+        selections.push(selection);
+        return select(selection);
+      };
+      return builder;
+    },
+  };
+
+  const { getMinistryMembersOptions } = loadScheduleServiceWithProfileLookup(
+    supabaseMock,
+    (userIds) => {
+      profileLookupCalls.push(userIds);
+      return Promise.resolve({
+        data: [
+          {
+            id: "user-1",
+            full_name: "Lia Santos",
+            avatar_url: "https://example.com/lia.png",
+          },
+        ],
+        error: null,
+      });
+    },
+  );
+
+  const result = await getMinistryMembersOptions("ministry-1");
+
+  assert.equal(result.error, null);
+  assert.deepEqual(profileLookupCalls, [["user-1"]]);
+  assert.doesNotMatch(selections[0] ?? "", /profiles/i);
+  assert.deepEqual(result.data, [
+    {
+      user_id: "user-1",
+      full_name: "Lia Santos",
+      avatar_url: "https://example.com/lia.png",
+      capability_role_ids: ["role-1"],
+    },
+  ]);
+});
+
+test("getMinistryMembersOptions returns the controlled lookup error", async () => {
+  const supabaseMock = {
+    from(table: string) {
+      assert.equal(table, "ministry_members");
+      return createQueryBuilder({
+        select: {
+          data: [
+            {
+              user_id: "user-1",
+              ministry_member_roles: [],
+            },
+          ],
+        },
+      });
+    },
+  };
+
+  const { getMinistryMembersOptions } = loadScheduleServiceWithProfileLookup(
+    supabaseMock,
+    () => Promise.resolve({ data: null, error: "Nao foi possivel carregar os perfis." }),
+  );
+
+  const result = await getMinistryMembersOptions("ministry-1");
+
+  assert.equal(result.data, null);
+  assert.equal(result.error, "Nao foi possivel carregar os perfis.");
 });

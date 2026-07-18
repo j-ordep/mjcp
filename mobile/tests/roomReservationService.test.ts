@@ -343,6 +343,7 @@ test("getRoomsDailyAgenda groups daily reservations per room and attaches linked
   assert.deepEqual(calls.scheduleIns[0], ["event_id", ["event-1"]]);
   assert.equal(result.data?.[0].agenda.length, 1);
   assert.equal(result.data?.[0].agenda[0].isEventLinked, true);
+  assert.equal(result.data?.[0].agenda[0].reservedBy, "user-1");
   assert.deepEqual(result.data?.[0].agenda[0].linkedScheduleSummary, {
     schedulesCount: 2,
     assignmentsCount: 3,
@@ -458,8 +459,8 @@ test("cancelStandaloneRoomReservation cancels the current user's active standalo
         reserved_by: "user-1",
         start_at: "2026-05-02T19:00:00.000Z",
         end_at: "2026-05-02T21:00:00.000Z",
-        purpose: "ReuniÃ£o de alinhamento",
-        category: "reuniÃ£o",
+        purpose: "Reuni\u00e3o de alinhamento",
+        category: "reuni\u00e3o",
         status: "active",
         created_at: "2026-05-01T10:00:00.000Z",
       },
@@ -472,8 +473,8 @@ test("cancelStandaloneRoomReservation cancels the current user's active standalo
         reserved_by: "user-1",
         start_at: "2026-05-02T19:00:00.000Z",
         end_at: "2026-05-02T21:00:00.000Z",
-        purpose: "ReuniÃ£o de alinhamento",
-        category: "reuniÃ£o",
+        purpose: "Reuni\u00e3o de alinhamento",
+        category: "reuni\u00e3o",
         status: "cancelled",
         created_at: "2026-05-01T10:00:00.000Z",
       },
@@ -522,7 +523,7 @@ test("cancelStandaloneRoomReservation blocks reservations linked to an event", a
 
   assert.equal(
     result.error,
-    "Esta reserva estÃ¡ vinculada a um evento e nÃ£o pode ser cancelada por aqui.",
+    "Esta reserva est\u00e1 vinculada a um evento e n\u00e3o pode ser cancelada por aqui.",
   );
   assert.equal(calls.updates.length, 0);
 });

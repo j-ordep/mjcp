@@ -278,6 +278,26 @@ test("getProfile normalizes missing can_manage_events to false", async () => {
   assert.equal(result.profile?.can_manage_events, false);
 });
 
+test("getProfile hides technical backend errors behind a friendly fallback", async () => {
+  const { supabaseMock } = createProfilesQueryMock({
+    error: {
+      message: 'new row violates row-level security policy for table "profiles"',
+    },
+  });
+
+  const { getProfile } = loadServiceModule<ProfileService>(
+    "../src/services/profileService",
+    supabaseMock,
+  );
+
+  const result = await getProfile("user-1");
+
+  assert.equal(
+    result.error,
+    "Nao foi possivel carregar seu perfil. Tente novamente em alguns instantes.",
+  );
+});
+
 test("listProfilesForEventPermissionPage returns current event permission flags", async () => {
   const { calls, supabaseMock } = createProfilesRpcMock({
     data: [

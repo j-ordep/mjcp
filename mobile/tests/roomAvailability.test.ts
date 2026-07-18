@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import type { RoomAvailability } from "../src/services/roomReservationService";
 import {
+  canCancelStandaloneRoomAgendaItem,
   canCreateStandaloneRoomReservation,
   getRoomIdForEditSave,
   getNextSelectedRoomId,
@@ -292,6 +293,65 @@ test("canCreateStandaloneRoomReservation requires trimmed title and valid window
     canCreateStandaloneRoomReservation({
       title: "Reserva",
       reservationWindow: null,
+    }),
+    false,
+  );
+});
+
+test("canCancelStandaloneRoomAgendaItem allows cancelling only the current user's standalone reservation", () => {
+  assert.equal(
+    canCancelStandaloneRoomAgendaItem({
+      currentUserId: "user-1",
+      reservation: {
+        id: "reservation-1",
+        roomId: "room-1",
+        startAt: "2026-05-05T19:00:00.000Z",
+        endAt: "2026-05-05T21:00:00.000Z",
+        purpose: "ReuniÃ£o",
+        category: "reuniÃ£o",
+        eventId: null,
+        isEventLinked: false,
+        linkedScheduleSummary: null,
+        reservedBy: "user-1",
+      },
+    }),
+    true,
+  );
+
+  assert.equal(
+    canCancelStandaloneRoomAgendaItem({
+      currentUserId: "user-1",
+      reservation: {
+        id: "reservation-2",
+        roomId: "room-1",
+        startAt: "2026-05-05T19:00:00.000Z",
+        endAt: "2026-05-05T21:00:00.000Z",
+        purpose: "Culto",
+        category: "culto",
+        eventId: "event-1",
+        isEventLinked: true,
+        linkedScheduleSummary: null,
+        reservedBy: "user-1",
+      },
+    }),
+    false,
+  );
+
+  assert.equal(
+    canCancelStandaloneRoomAgendaItem({
+      currentUserId: "user-1",
+      reservation: {
+        id: "reservation-3",
+        roomId: "room-1",
+        startAt: "2026-05-05T19:00:00.000Z",
+        endAt: "2026-05-05T21:00:00.000Z",
+        purpose: "ReuniÃ£o",
+        category: "reuniÃ£o",
+        eventId: null,
+        isEventLinked: false,
+        linkedScheduleSummary: null,
+        reservedBy: "user-2",
+      },
     }),
     false,
   );

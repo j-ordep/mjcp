@@ -1,5 +1,9 @@
 import { supabase } from "../lib/supabase";
-import { searchProfiles, type SearchableProfile } from "./profileService";
+import {
+  getProfilesByIds,
+  searchProfiles,
+  type SearchableProfile,
+} from "./profileService";
 import type { TableRow } from "../types/database.types";
 import { Ministry } from "../types/models";
 import {
@@ -72,18 +76,6 @@ interface MinistryMemberDetailedRow {
   user_id: string;
   is_leader: boolean;
   joined_at: string;
-  profiles:
-    | {
-        full_name: string | null;
-        email: string | null;
-        avatar_url: string | null;
-      }
-    | {
-        full_name: string | null;
-        email: string | null;
-        avatar_url: string | null;
-      }[]
-    | null;
   ministry_member_roles: MinistryMemberCapabilityRow[] | null;
 }
 
@@ -172,11 +164,6 @@ export async function getMinistryMembersDetailed(ministryId: string) {
         user_id,
         is_leader,
         joined_at,
-        profiles!inner (
-          full_name,
-          email,
-          avatar_url
-        ),
         ministry_member_roles (
           role_id,
           ministry_roles (
@@ -191,10 +178,28 @@ export async function getMinistryMembersDetailed(ministryId: string) {
 
     if (error) throw error;
 
+    const members = (data ?? []) as MinistryMemberDetailedRow[];
+    const profileResult = await getProfilesByIds(members.map((member) => member.user_id));
+    if (profileResult.error) throw new Error(profileResult.error);
+
+    const profilesById = new Map(
+      (profileResult.data ?? []).map((profile) => [profile.id, profile]),
+    );
+
     return {
-      data: ((data ?? []) as MinistryMemberDetailedRow[]).map(
-        mapMinistryMemberWithCapabilities,
-      ),
+      data: members.map((member) => {
+        const profile = profilesById.get(member.user_id) ?? null;
+
+        return mapMinistryMemberWithCapabilities({
+          ...member,
+          profiles: profile
+            ? {
+                full_name: profile.full_name,
+                avatar_url: profile.avatar_url,
+              }
+            : null,
+        });
+      }),
       error: null,
     };
   } catch (error: unknown) {

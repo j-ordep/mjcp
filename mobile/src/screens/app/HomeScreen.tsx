@@ -1,9 +1,15 @@
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Calendar, CalendarX, RefreshCw } from "lucide-react-native";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { formatDateTime } from "../../utils/formatDate";
-import { ScrollView, TouchableOpacity, View, ActivityIndicator } from "react-native";
+import {
+  ScrollView,
+  TouchableOpacity,
+  View,
+  ActivityIndicator,
+  RefreshControl,
+} from "react-native";
 import { Text } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import MiniCard from "../../components/card/MiniCard";
@@ -14,12 +20,21 @@ import NotificationsModal from "../../components/utils/NotificationsModal";
 import { RootStackParamList } from "../../navigation/AppNavigator";
 import { useAuthStore } from "../../stores/useAuthStore";
 import { useEventStore } from "../../stores/useEventStore";
+import { useNotificationStore } from "../../stores/useNotificationStore";
 import { getProfileAvatarUri } from "../../utils/profileAvatar";
 
 export default function HomeScreen() {
   const [modalVisible, setModalVisible] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { events, isLoadingEvents, fetchUpcomingEvents } = useEventStore();
   const { profile } = useAuthStore();
+  const unreadCount = useNotificationStore((state) => state.unreadCount);
+  const refreshNotifications = useNotificationStore(
+    (state) => state.refreshNotifications,
+  );
+  const refreshUnreadCount = useNotificationStore(
+    (state) => state.refreshUnreadCount,
+  );
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
@@ -27,6 +42,25 @@ export default function HomeScreen() {
   useEffect(() => {
     fetchUpcomingEvents();
   }, [fetchUpcomingEvents]);
+
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await Promise.all([
+        fetchUpcomingEvents(true),
+        refreshNotifications(),
+        refreshUnreadCount(),
+      ]);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [fetchUpcomingEvents, refreshNotifications, refreshUnreadCount]);
+
+  useFocusEffect(
+    useCallback(() => {
+      void Promise.all([refreshNotifications(), refreshUnreadCount()]);
+    }, [refreshNotifications, refreshUnreadCount]),
+  );
 
 
 
@@ -46,11 +80,18 @@ export default function HomeScreen() {
         onAvatarPress={() => navigation.navigate("Profile")}
         avatarUri={getProfileAvatarUri(profile?.avatar_url)}
         avatarLabel={profile?.full_name ?? ""}
+        notificationUnreadCount={unreadCount}
       />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 24, paddingTop: 2 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={() => void handleRefresh()}
+          />
+        }
       >
         {/* 4 MiniCards — grid 2x2 */}
         <View className="flex-row gap-3 mb-2">

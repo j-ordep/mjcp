@@ -6,11 +6,20 @@ import {
   Search,
   X,
 } from "lucide-react-native";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, ScrollView, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  RefreshControl,
+  ScrollView,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { Text, TextInput } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import DefaultButton from "../../components/button/DefaultButton";
+import type { RootStackParamList } from "../../navigation/AppNavigator";
 import { getSongsCatalog, getNextUpcomingEventSetlist, replaceEventSetlist } from "../../services/musicService";
 import { useAuthStore } from "../../stores/useAuthStore";
 import type { EventSetlistSong } from "../../services/musicService";
@@ -93,6 +102,8 @@ function SongMeta({ song }: { song: Song }) {
 }
 
 export default function MusicScreen() {
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { profile } = useAuthStore();
   const userCanManageEvents = canManageEvents(profile);
 
@@ -103,12 +114,19 @@ export default function MusicScreen() {
   const [nextSetlistSongs, setNextSetlistSongs] = useState<EventSetlistSong[]>([]);
   const [draftSetlistSongs, setDraftSetlistSongs] = useState<DraftSetlistSong[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isEditingSetlist, setIsEditingSetlist] = useState(false);
   const [screenError, setScreenError] = useState<string | null>(null);
 
-  const loadScreen = useCallback(async () => {
-    setIsLoading(true);
+  const loadScreen = useCallback(async (options?: { preserveDraft?: boolean; showLoading?: boolean }) => {
+    const preserveDraft = options?.preserveDraft ?? false;
+    const showLoading = options?.showLoading ?? true;
+
+    if (showLoading) {
+      setIsLoading(true);
+    }
+
     setScreenError(null);
 
     const [songsResult, nextSetlistResult] = await Promise.all([
@@ -119,7 +137,9 @@ export default function MusicScreen() {
     if (songsResult.error) {
       setSongs([]);
       setScreenError(songsResult.error);
-      setIsLoading(false);
+      if (showLoading) {
+        setIsLoading(false);
+      }
       return;
     }
 
@@ -127,9 +147,13 @@ export default function MusicScreen() {
       setSongs(songsResult.data ?? []);
       setNextEvent(null);
       setNextSetlistSongs([]);
-      setDraftSetlistSongs([]);
+      if (!preserveDraft) {
+        setDraftSetlistSongs([]);
+      }
       setScreenError(nextSetlistResult.error);
-      setIsLoading(false);
+      if (showLoading) {
+        setIsLoading(false);
+      }
       return;
     }
 
@@ -139,9 +163,26 @@ export default function MusicScreen() {
     setSongs(songsResult.data ?? []);
     setNextEvent(nextEventData);
     setNextSetlistSongs(nextSongsData);
-    setDraftSetlistSongs(mapPersistedSetlistToDraft(nextSongsData));
-    setIsLoading(false);
+    if (!preserveDraft) {
+      setDraftSetlistSongs(mapPersistedSetlistToDraft(nextSongsData));
+    }
+
+    if (showLoading) {
+      setIsLoading(false);
+    }
   }, []);
+
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await loadScreen({
+        preserveDraft: isEditingSetlist,
+        showLoading: false,
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [isEditingSetlist, loadScreen]);
 
   useEffect(() => {
     void loadScreen();
@@ -236,6 +277,10 @@ export default function MusicScreen() {
     });
   };
 
+  const openSongDetails = (songId: string) => {
+    navigation.navigate("MusicDetails", { songId });
+  };
+
   const handleSaveSetlist = async () => {
     if (!nextEvent) {
       return;
@@ -278,6 +323,12 @@ export default function MusicScreen() {
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={() => void handleRefresh()}
+            />
+          }
         >
           <View className="flex-row items-center bg-gray-100 rounded-xl border border-gray-200 px-3 mb-4">
             <Search size={18} color="#888" />
@@ -388,8 +439,10 @@ export default function MusicScreen() {
 
                 {nextSetlistSongs.length > 0 ? (
                   nextSetlistSongs.map((item) => (
-                    <View
+                    <TouchableOpacity
                       key={item.id}
+                      onPress={() => openSongDetails(item.song.id)}
+                      activeOpacity={0.8}
                       style={{
                         flexDirection: "row",
                         alignItems: "center",
@@ -421,7 +474,7 @@ export default function MusicScreen() {
                           {item.song.artist || "Sem artista"} · Tom {item.song_key || item.song.key || "-"}
                         </Text>
                       </View>
-                    </View>
+                    </TouchableOpacity>
                   ))
                 ) : (
                   <Text style={{ color: "#d1d5db", lineHeight: 20 }}>
@@ -598,13 +651,14 @@ export default function MusicScreen() {
                 <TouchableOpacity
                   key={song.id}
                   onPress={() => {
-                    if (!isEditingSetlist || alreadySelected) {
+                    if (isEditingSetlist && !alreadySelected) {
+                      addSongToDraft(song);
                       return;
                     }
 
-                    addSongToDraft(song);
+                    openSongDetails(song.id);
                   }}
-                  activeOpacity={isEditingSetlist && !alreadySelected ? 0.8 : 1}
+                  activeOpacity={0.8}
                   style={{
                     borderWidth: 1,
                     borderColor: alreadySelected ? "#d1fae5" : "#f3f4f6",

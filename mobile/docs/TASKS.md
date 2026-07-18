@@ -1,27 +1,100 @@
 # MJCP Mobile - Tarefas e Melhorias (Backlog)
 
-Data: 2026-04-05 (America/Sao_Paulo)
+Data: 2026-06-14 (America/Sao_Paulo)
 
 Referencia rapida:
-- plano consolidado da proxima rodada: `docs/NEXT_STEPS_PLAN.md`
-- plano da rodada para transformar o app em POC usavel: `docs/POC_USABLE_PLAN.md`
+- backlog vivo desta rodada: `docs/TASKS.md`
+- contexto atual real do app: `docs/CONTEXT.md`
+- horizonte de produto: `docs/ROADMAP.md`
 - plano consolidado do core de eventos: `docs/EVENT_CORE_PLAN.md`
-- plano tecnico da fase 1 do core de eventos: `docs/EVENT_CORE_PHASE1_IMPLEMENTATION_PLAN.md`
-- plano tecnico da fase 2 do core de eventos: `docs/EVENT_CORE_PHASE2_IMPLEMENTATION_PLAN.md`
-- plano pequeno da agenda diaria de salas: `docs/ROOMS_SCREEN_DAY_AGENDA_PLAN.md`
+- modelo de escalas e dominio: `docs/scheduling_model.md`
+- referencia estrutural do sistema: `docs/system_design.md`
 - referencia da mudanca de read-only para bloqueio em `start_at`: `docs/SCHEDULE_READ_ONLY_BY_HOUR_PLAN.md`
 - ideia futura de cadastro de visitante: `docs/VISITOR_REGISTRATION_IDEA.md`
 - ideia futura de fluxo de escola biblica: `docs/BIBLE_SCHOOL_IDEA.md`
 - historico documental e registros de rodadas: `docs/history/README.md`
+- planos arquivados de rodadas anteriores: `docs/history/`
 - aplicacao remota no Supabase: `docs/SUPABASE_REMOTE_RUNBOOK.md`
 
-Objetivo imediato: sair do prototipo e fechar o fluxo principal de "Criacao de Escalas" com regra:
-- Admin pode criar/gerenciar tudo
-- Lider so cria/gerencia escalas da(s) sua(s) area(s)/ministerio(s)
-- Lider tambem pode se auto-escalar no proprio ministerio, desde que respeite as mesmas validacoes de membro/funcao da escala
-- Membro apenas visualiza e interage com o que for dele (confirmar/trocar)
-- Eventos sao apenas informativos; a operacao de escala nao deve depender da tela de evento
-- Datas nao podem ficar em branco em formularios; quando nao houver valor inicial, o padrao deve ser a data/hora atual do sistema no momento da criacao/carregamento do formulario, ja selecionada no campo
+Objetivo imediato desta rodada:
+- aterrar bootstrap/env e reduzir falhas previsiveis logo na abertura do app
+- manter o fluxo principal de eventos + escalas consistente em datas, timezone e read-only
+- fechar a proxima feature visivel de baixo risco no dominio de musicas
+- manter `docs/TASKS.md`, `docs/CONTEXT.md` e `docs/ROADMAP.md` como fonte viva, arquivando planos antigos em `docs/history/`
+
+## Fila priorizada desta rodada (reconciliada em 2026-06-14)
+
+### Confirmado no codigo
+
+- [ ] P0 - Fechar brechas de permissao e escopo de dados antes de novas features
+  - travar autoelevacao via `profiles.role` e demais campos privilegiados; a policy antiga ainda permite `UPDATE` do proprio perfil e a trigger nova protege apenas `can_manage_events`
+  - filtrar `notifications` por `user_id` nas leituras e mutacoes do client (`listar`, `marcar uma`, `marcar todas`, `count`)
+  - [x] alinhar RPCs `SECURITY DEFINER` de eventos com bloqueio transacional antes de `start_at` (`save_event_with_optional_room_reservation` + `create_events_with_audiences`)
+  - alinhar RPCs `SECURITY DEFINER` de setlists com a mesma janela temporal das policies (`is_event_editable_before_start(...)`)
+  - restringir o `UPDATE` do proprio `schedule_assignment` a transicoes permitidas de status, em vez de confiar no `UPDATE` generico da linha inteira
+
+- [ ] P1 - Fechar lacunas visiveis do core atual
+  - religar o atalho `Trocas` na Home
+  - corrigir a aba `Minhas` em `SwapRequestsScreen`, que hoje mistura itens de terceiros nao pendentes
+  - propagar erro amigavel real de conflito/sala na `CreateEventScreen`, reaproveitando a sanitizacao ja existente no service layer
+  - decidir exclusao de evento: implementar o fluxo real ou alinhar a copy administrativa para nao prometer `excluir` sem CTA correspondente
+
+- [ ] P1 - Padronizar experiencia operacional das telas principais
+  - loading/error/empty states consistentes em `Home`, `Schedule`, `SwapRequests`, `Rooms`, `Music` e superfices administrativas mais visiveis
+  - manter `pull-to-refresh` e feedback de erro alinhados ao mesmo contrato visual
+  - expandir o contrato compartilhado de datas/timezone para formularios restantes fora do fluxo principal
+
+- [ ] P1 - Ampliar cobertura automatizada para os guardrails novos
+  - testes de `notificationService` e `useNotificationStore` cobrindo escopo por usuario
+  - testes de migrations para hardening de `profiles`, RPCs de eventos/setlists e transicoes de assignment
+  - ampliar cobertura dos services principais antes de abrir outra frente grande
+
+- [ ] P1 - Fechamento operacional remoto
+  - validar constraints `NOT VALID` no Supabase remoto apos saneamento/backfill dos dados historicos
+  - revisar tambem a limpeza de duplicidade legado antes de endurecer novas constraints
+
+### PENDENTE DE DEFINICAO
+
+- fluxo final de `swap_requests`:
+  - o modelo ainda carrega sinais de fluxo antigo (`to_user_id`, `to_assignment_id`, `reviewed_by`)
+  - falta decidir se continuamos somente com `primeiro elegivel assume` ou se havera aprovacao/alvo explicito em alguma etapa
+- politica final de conflitos e indisponibilidade:
+  - hoje continuam como warning operacional no app
+  - ainda falta decidir se algum caso vira bloqueio duro de produto/backend
+- notificacoes futuras fora do fluxo atual:
+  - evento privado para audiencia selecionada
+  - reserva de sala criada/cancelada
+  - copy final por tipo e necessidade de notificacao de encerramento para elegiveis remanescentes
+- estrategia futura de retencao/limpeza de escalas antigas
+
+### INFORMACAO INSUFICIENTE
+
+- estrategia oficial de testes automatizados em CI
+- decisao final sobre metadados extras no detalhe de evento (ex.: video/transmissao)
+
+Atualizacao de hygiene/POC (2026-05-15):
+- [x] Remover fallbacks externos de avatar do fluxo de perfil/home
+- [x] Remover CTA enganoso de troca de foto no perfil
+- [x] Remover acoes placeholder do menu de perfil (`Compartilhar perfil`, `Configuracoes de Notificacao`)
+- [x] Trocar o bloco mockado de atividades recentes por um resumo real e explicito da POC no perfil
+- [x] Formatar telefone no perfil para leitura humana
+- [x] Resetar `CalendarModal` ao reabrir apos cancelamento
+- [x] Travar `BlockDatesScreen` durante salvamento
+- [x] Tornar a troca completa da setlist atomica via RPC (`20260515000126_add_replace_event_setlist_rpc.sql`)
+- [x] Padronizar mensagens de erro para nao expor texto bruto do Supabase diretamente em alerts
+  - fechamento:
+    - `userFacingErrors` centraliza sanitizacao para auth, perfil e eventos
+    - a UX continua em `Alert.alert`, mas sem vazar texto tecnico do backend para o usuario final
+- [x] Limpar strings com mojibake/encoding quebrado nas telas e services mais visiveis
+  - Atualizacao em 2026-05-20:
+    - varredura local cobriu `src`, `tests`, `docs` e `supabase`
+    - strings corrompidas restantes foram normalizadas em testes/documentacao e na tela de gestao de membros
+- [x] Adicionar guardrails explicitos para `.env` publico incompleto (`EXPO_PUBLIC_SUPABASE_*`, `EXPO_PUBLIC_YOUTUBE_API_KEY`)
+  - ja fechado parcialmente para `EXPO_PUBLIC_YOUTUBE_API_KEY`: `YoutubeCarousel` ignora placeholders publicos e nao faz fetch inutil sem chave real
+  - fechamento:
+    - `App.tsx` agora valida `EXPO_PUBLIC_SUPABASE_URL` e `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` antes de montar o fluxo autenticado
+    - o app mostra tela amigavel de configuracao em vez de quebrar silenciosamente no bootstrap
+    - `src/lib/publicEnv.ts` virou o contrato unico para leitura segura desse env publico
 
 ---
 
@@ -61,12 +134,12 @@ Objetivo imediato: sair do prototipo e fechar o fluxo principal de "Criacao de E
   - Atualizacao em 2026-04-13:
     - nova migration local `20260413000113_restrict_member_assignment_status_updates.sql`
     - a policy do proprio membro agora exige que o evento ainda esteja antes de `start_at`
-  - Pendencia operacional:
-    - aplicar no Supabase remoto a migration que alinhou a janela final de read-only em `start_at`
-
-- [ ] Validacoes de data no banco
-  - [ ] `events`: `end_at` deve ser > `start_at` quando `end_at` nao for nulo
-  - [ ] `room_reservations`: `end_at > start_at`
+- [~] Validacoes de data no banco
+  - [x] `events`: `end_at` deve ser > `start_at` quando `end_at` nao for nulo
+  - [x] `room_reservations`: `end_at > start_at`
+  - Atualizacao em 2026-05-20:
+    - migration local `20260520000127_add_temporal_integrity_constraints.sql` adiciona constraints `NOT VALID`, protegendo novas escritas sem bloquear deploy por dados historicos
+    - pendente operacional: validar/limpar dados historicos e executar `VALIDATE CONSTRAINT` no Supabase remoto
   - Regra de produto confirmada em 2026-04-05:
     - `events.start_at` e obrigatorio
     - nao permitir criar evento com `start_at` no passado
@@ -80,8 +153,6 @@ Objetivo imediato: sair do prototipo e fechar o fluxo principal de "Criacao de E
   - [x] `schedule_assignments (user_id, status)`
     - Atualizacao em 2026-04-13:
       - nova migration local `20260413000114_add_schedule_assignment_status_index.sql`
-    - Pendencia operacional:
-      - aplicar a migration nova no Supabase remoto
   - [ ] `schedules (event_id, ministry_id)` (ja existe UNIQUE, mas pode precisar index explicito dependendo do Postgres/plano)
   - [ ] `events (start_at)` ja existe; avaliar `events (end_at)`
 
@@ -187,6 +258,8 @@ Decisao atualizada em 2026-04-07:
   - Ajuste de UX em 2026-04-12:
     - remover alerts nativos de sucesso apos confirmar presenca
     - o feedback principal passa a ser a atualizacao imediata do CTA e do status na propria tela
+  - Ajuste de UX em 2026-05-25:
+    - encurtar o CTA principal para `Confirmar` / `Confirmado`, evitando quebra desigual dos botoes em `ScheduleScreen` e `EditScheduleScreen`
 
 - [~] Solicitar troca (membro)
   - Decisao atualizada em 2026-04-10:
@@ -285,6 +358,7 @@ Decisao atualizada em 2026-04-07:
   - `room_reservations.event_id` passa a ser o vinculo estrutural opcional entre evento e sala
   - `save_event_with_optional_room_reservation` salva evento + audiencia + reserva opcional em transacao
   - `CreateEventScreen` agora permite sala opcional com disponibilidade real por janela para evento de data unica
+  - `CreateEventScreen` agora mantem data unica por padrao e so habilita multiplas datas quando o usuario marca explicitamente `Permitir multiplas datas` no modal do calendario
   - `RoomsScreen` deixou de ser mock e passou a criar reservas independentes reais
   - a reconciliacao de sala em edicao protege contra limpeza indevida ao mudar e voltar janela/horario
 
@@ -416,7 +490,7 @@ Contexto: eventos sao informativos para todos; escala e o fluxo operacional de q
     - escala = servico/funcao, nunca lista de participantes
   - referencia consolidada: `docs/EVENT_CORE_PLAN.md`
 
-- [ ] Fechar reuniao como configuracao de evento, nao como modulo proprio
+- [x] Fechar reuniao como configuracao de evento, nao como modulo proprio
   - manter categoria `reunião`
   - manter publico/privado
   - manter audiencia selecionada no proprio evento
@@ -462,7 +536,14 @@ Contexto: eventos sao informativos para todos; escala e o fluxo operacional de q
       - criacao com normalizacao de range e termino padrao
       - categoria padrao `geral` para eventos sem categoria explicita
       - atualizacao sem sobrescrever `start_at` ao alterar apenas `end_at`
+    - cobertura ampliada para `src/services/musicService.ts` com cenarios de:
+      - troca completa da setlist via RPC transacional `replace_event_setlist`
+      - propagacao de erro da RPC sem reler setlist potencialmente stale
     - cobertura adicionada para `src/utils/eventCategory.ts` com categorias em portugues e fallback para `geral`
+    - cobertura adicionada para `src/utils/profileAvatar.ts` com:
+      - iniciais padrao para avatar local
+      - filtro de `avatar_url` vazio/placeholders
+      - formatacao de telefone para leitura humana
   - Proximos alvos naturais:
     - expandir `scheduleService` para warnings, cards e validacoes adicionais
     - expandir `ministryService` para fluxos restantes
@@ -476,7 +557,7 @@ Contexto: eventos sao informativos para todos; escala e o fluxo operacional de q
     - `EventDetailsScreen` ja usa props tipadas do navigator
     - `EventDetails` no navigator ja aceita payload menor do que `Event`, reduzindo casts frageis no fluxo de escalas
 
-- [ ] Padronizar timezone e datas
+- [~] Padronizar timezone e datas
   - Hoje eventos sao criados usando `new Date(...).toISOString()` (ok para TIMESTAMPTZ)
   - Definir padrao:
     - app assume fuso local da igreja
@@ -487,50 +568,56 @@ Contexto: eventos sao informativos para todos; escala e o fluxo operacional de q
     - a regra de read-only agora bloqueia exatamente em `start_at`
     - `start_at` deve ser tratado como instante absoluto no app e no banco
     - ver referencia de implementacao em `docs/SCHEDULE_READ_ONLY_BY_HOUR_PLAN.md`
+  - Atualizacao em 2026-06-14:
+    - `src/utils/eventDate.ts` agora concentra a conversao `formulario local -> UTC ISO` em `buildUtcRangeFromLocalForm(...)`
+    - `CreateEventScreen` deixou de reidratar a data por `split("T")` e passou a usar o valor local formatado do `Date`
+    - `roomReservationForm` reaproveita o mesmo contrato base para montar janelas locais em UTC
+  - Ainda falta:
+    - aplicar o mesmo padrao em outros formularios que ainda criem/editem datas fora do fluxo principal
 
 ---
 
 ## P2 (Medio) - Notificacoes
 
-- [ ] Criar notificacao ao:
-  - novo assignment criado
-    - incluir notificacao direta ao usuario escalado quando entrar em uma escala
-  - evento privado criado/atualizado para audiencia selecionada
-    - usuarios escolhidos manualmente devem poder receber notificacao no futuro
-  - [~] swap request criado/atualizado
-  - [~] swap request criado para:
+- [~] Expandir notificacoes alem do fluxo operacional atual
+  - [x] novo assignment criado
+    - notificacao direta ao usuario escalado quando entrar em uma escala
+  - [x] swap request criado/atualizado
+  - [x] swap request criado para:
     - membros elegiveis do mesmo ministerio e mesma funcao
     - lider responsavel pela escala
-  - [~] acompanhamento operacional do lider:
+  - [x] acompanhamento operacional do lider:
     - quando o pedido for criado
     - quando alguem assumir a troca
     - quando o pedido for cancelado
-  - reserva de sala criada/cancelada
-  - (opcional) confirmacao/declinio
+  - [ ] evento privado criado/atualizado para audiencia selecionada
+    - usuarios escolhidos manualmente devem poder receber notificacao no futuro
+  - [ ] reserva de sala criada/cancelada
+  - [ ] (opcional) confirmacao/declinio
 
   - Estado atual confirmado no codigo:
-    - existe migration local para emitir notificacoes de swap no backend:
+    - o backend remoto ja emite notificacoes de swap no backend:
       - `created`
       - `accepted`
       - `cancelled`
+    - o backend remoto tambem emite notificacao de `schedule.assigned` ao criar assignment
     - existe `notificationService` para:
       - listar notificacoes
       - marcar uma como lida
       - marcar todas como lidas
+      - assinar notificacoes por realtime
     - `NotificationsModal` agora usa a tabela `notifications`
+    - a Home agora mostra badge de nao lidas e reidrata a inbox por focus/modal
+    - a navegacao contextual da inbox abre:
+      - `SwapRequests`
+      - `EditSchedule`
 
   - PENDENTE DE DEFINICAO:
     - copy final de titulo/corpo por tipo
     - se elegiveis devem receber notificacao de encerramento quando outra pessoa assumir a vaga
 
-  - Pendencia operacional:
-    - aplicar no Supabase remoto as migrations locais ainda pendentes:
-      - `20260412000110_add_swap_request_notifications.sql`
-      - `20260412000111_fix_schedule_rls_recursion.sql`
-      - `20260412000112_reset_assignment_confirmation_on_swap_request.sql`
-
-- [ ] Integrar realtime para notificar (opcional)
-  - `notifications` ja tem tabela + modal real no app
+- [x] Integrar realtime para inbox de notificacoes
+  - `notifications` agora tem tabela, modal real, badge de nao lidas e assinatura Supabase Realtime por `user_id`
 
 ### Plano tecnico recomendado para notificacoes de swap
 
@@ -581,15 +668,55 @@ Contexto: eventos sao informativos para todos; escala e o fluxo operacional de q
   - mostrar badge `Evento` quando `room_reservations.event_id` estiver preenchido
   - mostrar cronograma simples separado das escalas vinculadas ao evento
 - [x] Permitir cancelamento da propria reserva avulsa sem cancelar reserva vinculada a evento
+- [x] Simplificar a UX de filtros e reserva na `RoomsScreen`
+  - remover do topo da tela os campos de `titulo`, `categoria`, `data` e `hora` quando eles estiverem servindo como pseudo-filtros
+  - manter na superficie principal apenas os filtros realmente necessarios para navegar pelas salas/agenda
+  - mover os dados da reserva para um fluxo dedicado acionado por `Reservar`
+  - esse fluxo pode abrir nova tela ou modal, desde que concentre:
+    - `titulo`
+    - `categoria`
+    - `data`
+    - `hora`
+  - objetivo de produto:
+    - limpar a UI
+    - deixar a tela mais minimalista e facil de entender
+    - reduzir confusao entre `filtro` e `formulario de criacao`
+  - checkpoint em 2026-05-25:
+    - implementacao conduzida em branch isolada
+    - extraidos e testados utilitarios puros do formulario de reserva em `src/utils/roomReservationForm.ts`
+    - adicionada regra utilitaria para cancelamento de reserva avulsa pela agenda do dia
+  - fechamento:
+    - `RoomsScreen` agora ficou centrada na agenda do dia
+    - o fluxo de `Reservar` abre um modal dedicado por sala
+    - o cancelamento da propria reserva avulsa continua disponivel dentro da agenda do card
 
 ---
 
 ## P2 (Medio) - Musicas e Setlists
 
-- [ ] Implementar tela de musica individual (letra/cifra via URL)
+- [x] Implementar tela de musica individual (letra/cifra via URL)
+  - `MusicDetailsScreen` agora abre a partir do catalogo e do proximo setlist
+  - o detalhe mostra metadados basicos e link externo amigavel quando `lyrics_url` existir
 - [x] Implementar setlist por evento (`event_setlists` + ordenacao)
   - entregue em modo simples no `MusicScreen`, focado no proximo evento
   - permissao de escrita alinhada por migration com `can_manage_events`
+
+---
+
+## Higiene documental
+
+- [x] Arquivar planos antigos que nao orientam mais a execucao presente
+  - movidos para `docs/history/`:
+    - `NEXT_STEPS_PLAN.md`
+    - `POC_USABLE_PLAN.md`
+    - `EVENT_CORE_PHASE1_IMPLEMENTATION_PLAN.md`
+    - `EVENT_CORE_PHASE2_IMPLEMENTATION_PLAN.md`
+    - `ROOMS_SCREEN_DAY_AGENDA_PLAN.md`
+- [~] Manter a raiz de `docs/` restrita a backlog vivo, contexto atual, horizonte de produto e referencias operacionais
+  - concluido nesta rodada:
+    - `TASKS.md`, `CONTEXT.md` e `ROADMAP.md` passam a refletir o estado real mais recente
+  - ainda revisar futuramente:
+    - se `EVENT_CORE_PLAN.md` continua vivo na raiz ou se tambem deve virar historico consolidado
 
 ---
 

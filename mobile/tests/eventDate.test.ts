@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  buildUtcRangeFromLocalForm,
   createLocalDateTime,
   formatLocalDateKey,
   formatTimeFromDate,
@@ -62,6 +63,54 @@ test("getDefaultEndAt adds three hours to the start time", () => {
   const result = getDefaultEndAt(new Date("2026-04-09T10:00:00.000Z"));
 
   assert.equal(result.toISOString(), "2026-04-09T13:00:00.000Z");
+});
+
+test("buildUtcRangeFromLocalForm converts a local form selection to UTC and keeps the three-hour default", () => {
+  const result = buildUtcRangeFromLocalForm({
+    dateKey: "2026-04-09",
+    startTime: "19:00",
+  });
+
+  assert.deepEqual(result, {
+    data: {
+      startAt: "2026-04-09T22:00:00.000Z",
+      endAt: "2026-04-10T01:00:00.000Z",
+    },
+    error: null,
+  });
+});
+
+test("buildUtcRangeFromLocalForm accepts an explicit end time and rejects invalid local form values", () => {
+  const valid = buildUtcRangeFromLocalForm({
+    dateKey: "2026-04-09",
+    startTime: "18:00",
+    endTime: "20:30",
+  });
+  const invalid = buildUtcRangeFromLocalForm({
+    dateKey: "2026-04-09",
+    startTime: "xx",
+  });
+  const invalidEnd = buildUtcRangeFromLocalForm({
+    dateKey: "2026-04-09",
+    startTime: "18:00",
+    endTime: "yy",
+  });
+
+  assert.deepEqual(valid, {
+    data: {
+      startAt: "2026-04-09T21:00:00.000Z",
+      endAt: "2026-04-09T23:30:00.000Z",
+    },
+    error: null,
+  });
+  assert.deepEqual(invalid, {
+    data: null,
+    error: "Data inicial invalida.",
+  });
+  assert.deepEqual(invalidEnd, {
+    data: null,
+    error: "Data final invalida.",
+  });
 });
 
 test("normalizeEventRange returns normalized data when start and end are valid", () => {

@@ -9,12 +9,9 @@ import {
 } from "react-native";
 import { Divider, Modal, Portal, Text } from "react-native-paper";
 import type { RootStackParamList } from "../../navigation/AppNavigator";
-import {
-  getNotifications,
-  markAllNotificationsAsRead,
-  markNotificationAsRead,
-  type AppNotification,
-} from "../../services/notificationService";
+import type { AppNotification } from "../../services/notificationService";
+import { useNotificationStore } from "../../stores/useNotificationStore";
+import { getNotificationNavigationTarget } from "../../types/notifications";
 import { formatDateTime } from "../../utils/formatDate";
 import DefaultButton from "../button/DefaultButton";
 
@@ -29,25 +26,21 @@ export default function NotificationsModal({
 }: NotificationsModalProps) {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const [notifications, setNotifications] = useState<AppNotification[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [isMarkingAllAsRead, setIsMarkingAllAsRead] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const notifications = useNotificationStore((state) => state.notifications);
+  const isLoading = useNotificationStore((state) => state.isLoading);
+  const errorMessage = useNotificationStore((state) => state.error);
+  const refreshNotifications = useNotificationStore(
+    (state) => state.refreshNotifications,
+  );
+  const refreshUnreadCount = useNotificationStore(
+    (state) => state.refreshUnreadCount,
+  );
+  const markAsRead = useNotificationStore((state) => state.markAsRead);
+  const markAllAsRead = useNotificationStore((state) => state.markAllAsRead);
 
   const loadNotifications = async () => {
-    setIsLoading(true);
-    setErrorMessage(null);
-
-    const { data, error } = await getNotifications();
-    if (error) {
-      setNotifications([]);
-      setErrorMessage(error);
-      setIsLoading(false);
-      return;
-    }
-
-    setNotifications(data ?? []);
-    setIsLoading(false);
+    await Promise.all([refreshNotifications(), refreshUnreadCount()]);
   };
 
   useEffect(() => {
@@ -57,37 +50,35 @@ export default function NotificationsModal({
 
   const handleNotificationPress = async (notification: AppNotification) => {
     if (!notification.read) {
-      const { error } = await markNotificationAsRead(notification.id);
-      if (!error) {
-        setNotifications((current) =>
-          current.map((item) =>
-            item.id === notification.id ? { ...item, read: true } : item,
-          ),
-        );
-      }
+      await markAsRead(notification.id);
     }
+
+    const navigationTarget = getNotificationNavigationTarget({
+      type: notification.type,
+      data: notification.data,
+    });
 
     onDismiss();
 
-    if (notification.type === "swap_request") {
+    if (navigationTarget?.screen === "SwapRequests") {
       navigation.navigate("SwapRequests");
+      return;
+    }
+
+    if (
+      navigationTarget?.screen === "EditSchedule" &&
+      navigationTarget.params?.scheduleId
+    ) {
+      navigation.navigate("EditSchedule", {
+        scheduleId: navigationTarget.params.scheduleId,
+      });
     }
   };
 
   const handleMarkAllAsRead = async () => {
     setIsMarkingAllAsRead(true);
-
-    const { error } = await markAllNotificationsAsRead();
+    await markAllAsRead();
     setIsMarkingAllAsRead(false);
-
-    if (error) {
-      setErrorMessage(error);
-      return;
-    }
-
-    setNotifications((current) =>
-      current.map((notification) => ({ ...notification, read: true })),
-    );
   };
 
   const allRead =

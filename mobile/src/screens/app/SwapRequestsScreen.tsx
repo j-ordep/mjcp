@@ -2,7 +2,13 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RefreshCcw } from "lucide-react-native";
 import { useCallback, useMemo, useState } from "react";
-import { Alert, ScrollView, TouchableOpacity, View } from "react-native";
+import {
+  Alert,
+  RefreshControl,
+  ScrollView,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { Text } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import HeaderSecondary from "../../components/Header/HeaderSecondary";
@@ -27,15 +33,24 @@ export default function SwapRequestsScreen() {
   const [availableItems, setAvailableItems] = useState<SwapRequestReviewItem[]>([]);
   const [myItems, setMyItems] = useState<SwapRequestReviewItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isActingId, setIsActingId] = useState<string | null>(null);
 
-  const loadRequests = useCallback(async () => {
-    setIsLoading(true);
+  const loadRequests = useCallback(async (withLoadingState = true) => {
+    if (withLoadingState) {
+      setIsLoading(true);
+    }
+
     const { data, error } = await getVisibleSwapRequests();
 
     if (error) {
-      Alert.alert("Erro", error);
-      setIsLoading(false);
+      Alert.alert(
+        "Nao foi possivel carregar as trocas",
+        "Tente novamente em alguns instantes.",
+      );
+      if (withLoadingState) {
+        setIsLoading(false);
+      }
       return;
     }
 
@@ -58,7 +73,9 @@ export default function SwapRequestsScreen() {
           ),
       ),
     );
-    setIsLoading(false);
+    if (withLoadingState) {
+      setIsLoading(false);
+    }
   }, [session?.user?.id]);
 
   useFocusEffect(
@@ -69,6 +86,15 @@ export default function SwapRequestsScreen() {
 
   const pendingAvailableCount = useMemo(() => availableItems.length, [availableItems]);
   const visibleItems = filter === "available" ? availableItems : myItems;
+
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await loadRequests(false);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [loadRequests]);
 
   const handleAccept = (item: SwapRequestReviewItem) => {
     Alert.alert(
@@ -84,7 +110,10 @@ export default function SwapRequestsScreen() {
             setIsActingId(null);
 
             if (error) {
-              Alert.alert("Nao foi possivel aceitar", error);
+              Alert.alert(
+                "Nao foi possivel aceitar",
+                "A troca nao foi aceita. Tente novamente em alguns instantes.",
+              );
               return;
             }
 
@@ -103,7 +132,10 @@ export default function SwapRequestsScreen() {
       setIsActingId(null);
 
       if (error) {
-        Alert.alert("Erro", error);
+        Alert.alert(
+          "Nao foi possivel cancelar",
+          "A solicitacao de troca nao foi cancelada. Tente novamente em alguns instantes.",
+        );
         return;
       }
 
@@ -126,6 +158,12 @@ export default function SwapRequestsScreen() {
       <ScrollView
         contentContainerStyle={{ padding: 20, paddingBottom: 32, backgroundColor: "#f8fafc" }}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={() => void handleRefresh()}
+          />
+        }
       >
         <View
           style={{

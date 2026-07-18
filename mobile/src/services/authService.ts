@@ -1,4 +1,5 @@
 import { supabase } from "../lib/supabase";
+import { getAuthUserFacingError, getRawErrorMessage } from "../utils/userFacingErrors";
 
 export async function signUp(email: string, password: string, fullName: string) {
   try {
@@ -13,9 +14,9 @@ export async function signUp(email: string, password: string, fullName: string) 
     });
     if (error) throw error;
     return { user: data.user, error: null };
-  } catch (error: any) {
-    console.error('Erro no signUp:', error.message);
-    return { user: null, error: error.message };
+  } catch (error: unknown) {
+    console.error("Erro no signUp:", getRawErrorMessage(error));
+    return { user: null, error: getAuthUserFacingError(error, "sign_up") };
   }
 }
 
@@ -29,9 +30,9 @@ export async function signIn(email: string, password: string) {
     if (error) throw error;
 
     return { user: data.user, error: null };
-  } catch (error: any) {
-    console.error('Erro no signIn:', error.message);
-    return { user: null, error: error.message };
+  } catch (error: unknown) {
+    console.error("Erro no signIn:", getRawErrorMessage(error));
+    return { user: null, error: getAuthUserFacingError(error, "sign_in") };
   }
 }
 
@@ -42,8 +43,8 @@ export async function signOut() {
     if (error) throw error;
     
     return { error: null };
-  } catch (error: any) {
-    console.error('Erro no signOut:', error.message);
-    return { error: error.message };
+  } catch (error: unknown) {
+    console.error("Erro no signOut:", getRawErrorMessage(error));
+    return { error: getAuthUserFacingError(error, "sign_out") };
   }
 }

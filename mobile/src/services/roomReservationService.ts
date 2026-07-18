@@ -1,11 +1,23 @@
 import { supabase } from "../lib/supabase";
 import type { Room, RoomReservation } from "../types/models";
 import { normalizeEventCategory } from "../utils/eventCategory";
+
 export const ROOM_EVENT_LINKED_CANCELLATION_MESSAGE =
-  "Esta reserva estÃ¡ vinculada a um evento e nÃ£o pode ser cancelada por aqui.";
+  "Esta reserva está vinculada a um evento e não pode ser cancelada por aqui.";
 
 export const ROOM_RESERVATION_CONFLICT_MESSAGE =
   "Esta sala já está reservada para esse horário.";
+
+const ROOM_AVAILABILITY_LOAD_ERROR_MESSAGE =
+  "Não foi possível carregar as salas para esse horário.";
+const ROOM_DAILY_AGENDA_LOAD_ERROR_MESSAGE =
+  "Não foi possível carregar a agenda das salas.";
+const ROOM_RESERVATION_CREATE_ERROR_MESSAGE =
+  "Não foi possível salvar a reserva da sala.";
+const ROOM_RESERVATION_CANCEL_ERROR_MESSAGE =
+  "Não foi possível cancelar a reserva.";
+const ROOM_EVENT_LINK_LOAD_ERROR_MESSAGE =
+  "Não foi possível carregar a reserva vinculada ao evento.";
 
 export interface RoomAvailability extends Room {
   status: "available" | "occupied";
@@ -22,6 +34,7 @@ export interface LinkedRoomScheduleSummary {
 export interface RoomDailyAgendaItem {
   id: string;
   roomId: string;
+  reservedBy: string;
   startAt: string;
   endAt: string;
   purpose: string | null;
@@ -59,6 +72,32 @@ function getErrorMessage(error: unknown) {
   return "Erro inesperado.";
 }
 
+function mapRoomReservationError(error: unknown, fallback: string) {
+  const message = getErrorMessage(error);
+
+  if (message.includes("no_overlap")) {
+    return ROOM_RESERVATION_CONFLICT_MESSAGE;
+  }
+
+  if (
+    message === ROOM_EVENT_LINKED_CANCELLATION_MESSAGE ||
+    message === ROOM_RESERVATION_CONFLICT_MESSAGE ||
+    message === "Usuário não autenticado." ||
+    message === "Reserva não encontrada." ||
+    message === "Você não pode cancelar esta reserva." ||
+    message === "Esta reserva já não está ativa." ||
+    message === "Data inicial inválida." ||
+    message === "Data final inválida." ||
+    message === "Data inválida." ||
+    message === "A data final deve ser maior que a data inicial." ||
+    message === "Intervalo da reserva inválido."
+  ) {
+    return message;
+  }
+
+  return fallback;
+}
+
 function normalizeReservationWindow(input: {
   startAt?: string | null;
   endAt?: string | null;
@@ -94,7 +133,7 @@ function normalizeDayWindow(dateKey: string) {
   const startDate = new Date(`${dateKey}T00:00:00`);
 
   if (Number.isNaN(startDate.getTime())) {
-    return { data: null, error: "Data invÃ¡lida." };
+    return { data: null, error: "Data inválida." };
   }
 
   const endDate = new Date(startDate);
@@ -141,13 +180,7 @@ function buildLinkedScheduleSummaryByEventId(rows: ScheduleSummaryRow[]) {
 }
 
 export function mapRoomReservationConflictMessage(error: unknown) {
-  const message = getErrorMessage(error);
-
-  if (message.includes("no_overlap")) {
-    return ROOM_RESERVATION_CONFLICT_MESSAGE;
-  }
-
-  return message;
+  return mapRoomReservationError(error, ROOM_RESERVATION_CREATE_ERROR_MESSAGE);
 }
 
 export async function getRoomsForWindow(input: {
@@ -199,7 +232,10 @@ export async function getRoomsForWindow(input: {
       error: null,
     };
   } catch (error: unknown) {
-    return { data: null, error: getErrorMessage(error) };
+    return {
+      data: null,
+      error: mapRoomReservationError(error, ROOM_AVAILABILITY_LOAD_ERROR_MESSAGE),
+    };
   }
 }
 
@@ -208,7 +244,7 @@ export async function getRoomsDailyAgenda(dateKey: string) {
     const normalizedDay = normalizeDayWindow(dateKey);
 
     if (normalizedDay.error || !normalizedDay.data) {
-      throw new Error(normalizedDay.error ?? "Data invÃ¡lida.");
+      throw new Error(normalizedDay.error ?? "Data inválida.");
     }
 
     const { data: rooms, error: roomsError } = await supabase
@@ -233,7 +269,10 @@ export async function getRoomsDailyAgenda(dateKey: string) {
       new Set(
         typedReservations
           .map((reservation) => reservation.event_id)
-          .filter((eventId): eventId is string => typeof eventId === "string" && eventId.length > 0),
+          .filter(
+            (eventId): eventId is string =>
+              typeof eventId === "string" && eventId.length > 0,
+          ),
       ),
     );
 
@@ -267,6 +306,7 @@ export async function getRoomsDailyAgenda(dateKey: string) {
       roomAgenda.push({
         id: reservation.id,
         roomId: reservation.room_id,
+        reservedBy: reservation.reserved_by,
         startAt: reservation.start_at,
         endAt: reservation.end_at,
         purpose: reservation.purpose,
@@ -289,7 +329,10 @@ export async function getRoomsDailyAgenda(dateKey: string) {
       error: null,
     };
   } catch (error: unknown) {
-    return { data: null, error: getErrorMessage(error) };
+    return {
+      data: null,
+      error: mapRoomReservationError(error, ROOM_DAILY_AGENDA_LOAD_ERROR_MESSAGE),
+    };
   }
 }
 
@@ -338,7 +381,10 @@ export async function createStandaloneRoomReservation(input: {
 
     return { data: data as RoomReservation, error: null };
   } catch (error: unknown) {
-    return { data: null, error: mapRoomReservationConflictMessage(error) };
+    return {
+      data: null,
+      error: mapRoomReservationError(error, ROOM_RESERVATION_CREATE_ERROR_MESSAGE),
+    };
   }
 }
 
@@ -352,7 +398,7 @@ export async function cancelStandaloneRoomReservation(reservationId: string) {
     if (authError) throw authError;
 
     if (!user?.id) {
-      throw new Error("UsuÃ¡rio nÃ£o autenticado.");
+      throw new Error("Usuário não autenticado.");
     }
 
     const { data: reservationData, error: reservationError } = await supabase
@@ -366,11 +412,11 @@ export async function cancelStandaloneRoomReservation(reservationId: string) {
     const reservation = reservationData as RoomReservation | null;
 
     if (!reservation) {
-      throw new Error("Reserva nÃ£o encontrada.");
+      throw new Error("Reserva não encontrada.");
     }
 
     if (reservation.reserved_by !== user.id) {
-      throw new Error("VocÃª nÃ£o pode cancelar esta reserva.");
+      throw new Error("Você não pode cancelar esta reserva.");
     }
 
     if (reservation.event_id != null) {
@@ -378,7 +424,7 @@ export async function cancelStandaloneRoomReservation(reservationId: string) {
     }
 
     if (reservation.status !== "active") {
-      throw new Error("Esta reserva jÃ¡ nÃ£o estÃ¡ ativa.");
+      throw new Error("Esta reserva já não está ativa.");
     }
 
     const { data, error } = await supabase
@@ -392,7 +438,10 @@ export async function cancelStandaloneRoomReservation(reservationId: string) {
 
     return { data: data as RoomReservation, error: null };
   } catch (error: unknown) {
-    return { data: null, error: getErrorMessage(error) };
+    return {
+      data: null,
+      error: mapRoomReservationError(error, ROOM_RESERVATION_CANCEL_ERROR_MESSAGE),
+    };
   }
 }
 
@@ -412,6 +461,9 @@ export async function getLinkedReservationForEvent(eventId: string) {
       error: null,
     };
   } catch (error: unknown) {
-    return { data: null, error: getErrorMessage(error) };
+    return {
+      data: null,
+      error: mapRoomReservationError(error, ROOM_EVENT_LINK_LOAD_ERROR_MESSAGE),
+    };
   }
 }

@@ -3,6 +3,7 @@ import { Event } from '../types/models';
 import { normalizeAudienceUserIds } from '../utils/eventAudience';
 import { normalizeEventRange } from '../utils/eventDate';
 import { normalizeEventCategory } from '../utils/eventCategory';
+import { getGenericUserFacingError, getRawErrorMessage } from '../utils/userFacingErrors';
 import {
   getLinkedReservationForEvent,
   mapRoomReservationConflictMessage,
@@ -11,11 +12,6 @@ import {
 export interface EventEditorData {
   event: Event;
   visible_to_user_ids: string[];
-}
-
-function getErrorMessage(error: unknown) {
-  if (error instanceof Error) return error.message;
-  return 'Erro inesperado.';
 }
 
 function buildEventPayload(eventData: Partial<Event>) {
@@ -61,11 +57,17 @@ export async function getUpcomingEvents(limit: number = 20) {
       .limit(limit);
 
     if (error) throw error;
-    
+
     return { data: data as Event[], error: null };
-  } catch (error: any) {
-    console.error('Erro ao buscar próximos eventos:', error.message);
-    return { data: null, error: error.message };
+  } catch (error: unknown) {
+    console.error('Erro ao buscar proximos eventos:', getRawErrorMessage(error));
+    return {
+      data: null,
+      error: getGenericUserFacingError(
+        error,
+        'Nao foi possivel carregar os eventos. Tente novamente em alguns instantes.',
+      ),
+    };
   }
 }
 
@@ -80,9 +82,15 @@ export async function getEvents(limit: number = 100) {
     if (error) throw error;
 
     return { data: data as Event[], error: null };
-  } catch (error: any) {
-    console.error('Erro ao buscar eventos:', error.message);
-    return { data: null, error: error.message };
+  } catch (error: unknown) {
+    console.error('Erro ao buscar eventos:', getRawErrorMessage(error));
+    return {
+      data: null,
+      error: getGenericUserFacingError(
+        error,
+        'Nao foi possivel carregar os eventos. Tente novamente em alguns instantes.',
+      ),
+    };
   }
 }
 
@@ -98,9 +106,14 @@ export async function getEventById(eventId: string) {
 
     return { data: data as Event, error: null };
   } catch (error: unknown) {
-    const message = getErrorMessage(error);
-    console.error('Erro ao buscar evento por id:', message);
-    return { data: null, error: message };
+    console.error('Erro ao buscar evento por id:', getRawErrorMessage(error));
+    return {
+      data: null,
+      error: getGenericUserFacingError(
+        error,
+        'Nao foi possivel carregar este evento. Tente novamente em alguns instantes.',
+      ),
+    };
   }
 }
 
@@ -118,9 +131,14 @@ export async function getEventAudienceUserIds(eventId: string) {
       error: null,
     };
   } catch (error: unknown) {
-    const message = getErrorMessage(error);
-    console.error('Erro ao buscar audiencia do evento:', message);
-    return { data: null, error: message };
+    console.error('Erro ao buscar audiencia do evento:', getRawErrorMessage(error));
+    return {
+      data: null,
+      error: getGenericUserFacingError(
+        error,
+        'Nao foi possivel carregar a audiencia do evento. Tente novamente em alguns instantes.',
+      ),
+    };
   }
 }
 
@@ -158,9 +176,14 @@ export async function getEventEditorData(eventId: string) {
       error: null,
     };
   } catch (error: unknown) {
-    const message = getErrorMessage(error);
-    console.error('Erro ao buscar dados de edicao do evento:', message);
-    return { data: null, error: message };
+    console.error('Erro ao buscar dados de edicao do evento:', getRawErrorMessage(error));
+    return {
+      data: null,
+      error: getGenericUserFacingError(
+        error,
+        'Nao foi possivel carregar os dados do evento. Tente novamente em alguns instantes.',
+      ),
+    };
   }
 }
 
@@ -188,7 +211,7 @@ export async function createEvent(eventData: Partial<Event>) {
           is_public: isPublic,
           start_at: normalizedRange.data.startAt,
           end_at: normalizedRange.data.endAt,
-        }
+        },
       ])
       .select()
       .single();
@@ -198,12 +221,17 @@ export async function createEvent(eventData: Partial<Event>) {
     if (!isPublic && visibleUserIds.length > 0) {
       await syncEventAudience(data.id, false, visibleUserIds);
     }
-    
+
     return { data: data as Event, error: null };
   } catch (error: unknown) {
-    const message = getErrorMessage(error);
-    console.error('Erro ao criar evento:', message);
-    return { data: null, error: message };
+    console.error('Erro ao criar evento:', getRawErrorMessage(error));
+    return {
+      data: null,
+      error: getGenericUserFacingError(
+        error,
+        'Nao foi possivel criar o evento. Tente novamente em alguns instantes.',
+      ),
+    };
   }
 }
 
@@ -247,12 +275,16 @@ export async function createMultipleEvents(eventsData: Partial<Event>[]) {
     );
 
     if (error) throw error;
-    
     return { data: data as Event[], error: null };
   } catch (error: unknown) {
-    const message = getErrorMessage(error);
-    console.error('Erro ao criar eventos em massa:', message);
-    return { data: null, error: message };
+    console.error('Erro ao criar eventos em massa:', getRawErrorMessage(error));
+    return {
+      data: null,
+      error: getGenericUserFacingError(
+        error,
+        'Nao foi possivel criar os eventos. Tente novamente em alguns instantes.',
+      ),
+    };
   }
 }
 
@@ -347,12 +379,17 @@ export async function updateEvent(eventId: string, updates: Partial<Event>) {
         visibleUserIds,
       );
     }
-    
+
     return { data: data as Event, error: null };
   } catch (error: unknown) {
-    const message = getErrorMessage(error);
-    console.error('Erro ao atualizar evento:', message);
-    return { data: null, error: message };
+    console.error('Erro ao atualizar evento:', getRawErrorMessage(error));
+    return {
+      data: null,
+      error: getGenericUserFacingError(
+        error,
+        'Nao foi possivel atualizar o evento. Tente novamente em alguns instantes.',
+      ),
+    };
   }
 }
 

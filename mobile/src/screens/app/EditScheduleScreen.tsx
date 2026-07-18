@@ -113,7 +113,7 @@ export default function EditScheduleScreen() {
     } catch (error: any) {
       Alert.alert(
         "Erro",
-        error.message ?? "Nao foi possivel carregar a escala.",
+        "Nao foi possivel carregar a escala.",
         [{ text: "Voltar", onPress: () => navigation.goBack() }],
       );
     } finally {
@@ -216,7 +216,10 @@ export default function EditScheduleScreen() {
 
     const { data, error } = await getSwapCandidatesForAssignment(assignmentId);
     if (error) {
-      Alert.alert("Nao foi possivel carregar candidatos", error);
+      Alert.alert(
+        "Nao foi possivel carregar candidatos",
+        "Tente novamente em alguns instantes.",
+      );
       setSwapCandidates([]);
       return;
     }
@@ -254,7 +257,10 @@ export default function EditScheduleScreen() {
     });
 
     if (warningsResult.error) {
-      Alert.alert("Nao foi possivel validar warnings", warningsResult.error);
+      Alert.alert(
+        "Nao foi possivel validar avisos",
+        "Tente novamente em alguns instantes.",
+      );
       return;
     }
 
@@ -271,7 +277,10 @@ export default function EditScheduleScreen() {
       setIsSavingAssignment(false);
 
       if (error) {
-        Alert.alert("Nao foi possivel adicionar na escala", error);
+        Alert.alert(
+          "Nao foi possivel adicionar na escala",
+          "O membro nao foi adicionado. Tente novamente em alguns instantes.",
+        );
         return;
       }
 
@@ -325,7 +334,10 @@ export default function EditScheduleScreen() {
           setRemovingAssignmentId(null);
 
           if (error) {
-            Alert.alert("Nao foi possivel remover", error);
+            Alert.alert(
+              "Nao foi possivel remover",
+              "O membro nao foi removido da escala. Tente novamente em alguns instantes.",
+            );
             return;
           }
 
@@ -370,7 +382,10 @@ export default function EditScheduleScreen() {
             setIsDeletingSchedule(false);
 
             if (error) {
-              Alert.alert("Nao foi possivel excluir a escala", error);
+              Alert.alert(
+                "Nao foi possivel excluir a escala",
+                "A escala nao foi excluida. Tente novamente em alguns instantes.",
+              );
               return;
             }
 
@@ -398,7 +413,10 @@ export default function EditScheduleScreen() {
     setIsConfirmingPresence(false);
 
     if (error) {
-      Alert.alert("Nao foi possivel confirmar presenca", error);
+      Alert.alert(
+        "Nao foi possivel confirmar presenca",
+        "Sua presenca nao foi confirmada. Tente novamente em alguns instantes.",
+      );
       return;
     }
 
@@ -419,7 +437,10 @@ export default function EditScheduleScreen() {
       );
 
       if (error) {
-        Alert.alert("Nao foi possivel verificar a troca", error);
+        Alert.alert(
+          "Nao foi possivel verificar a troca",
+          "Tente novamente em alguns instantes.",
+        );
         return;
       }
 
@@ -447,7 +468,10 @@ export default function EditScheduleScreen() {
     setIsSavingSwapRequest(false);
 
       if (error) {
-        Alert.alert("Nao foi possivel solicitar troca", error);
+        Alert.alert(
+          "Nao foi possivel solicitar troca",
+          "Sua solicitacao de troca nao foi enviada. Tente novamente em alguns instantes.",
+        );
         return;
       }
 
@@ -615,7 +639,10 @@ export default function EditScheduleScreen() {
                           pendingOwnSwapRequestId,
                         );
                         if (error) {
-                          Alert.alert("Nao foi possivel cancelar", error);
+                          Alert.alert(
+                            "Nao foi possivel cancelar",
+                            "A solicitacao de troca nao foi cancelada. Tente novamente em alguns instantes.",
+                          );
                           return;
                         }
 
@@ -638,7 +665,7 @@ export default function EditScheduleScreen() {
                     isLoading={isConfirmingPresence}
                     disabled={isOwnParticipationReadOnly || !hasPendingOwnAssignments}
                   >
-                    {hasPendingOwnAssignments ? "Confirmar presenca" : "Presenca confirmada"}
+                    {hasPendingOwnAssignments ? "Confirmar" : "Confirmado"}
                   </DefaultButton>
                 </View>
               </View>

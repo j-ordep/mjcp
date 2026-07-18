@@ -1,6 +1,6 @@
 # MJCP Mobile - Contexto do Projeto
 
-Data de reconciliacao: 2026-04-10 (America/Sao_Paulo)
+Data de reconciliacao: 2026-06-14 (America/Sao_Paulo)
 
 ## O que e
 
@@ -40,10 +40,17 @@ O dominio principal hoje e o fluxo de escalas.
 
 - O app nao esta mais em estado de UI puramente mockada para o dominio principal.
 - Existe autenticacao Supabase parcial no projeto.
+- O bootstrap agora falha de forma amigavel quando o `.env` publico do Supabase estiver ausente, placeholder ou invalido:
+  - `App.tsx` valida `EXPO_PUBLIC_SUPABASE_URL` e `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` antes de montar o fluxo autenticado
+  - `src/lib/publicEnv.ts` concentra o contrato de leitura segura dessas variaveis
 - Existe integracao real com Supabase para eventos, ministerios, membros, escalas, assignments e trocas.
 - O app agora possui leitura real da inbox de notificacoes pela tabela `notifications`:
   - `NotificationsModal` deixou de ser mockado
   - existe `notificationService` para listar e marcar notificacoes como lidas
+  - existe `useNotificationStore` como fonte de verdade da inbox no cliente
+  - a Home exibe badge de nao lidas no sino
+  - a inbox recebe `INSERT` e `UPDATE` em realtime filtrados por `user_id`
+  - tocar em uma notificacao navega para `SwapRequests` ou `EditSchedule`, conforme o payload
 - O fluxo de criacao de escala foi separado da montagem da equipe:
   - `CreateScheduleScreen` cria o contexto da escala
   - `EditScheduleScreen` faz a montagem da equipe e operacao da escala
@@ -56,6 +63,9 @@ O dominio principal hoje e o fluxo de escalas.
   - `admin`
   - usuarios com `profiles.can_manage_events = true`
 - `CreateEventScreen` agora reidrata a edicao de evento pelo backend via `eventId`, em vez de depender apenas dos dados passados pela navegacao
+- `CreateEventScreen` agora usa um contrato compartilhado de datas para converter o formulario local em UTC ISO:
+  - `buildUtcRangeFromLocalForm(...)` concentra a regra base
+  - a reidratacao da data deixou de depender de `split("T")` e volta para o fuso local do usuario
 - a audiencia de eventos privados volta carregada corretamente ao editar o evento
 - no MVP atual, `event_audiences` representa ao mesmo tempo visibilidade e lista de convite/convocacao do evento privado
 - reuniao continua sendo um evento; nao existe entidade separada para esse caso
@@ -71,6 +81,10 @@ O dominio principal hoje e o fluxo de escalas.
   - todas as reservas ativas do dia
   - badge `Evento` quando a reserva veio de `room_reservations.event_id`
   - resumo simples somente leitura das escalas vinculadas ao evento
+- `RoomsScreen` agora mantem a superficie principal mais limpa:
+  - a tela principal ficou focada na agenda do dia
+  - o fluxo de reserva avulsa abre um modal dedicado por sala
+  - titulo, categoria, data e horario da reserva deixaram de aparecer no topo como pseudo-filtros
 - `RoomsScreen` agora tambem permite cancelar a propria reserva avulsa ativa, sem tocar em reservas vinculadas a evento
 - se a leitura de `schedules` falhar por permissao/RLS, a agenda diaria continua carregando e apenas omite o resumo de escalas
 - o vinculo estrutural entre evento e sala nesta fase passa por `room_reservations.event_id`, sem introduzir `events.room_id`
@@ -91,6 +105,19 @@ O dominio principal hoje e o fluxo de escalas.
   - o catalogo agora vem de `songs`
   - o proximo setlist agora vem de `event_setlists`
   - usuarios com permissao de gerenciar eventos agora conseguem editar de forma simples o setlist do proximo evento
+  - a troca completa do setlist agora acontece via RPC transacional `replace_event_setlist`, evitando apagar a setlist atual em caso de falha parcial
+- `MusicDetailsScreen` agora abre a partir do catalogo e do proximo setlist:
+  - exibe metadados basicos da musica
+  - tenta abrir `lyrics_url` de forma amigavel quando existir
+- o perfil deixou de depender de fallbacks externos de avatar:
+  - `HeaderPrimary`, `ProfileScreen` e `EditProfileScreen` agora usam apenas `avatar_url` real ou iniciais locais
+  - a edicao de perfil nao exibe mais CTA falso para trocar foto
+- `BottomSheetMenu` deixou de expor acoes placeholder de compartilhar perfil e configuracoes de notificacao
+- `ProfileScreen` trocou os cards mockados de atividade por um resumo simples com dados reais da POC
+- `ProfileScreen` passou a formatar telefone de forma legivel no resumo do usuario
+- `CalendarModal` volta a abrir sincronizado com a data real do formulario, sem reaproveitar selecao cancelada da abertura anterior
+- `BlockDatesScreen` agora trava interacoes durante o salvamento para evitar perda silenciosa de alteracoes
+- `YoutubeCarousel` ja ignora placeholders publicos de `EXPO_PUBLIC_YOUTUBE_API_KEY`, evitando requests inuteis enquanto o `.env` ainda nao estiver configurado
 - Ao tocar em uma escala a partir de `ScheduleScreen`, admin, lider e membro agora abrem a mesma tela `EditScheduleScreen`:
   - admin/lider entram em modo gerencial
   - membro entra em modo de acompanhamento da propria participacao, sem acoes administrativas
@@ -105,7 +132,7 @@ O dominio principal hoje e o fluxo de escalas.
 
 ### PENDENTE DE DEFINICAO
 
-- Estrategia final de notificacoes operacionais do fluxo de escalas e trocas
+- Notificacoes de evento privado e reserva de sala ainda seguem fora do escopo atual
 - Estrategia futura de retencao/limpeza de escalas antigas
 
 ### INFORMACAO INSUFICIENTE
@@ -191,7 +218,9 @@ O modelo atual e:
 - A verdade atual do dominio esta nas migrations e no service layer.
 - `docs/TASKS.md` e `docs/ROADMAP.md` servem como mapa de trabalho, nao como fonte primaria.
 - A UX do modal de adicionar membro foi alinhada ao padrao do modal central de troca; o fluxo nao usa mais visual de bottom sheet nesse ponto.
-- O backend de notificacoes de swap foi preparado em migration nova e depende de aplicacao no projeto Supabase para produzir notificacoes reais.
+- O backend de notificacoes de swap ja esta operacional no projeto Supabase remoto e produz notificacoes reais na inbox in-app.
+- O backend de notificacao de `schedule.assigned` tambem ja esta operacional no remoto, completando a inbox em tempo real desta rodada.
+- `docs/TASKS.md`, `docs/CONTEXT.md` e `docs/ROADMAP.md` passam a ser a superficie viva; planos antigos foram arquivados em `docs/history/`.
 - Nao colocar observacoes, `notes` ou `note` em nenhum lugar da escala.
 - O acesso primario ao fluxo de trocas deve sair de `ScheduleScreen`, nao da Home.
 - A confirmacao de presenca e a solicitacao/cancelamento de troca nao usam mais alerts nativos de sucesso; o feedback principal agora e o proprio estado da interface.
@@ -203,10 +232,5 @@ O modelo atual e:
 - `location` textual continua existindo em eventos; sala vinculada e opcional e nao substitui local livre.
 - A direcao atual para salas e reservas passa a ser concreta nesta fase: usar `room_reservations.event_id` opcional em vez de `events.room_id`.
 - Ao aplicar as migrations remotas de salas, conferir tambem a normalizacao do catalogo em `20260504000122_normalize_room_catalog.sql`.
-- A migration remota adicional desta rodada e `20260512000125_allow_event_managers_to_manage_event_setlists.sql`, para liberar escrita de `event_setlists` a quem ja pode gerenciar eventos.
 - O banco continua persistindo enums em ingles por compatibilidade de schema, mas a UI deve exibir status em pt-BR.
-- As migrations mais recentes a confirmar/aplicar no Supabase remoto incluem:
-  - `20260423000115_align_schedule_read_only_with_event_start_time.sql`
-  - `20260423000116_simplify_event_read_policy.sql`
-  - `20260426000117_prevent_duplicate_member_schedule_assignments.sql`
-  - `20260427000118_add_event_category.sql`
+- No estado remoto atual, as migrations locais ja aparecem sincronizadas ate `20260522000128`; a pendencia operacional que resta e validar constraints `NOT VALID` e outros checks manuais de dados historicos.

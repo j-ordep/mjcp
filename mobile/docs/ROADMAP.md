@@ -1,6 +1,6 @@
 # MJCP Mobile - Roadmap de Features
 
-Data de reconciliacao: 2026-04-10 (America/Sao_Paulo)
+Data de reconciliacao: 2026-06-14 (America/Sao_Paulo)
 
 > Este roadmap foi reconciliado com o estado atual do codigo em `src/` e das migrations em `supabase/migrations/`.
 > Quando houver divergencia entre este arquivo e o codigo, codigo + migrations continuam sendo a verdade atual.
@@ -12,6 +12,7 @@ Data de reconciliacao: 2026-04-10 (America/Sao_Paulo)
 ### Ja implementado no codigo
 
 - Autenticacao Supabase parcial, com `authService`, `useAuthStore` e fluxo autenticado no app
+- Bootstrap com guardrails amigaveis para `EXPO_PUBLIC_SUPABASE_URL` e `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 - Store global com Zustand para auth, eventos, ministerios e escalas
 - Criacao de escala separada da montagem da equipe
 - Tela dedicada de editar escala
@@ -27,7 +28,9 @@ Data de reconciliacao: 2026-04-10 (America/Sao_Paulo)
 - Eventos possuem categoria informativa em portugues e visual minimalista preto/branco
 - Edicao de evento hidrata dados canonicos do backend e reaplica corretamente a audiencia privada no formulario
 - `EventDetailsScreen` saneia o payload de edicao por whitelist, evitando reintroduzir campos operacionais no fluxo de eventos
+- `CreateEventScreen` usa um helper compartilhado para converter data/hora local em UTC ISO e reidrata a data editada no fuso local
 - Backend bloqueia novo assignment duplicado do mesmo membro na mesma escala
+- `MusicDetailsScreen` abre a partir do catalogo e do proximo setlist, com link externo amigavel quando `lyrics_url` existir
 
 ### Implementado parcialmente
 
@@ -41,11 +44,11 @@ Data de reconciliacao: 2026-04-10 (America/Sao_Paulo)
 
 ### Ainda pendente
 
-- Confirmar no Supabase remoto o estado final das migrations mais recentes de `start_at`, simplificacao da leitura de eventos e categoria de eventos
-- Aplicar/validar no Supabase remoto a migration que conecta notificacoes operacionais de swap, se ainda nao estiver aplicada
+- Validar constraints `NOT VALID` e dados historicos remanescentes no Supabase remoto
 - Pull-to-refresh e estados de loading/error mais consistentes
 - Validar em uso real a permissao granular de eventos e a nova UI admin de grant/revoke
 - Ampliar cobertura de testes do `scheduleService`, `ministryService` e `eventService`
+- Aplicar o mesmo contrato compartilhado de datas em outros formularios que ainda fujam do fluxo principal
 - Fluxo de declinio de assignment, caso o produto confirme essa necessidade
 - [x] Integrar salas e reservas ao fluxo basico real do app
   - `RoomsScreen` deixou de ser mock e agora cria reservas independentes reais
@@ -122,25 +125,25 @@ Data de reconciliacao: 2026-04-10 (America/Sao_Paulo)
 
 ## P2 - Notificacoes
 
-- [ ] Notificar novo assignment criado
-- [~] Notificar criacao de swap request
-- [~] Notificar membros elegiveis para assumir troca
-- [~] Notificar lider responsavel pela escala
-- [~] Notificar quando a troca for assumida
-- [~] Notificar quando a troca for cancelada
+- [x] Notificar novo assignment criado
+- [x] Notificar criacao de swap request
+- [x] Notificar membros elegiveis para assumir troca
+- [x] Notificar lider responsavel pela escala
+- [x] Notificar quando a troca for assumida
+- [x] Notificar quando a troca for cancelada
   - Estado atual confirmado no codigo:
-    - migration local preparada para gerar notificacoes de `swap_request` no backend
+    - backend de `swap_request` e `schedule.assigned` ja esta operacional no remoto
     - `NotificationsModal` agora consome a inbox real no app
   - Pendencia real:
-    - aplicar a migration no projeto Supabase remoto
-    - fechar badge/realtime/push em rodada futura
+    - estender a inbox para evento privado e reserva de sala
+    - decidir push externo em rodada futura
 
 ---
 
 ## P2 - Outras frentes do produto
 
 - [x] Queries reais de disponibilidade de salas
-- [ ] Tela de musica individual
+- [x] Tela de musica individual
 - [x] Setlist por evento
   - entregue em modo simples no `MusicScreen`, focado no proximo evento
 - [ ] Padronizacao de loading/error/empty states
@@ -148,11 +151,18 @@ Data de reconciliacao: 2026-04-10 (America/Sao_Paulo)
 
 ---
 
+## Higiene documental
+
+- [x] Arquivar planos faseados e snapshots que ja nao orientam a execucao atual
+- [~] Manter a raiz de `docs/` restrita a estado vivo e referencia operacional direta
+
+---
+
 ## Proximos passos sugeridos
 
-1. Aplicar no Supabase remoto a migration `20260512000125_allow_event_managers_to_manage_event_setlists.sql`.
-2. Revisar UX final de evento + sala em uso real no app.
-3. Validar em uso real a permissao granular de criacao/edicao de eventos e setlists.
-4. Confirmar no Supabase remoto a fase atual de salas, especialmente catalogo padrao e read-model diario com dados reais.
-5. Refinar a UI administrativa de permissao granular se o uso real pedir filtros ou escopo extra.
-6. Implementar notificacoes in-app do fluxo de trocas, escalas e eventos privados.
+1. Padronizar loading/error/empty states nas telas mais visiveis (`Home`, `Rooms`, `Music`, `Profile`, `SwapRequests`).
+2. Expandir o contrato compartilhado de datas para os formularios restantes fora do fluxo principal.
+3. Validar constraints `NOT VALID` e checks manuais de dados historicos no Supabase remoto.
+4. Estender a inbox atual para evento privado e reserva de sala.
+5. Revisar se `EVENT_CORE_PLAN.md` continua vivo na raiz ou deve migrar para `docs/history/`.
+6. Ampliar cobertura de testes dos services principais antes de abrir novas frentes grandes.

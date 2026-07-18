@@ -56,10 +56,10 @@ export default function CreateScheduleScreen() {
         if (error) throw new Error(error);
         setMinistries((data ?? []).filter((ministry) => ministry.is_leader));
       }
-    } catch (error: any) {
+    } catch {
       Alert.alert(
-        "Erro",
-        error.message ?? "Nao foi possivel carregar ministerios.",
+        "Nao foi possivel carregar ministerios",
+        "Tente novamente em alguns instantes.",
       );
     } finally {
       setIsLoadingMinistries(false);
@@ -104,7 +104,10 @@ export default function CreateScheduleScreen() {
     setIsSaving(false);
 
     if (error) {
-      Alert.alert("Nao foi possivel salvar a escala", error);
+      Alert.alert(
+        "Nao foi possivel salvar a escala",
+        "Tente novamente em alguns instantes.",
+      );
       return;
     }
 

@@ -5,6 +5,13 @@ export interface NormalizedEventRange {
   endAt: string;
 }
 
+export interface LocalEventRangeInput {
+  dateKey: string;
+  startTime: string;
+  endTime?: string | null;
+  requireFutureStart?: boolean;
+}
+
 export function getNow() {
   return new Date();
 }
@@ -28,6 +35,30 @@ export function createLocalDateTime(dateKey: string, time: string) {
 
 export function getDefaultEndAt(startAt: Date) {
   return new Date(startAt.getTime() + EVENT_DEFAULT_DURATION_MS);
+}
+
+export function buildUtcRangeFromLocalForm(
+  input: LocalEventRangeInput,
+): { data: NormalizedEventRange | null; error: string | null } {
+  const startDate = createLocalDateTime(input.dateKey, input.startTime);
+
+  if (Number.isNaN(startDate.getTime())) {
+    return { data: null, error: "Data inicial invalida." };
+  }
+
+  const endDate = input.endTime
+    ? createLocalDateTime(input.dateKey, input.endTime)
+    : getDefaultEndAt(startDate);
+
+  if (Number.isNaN(endDate.getTime())) {
+    return { data: null, error: "Data final invalida." };
+  }
+
+  return normalizeEventRange({
+    startAt: startDate.toISOString(),
+    endAt: endDate.toISOString(),
+    requireFutureStart: input.requireFutureStart,
+  });
 }
 
 export function normalizeEventRange(input: {

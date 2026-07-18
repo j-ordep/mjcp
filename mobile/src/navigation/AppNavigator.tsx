@@ -17,6 +17,7 @@ import EventDetailsScreen from "../screens/app/EventDetailsScreen";
 import EventsScreen from "../screens/app/EventsScreen";
 import ManageMinistryMembersScreen from "../screens/app/ManageMinistryMembersScreen";
 import ManageEventPermissionsScreen from "../screens/app/ManageEventPermissionsScreen";
+import MusicDetailsScreen from "../screens/app/MusicDetailsScreen";
 import ScheduleScreen from "../screens/app/ScheduleScreen";
 import ProfileScreen from "../screens/app/ProfileScreen";
 import SwapRequestsScreen from "../screens/app/SwapRequestsScreen";
@@ -24,6 +25,7 @@ import SignInScreen from "../screens/auth/SignInScreen";
 import SignUpScreen from "../screens/auth/SignUpScreen";
 import { getProfile } from "../services/profileService";
 import { useAuthStore } from "../stores/useAuthStore";
+import { useNotificationStore } from "../stores/useNotificationStore";
 
 export type RootStackParamList = {
   SignIn: undefined;
@@ -59,6 +61,9 @@ export type RootStackParamList = {
   EditSchedule: {
     scheduleId: string;
   };
+  MusicDetails: {
+    songId: string;
+  };
   ManageMinistryMembers:
     | {
         ministryId?: string;
@@ -83,6 +88,16 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 export default function AppNavigator() {
   const { session, isLoading, setSession, setProfile, setLoading } =
     useAuthStore();
+  const bootstrapNotifications = useNotificationStore(
+    (state) => state.bootstrap,
+  );
+  const connectNotificationRealtime = useNotificationStore(
+    (state) => state.connectRealtime,
+  );
+  const disconnectNotificationRealtime = useNotificationStore(
+    (state) => state.disconnectRealtime,
+  );
+  const clearNotifications = useNotificationStore((state) => state.clear);
 
   useEffect(() => {
     let isMounted = true;
@@ -141,6 +156,29 @@ export default function AppNavigator() {
     };
   }, [setLoading, setProfile, setSession]);
 
+  useEffect(() => {
+    const userId = session?.user?.id;
+
+    if (!userId) {
+      void disconnectNotificationRealtime();
+      clearNotifications();
+      return;
+    }
+
+    void bootstrapNotifications(userId);
+    void connectNotificationRealtime(userId);
+
+    return () => {
+      void disconnectNotificationRealtime();
+    };
+  }, [
+    bootstrapNotifications,
+    clearNotifications,
+    connectNotificationRealtime,
+    disconnectNotificationRealtime,
+    session?.user?.id,
+  ]);
+
   if (isLoading) {
     return (
       <View
@@ -187,6 +225,10 @@ export default function AppNavigator() {
             <Stack.Screen
               name="EditSchedule"
               component={EditScheduleScreen}
+            />
+            <Stack.Screen
+              name="MusicDetails"
+              component={MusicDetailsScreen}
             />
             <Stack.Screen
               name="ManageMinistryMembers"

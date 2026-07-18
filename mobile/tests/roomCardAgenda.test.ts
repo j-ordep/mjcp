@@ -10,6 +10,7 @@ function createAgendaItem(
   return {
     id: input.id,
     roomId: input.roomId,
+    reservedBy: input.reservedBy ?? "user-1",
     startAt: input.startAt ?? "2026-05-05T19:00:00-03:00",
     endAt: input.endAt ?? "2026-05-05T21:00:00-03:00",
     purpose: input.purpose ?? "Culto da noite",

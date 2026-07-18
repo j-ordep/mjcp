@@ -1,15 +1,15 @@
 # MJCP Mobile - Runbook de aplicacao remota no Supabase
 
-Data de consolidacao: 2026-04-27 (America/Sao_Paulo)
+Data de consolidacao: 2026-06-14 (America/Sao_Paulo)
 
-> Este arquivo organiza o que precisa ser aplicado no projeto Supabase remoto para alinhar o ambiente com o estado atual do repositorio.
+> Este arquivo registra a rodada de aplicacao remota e permanece como checklist historico/operacional das migrations mais sensiveis do projeto.
 > Fonte primaria: `supabase/migrations/*.sql`.
 
 ---
 
 ## 1. Objetivo desta rodada
 
-Aplicar no Supabase remoto as migrations locais pendentes que fecham o fluxo principal de escalas e trocas:
+Este foi o pacote de migrations usado para fechar o fluxo principal de escalas, trocas, setlist e inbox operacional no remoto:
 
 1. `20260412000111_fix_schedule_rls_recursion.sql`
 2. `20260412000112_reset_assignment_confirmation_on_swap_request.sql`
@@ -24,6 +24,8 @@ Aplicar no Supabase remoto as migrations locais pendentes que fecham o fluxo pri
 11. `20260509000123_add_event_management_permission.sql`
 12. `20260511000124_add_profile_event_management_permission_rpc.sql`
 13. `20260512000125_allow_event_managers_to_manage_event_setlists.sql`
+14. `20260515000126_add_replace_event_setlist_rpc.sql`
+15. `20260522000128_add_schedule_assignment_notifications.sql`
 
 ---
 
@@ -152,6 +154,22 @@ Aplicar no Supabase remoto as migrations locais pendentes que fecham o fluxo pri
   - quem ja pode gerenciar eventos passa a conseguir editar setlists sem precisar virar `admin`
   - leitura autenticada de `event_setlists` continua igual
 
+### `20260515000126_add_replace_event_setlist_rpc.sql`
+
+- cria a RPC transacional `replace_event_setlist`
+- impacto funcional:
+  - a troca completa da setlist acontece dentro de uma unica transacao no banco
+  - evita apagar a setlist atual se a insercao da nova lista falhar no meio do processo
+
+### `20260522000128_add_schedule_assignment_notifications.sql`
+
+- cria a funcao `notify_schedule_assignment_created`
+- cria trigger `schedule_assignments_notify_created`
+- impacto funcional:
+  - ao inserir novo assignment, o usuario escalado recebe notificacao `schedule`
+  - o payload carrega `action = assigned` e ids de navegacao da escala
+  - auto-escala do proprio usuario nao gera auto-notificacao
+
 ## 3. Ordem recomendada de aplicacao
 
 Aplicar exatamente nesta ordem:
@@ -169,6 +187,8 @@ Aplicar exatamente nesta ordem:
 11. `20260509000123_add_event_management_permission.sql`
 12. `20260511000124_add_profile_event_management_permission_rpc.sql`
 13. `20260512000125_allow_event_managers_to_manage_event_setlists.sql`
+14. `20260515000126_add_replace_event_setlist_rpc.sql`
+15. `20260522000128_add_schedule_assignment_notifications.sql`
 
 ### Motivo da ordem
 
@@ -182,6 +202,8 @@ Aplicar exatamente nesta ordem:
 - `20260509000123` fecha a permissao granular de eventos por cima da modelagem ja consolidada de audiencia privada e sala opcional
 - `20260511000124` fecha a operacao segura de grant/revoke da flag no proprio app
 - `20260512000125` alinha `event_setlists` com a mesma permissao granular ja adotada no dominio de eventos
+- `20260515000126` fecha a integridade do fluxo de setlist com troca atomica no banco
+- `20260522000128` fecha o backend da inbox operacional para `schedule_assignments`
 
 ### Pre-requisito critico
 
@@ -265,9 +287,10 @@ where proname in (
   'notify_swap_request_created',
   'notify_swap_request_accepted',
   'notify_swap_request_cancelled',
-  'reset_assignment_confirmation_on_swap_request'
+  'reset_assignment_confirmation_on_swap_request',
+  'notify_schedule_assignment_created'
 );
-```
+``` 
 
 ```sql
 select trigger_name
@@ -277,6 +300,13 @@ where event_object_table = 'swap_requests'
     'swap_requests_notify_created',
     'swap_requests_reset_assignment_confirmation'
   );
+```
+
+```sql
+select trigger_name
+from information_schema.triggers
+where event_object_table = 'schedule_assignments'
+  and trigger_name = 'schedule_assignments_notify_created';
 ```
 
 ### 6.3 Conferir indice
@@ -407,6 +437,17 @@ Depois do `db push`, validar nesta ordem:
      - usuario consegue salvar audiencia privada e sala opcional
      - usuario nao precisa virar `admin` para isso
 
+7. adicionar um membro novo em uma escala como lider/admin
+   - esperado:
+     - assignment novo criado
+     - notificacao `Nova escala` gerada para o usuario escalado
+     - payload `schedule` com `schedule_id`, `event_id`, `ministry_id`, `assignment_id` e `role_id`
+
+8. auto-escalar o proprio lider/admin
+   - esperado:
+     - assignment novo criado
+     - nenhuma auto-notificacao gerada para o mesmo usuario
+
 ---
 
 ## 8. Principais riscos
@@ -493,6 +534,7 @@ Este runbook nao cobre:
 - novos indices alem de `schedule_assignments (user_id, status)`
 - melhorias de notificacao de copy/frequencia
 - evolucoes futuras da UI administrativa para grant/revoke de `profiles.can_manage_events`
+- notificacoes futuras de evento privado e reserva de sala
 - proximas evolucoes de UI fora da tela informativa de eventos
 
-Esses itens continuam no backlog e no `docs/NEXT_STEPS_PLAN.md`.
+Esses itens continuam no backlog vivo em `docs/TASKS.md` e no horizonte de produto em `docs/ROADMAP.md`.
