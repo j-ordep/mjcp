@@ -145,6 +145,10 @@ Atualizacao de hygiene/POC (2026-05-15):
     - nao permitir criar evento com `start_at` no passado
     - se o usuario nao informar `end_at`, o sistema deve preencher automaticamente `start_at + 3 horas`
 
+- [x] Endurecer RPCs de eventos antes de novas telas
+  - `save_event_with_optional_room_reservation` agora bloqueia edicao quando o evento ja iniciou
+  - `create_events_with_audiences` centraliza criacao em lote de eventos privados e publicos na mesma transacao
+
 - [ ] Indices para performance basica
   - [x] `schedule_assignments (user_id, status)`
     - Atualizacao em 2026-04-13:

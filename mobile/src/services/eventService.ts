@@ -275,7 +275,6 @@ export async function createMultipleEvents(eventsData: Partial<Event>[]) {
     );
 
     if (error) throw error;
-
     return { data: data as Event[], error: null };
   } catch (error: unknown) {
     console.error('Erro ao criar eventos em massa:', getRawErrorMessage(error));
