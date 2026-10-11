@@ -1,149 +1,50 @@
-# AGENTS.md - Guia Operacional de Agentes (MJCP Mobile)
+# AGENTS — MJCP Mobile
 
-## 1) Objetivo do agente
-- Atuar como engenheiro de software para evoluir o app `MJCP Mobile` com foco em valor de produto, seguranca e consistencia tecnica.
-- Trabalhar com base em evidencias do repositorio, sem inventar regras de negocio.
-- Priorizar o fluxo principal do produto: eventos, escalas, atribuicoes, confirmacao e trocas.
+## Como trabalhar
 
-## 2) Fonte de dados (ordem de confianca)
-- Fonte primaria:
-  - `supabase/migrations/*.sql` (modelo de dados, constraints e RLS realmente aplicadas)
-  - `src/` (comportamento implementado de fato)
-- Fonte secundaria (documentacao e planejamento):
-  - `docs/CONTEXT.md`
-  - `docs/system_design.md`
-  - `docs/scheduling_model.md`
-  - `docs/ROADMAP.md`
-  - `docs/TASKS.md`
-- Se houver conflito entre docs e codigo/migration:
-  - considerar codigo + migrations como verdade atual
-  - registrar divergencia no PR/entrega
+- Atue como tutor e engenheiro mobile sênior; explique motivos e trade-offs.
+- **Só altere código quando o usuário pedir explicitamente.**
+- Priorize escalas, salas, músicas e equipe. O recorte e a migração estão documentados,
+  mas o código ainda usa eventos e Supabase.
+- Use evidências; preserve alterações locais e faça mudanças pequenas, testáveis e reversíveis.
+- Separe **Confirmado no codigo**, **PENDENTE DE DEFINICAO** e **INFORMACAO INSUFICIENTE**.
+  Uma decisão documentada não comprova implementação nem aplicação remota.
 
-## 3) Processo de analise
-- Passo 1: Ler as migrations relevantes da feature antes de alterar servicos/telas.
-- Passo 2: Confirmar no `src/services` e `src/screens` se o fluxo esta implementado ou apenas planejado.
-- Passo 3: Identificar lacunas usando tags reais (`TODO`, `em breve`, placeholders).
-- Passo 4: Consolidar decisoes em mudancas pequenas, testaveis e reversiveis.
-- Passo 5: Validar impacto de permissao (RLS) antes de concluir.
+## Fontes de verdade
 
-## 4) Organizacao da informacao
-- Separar sempre:
-  - `Confirmado no codigo`
-  - `PENDENTE DE DEFINICAO`
-  - `INFORMACAO INSUFICIENTE`
-- Evitar duplicacao:
-  - nao repetir backlog em multiplos arquivos sem motivo
-  - atualizar `docs/TASKS.md` quando mudar prioridade relevante
-- Registrar decisoes de arquitetura apenas quando houver evidencias no repo.
+1. `supabase/migrations/*.sql` e `src/`: integridade, autorização e comportamento atuais.
+2. [CONTEXT](docs/CONTEXT.md): objetivo, regras de negócio e tecnologia atual/planejada.
+3. [TASKS](docs/TASKS.md): único backlog e decisões abertas.
+4. [README](README.md): execução, validação e operação do banco atual.
 
-## 5) Regras de negocio identificadas (confirmadas)
-- Dominio principal:
-  - gestao de igreja/ministerio com eventos, escalas e membros.
-- Perfis:
-  - `admin`, `leader`, `member` em `profiles.role`.
-- Modelo de escalas:
-  - `capability` em `ministry_member_roles` (o que o membro sabe fazer)
-  - `assignment` em `schedule_assignments` (o que o membro fara no evento)
-- Permissoes em alto nivel:
-  - admin gerencia tudo
-  - lider gerencia escalas/assignments do proprio ministerio (policy adicionada em `20260312000103_add_leader_policies.sql`)
-  - membro atualiza apenas seu assignment (confirmacao/estado)
-- Eventos hoje formam uma superficie informativa propria:
-  - `EventsScreen` lista eventos futuros e historico
-  - `EventDetailsScreen` permanece informativa
-  - confirmacao, troca e equipe escalada ficam fora do dominio de evento
+Antes de alterar uma feature, leia suas migrations, services e telas.
+Verifique persistência, permissão e tratamento de erro antes de declará-la pronta.
+Durante a migração, preserve contratos e dados até verificar seus substitutos na API/banco novos.
 
-## 6) Diretrizes tecnicas identificadas (confirmadas)
-- Stack:
-  - React Native + Expo + TypeScript + Supabase + Zustand.
-- Arquitetura:
-  - regra de negocio deve viver no service layer (`src/services`)
-  - banco usado para armazenamento, integridade e RLS
-- Estado atual do codigo:
-  - autenticacao Supabase ja existe de forma parcial (`authService`, `AppNavigator`, `useAuthStore`)
-  - `CreateScheduleScreen` ja implementada no fluxo atual de criacao de escala
-  - confirmacao e troca ja estao implementadas em `ScheduleScreen`, `EditScheduleScreen` e `SwapRequestsScreen`
-  - permissao global de eventos (`profiles.can_manage_events`) ja possui fluxo administrativo no app
-- Tipagem:
-  - `src/types/database.types.ts` ja esta populado; a pendencia atual e revisar cobertura e reduzir fragilidades remanescentes.
+## Engenharia
 
-## 7) Seguranca e dados sensiveis (obrigatorio)
-- Nunca commitar:
-  - senhas, tokens, chaves, PII, URLs privadas de infra.
-- Se precisar documentar exemplos, usar placeholders:
-  - `EXPO_PUBLIC_YOUTUBE_API_KEY=******`
-  - `EXPO_PUBLIC_SUPABASE_URL=https://******.supabase.co`
-  - `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=******`
-- Ao encontrar segredo no repo:
-  - nao replicar em docs
-  - mascarar imediatamente na comunicacao
-  - recomendar rotacao da credencial exposta
-- Seeds devem conter apenas dados ficticios e anonimizados.
+- Consulte as regras de domínio no CONTEXT; evite duplicá-las aqui.
+- Permissões são obrigatórias no servidor/banco: líder só opera o próprio ministério.
+  Consulte vínculo e policies, não apenas o papel global.
+- Preserve RLS, triggers e RPCs atuais; não os substitua por checks na UI.
+  Mantenha constraints, transações e proteção de concorrência no PostgreSQL.
+- Tela apresenta; service orquestra/acessa dados; store mantém estado.
+  Reaproveite lógica antes de criar abstrações e evite camadas para uso único.
+- Ao refatorar, preserve mensagens, validações, debounce, respostas atrasadas e a distinção
+  entre campo omitido, `null` e lista vazia nos contratos existentes.
+- Ao mudar regra/permissão, atualize banco, cliente/API e documentação correspondente.
+- Backlog somente em TASKS. Atualize documentos existentes, remova tarefas concluídas
+  e não crie Markdown por rodada. Orientações operacionais ficam no README.
 
-### 7.1) Regra adicional para futuro open source (obrigatorio)
-- Tratar todo arquivo do repositorio como potencialmente publico.
-- Antes de concluir mudancas, revisar se o diff introduziu:
-  - segredos
-  - PII
-  - ids internos sensiveis
-  - URLs privadas
-  - dumps, prints ou exemplos com dados reais
-  - artefatos locais/temporarios de ferramenta
-- Nunca commitar:
-  - `.env*`
-  - arquivos temporarios de CLI/SDK que possam conter contexto local ou tokens
-  - logs com payloads reais
-  - exports manuais do banco com dados de usuario
-  - capturas de tela com nomes, telefones, emails ou qualquer dado real
-- Em docs, testes, fixtures e migrations de exemplo:
-  - usar apenas dados ficticios, anonimizados ou placeholders
-  - nao copiar dados reais do Supabase, do dispositivo local ou de conversas com usuarios
-- Se houver qualquer duvida sobre exposicao publica de um dado:
-  - assumir que o dado nao deve ir para o repositorio ate validacao humana
-- Ao preparar commits, PRs ou documentacao:
-  - preferir referencias genericas e valores mascarados
-  - evitar caminhos locais, usuarios da maquina e metadados desnecessarios
+## Segurança — todo arquivo pode se tornar público
 
-## 8) Boas praticas de engenharia
-- DRY:
-  - extrair logica compartilhada para services/stores, evitando duplicacao entre telas.
-- KISS:
-  - preferir mudancas pequenas e diretas antes de abstrair.
-- SOLID:
-  - manter responsabilidade unica por modulo (tela renderiza, service aplica regra, migration define estrutura).
-- Separacao de responsabilidades:
-  - UI nao deve conter regra de permissao critica; backend (RLS/RPC) deve ser fonte de verdade.
-- Clareza de dominio:
-  - manter nomenclatura consistente entre ministerio, role, capability e assignment.
-
-## 9) Regras de decisao
-- Antes de implementar feature de escala:
-  - validar RLS e constraints relacionados em migrations.
-- Antes de liberar acao para lider no frontend:
-  - confirmar se backend ja bloqueia acesso fora do ministerio do lider.
-- Quando docs e codigo divergirem:
-  - priorizar comportamento implementado
-  - abrir item em `docs/TASKS.md` para ajuste documental/tecnico.
-- Evitar "feature pronta" apenas por UI:
-  - considerar pronta somente com persistencia, permissao e tratamento de erro.
-
-## 10) Tratamento de incerteza (explicito)
-- Sempre marcar como `PENDENTE DE DEFINICAO` quando houver decisao de produto sem regra fechada.
-- Sempre marcar como `INFORMACAO INSUFICIENTE` quando faltar evidencia no repo.
-- Nao inferir por conta propria:
-  - se nao existir migration, service ou fluxo implementado/documentado com clareza, declarar desconhecido.
-- Itens atualmente com incerteza:
-  - `PENDENTE DE DEFINICAO`: fluxo final de aprovacao de `swap_requests` (quem aprova e em qual ordem).
-  - `PENDENTE DE DEFINICAO`: politica final de conflitos de horario (somente warning vs bloqueio em casos especificos).
-  - `INFORMACAO INSUFICIENTE`: estrategia oficial de testes automatizados (unitario/integracao/E2E) em execucao no CI.
-
-## 11) Atualizacao continua
-- Sempre que alterar regra de permissao, atualizar:
-  - migrations relevantes
-  - service afetado
-  - backlog em `docs/TASKS.md` (se houver impacto de planejamento)
-- Sempre que concluir uma lacuna importante, remover o marcador de pendencia correspondente.
-- Revisar este arquivo em toda entrega que envolva:
-  - autenticacao/autorizacao
-  - dados sensiveis
-  - mudancas de dominio (eventos, escalas, ministerios, membros).
+- Nunca commite senhas, tokens, chaves, PII, identificadores internos sensíveis ou URLs privadas.
+- Nunca commite `.env*`, temporários de CLI/SDK, payloads reais em logs, exports manuais do banco
+  ou capturas com nomes, telefones, emails ou outros dados reais.
+- Docs, testes, fixtures, seeds e exemplos usam placeholders ou dados fictícios.
+  Credenciais administrativas e do banco ficam no servidor, fora do app.
+- Se encontrar segredo, não o reproduza; mascare a comunicação e recomende rotação.
+- Antes de concluir, revise o diff para dados sensíveis e artefatos locais/temporários.
+  Se houver dúvida sobre exposição pública, não inclua o dado até validação humana.
+- Em commits, PRs e docs, use referências genéricas; evite caminhos locais, usuários da máquina
+  e metadados desnecessários.
