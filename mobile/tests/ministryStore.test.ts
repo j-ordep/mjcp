@@ -65,6 +65,64 @@ function setSessionUserId(authStore: AuthStoreModule, userId: string) {
   });
 }
 
+test("auth revision changes on identity transitions and stays stable on refresh", () => {
+  const { authStore } = loadStoresWithMinistryMock(async () => ({ data: [], error: null }));
+  const store = authStore.useAuthStore;
+  const revision = () => (store.getState() as { sessionRevision?: number }).sessionRevision;
+  const initial = revision();
+  const session = { user: { id: "user-1" } } as NonNullable<ReturnType<typeof store.getState>["session"]>;
+  store.getState().setSession(session);
+  assert.equal(revision(), (initial ?? 0) + 1);
+  const first = revision();
+  store.getState().setSession({ ...session });
+  assert.equal(revision(), first);
+  store.getState().setSession(null);
+  store.getState().setSession(session);
+  assert.equal(revision(), (first ?? 0) + 2);
+  store.getState().setSession({ user: { id: "user-2" } } as typeof session);
+  assert.equal(revision(), (first ?? 0) + 3);
+});
+
+test("ministry reset invalidates a pending read", async () => {
+  let resolve!: (value: { data: unknown[]; error: null }) => void;
+  const { authStore, ministryStore } = loadStoresWithMinistryMock(() => new Promise(r => { resolve = r; }));
+  setSessionUserId(authStore, "user-1");
+  const pending = ministryStore.useMinistryStore.getState().fetchUserMinistries(true);
+  (ministryStore.useMinistryStore.getState() as { clearMinistries?: () => void }).clearMinistries!();
+  resolve({ data: [{ id: "old" }], error: null });
+  await pending;
+  assert.deepEqual(ministryStore.useMinistryStore.getState().userMinistries, []);
+  assert.equal(ministryStore.useMinistryStore.getState().isLoadingMinistries, false);
+});
+
+test("a late ministry response cannot replace a newer user", async () => {
+  const resolvers: ((value: { data: unknown[]; error: null }) => void)[] = [];
+  const { authStore, ministryStore } = loadStoresWithMinistryMock(() => new Promise(r => resolvers.push(r)));
+  setSessionUserId(authStore, "user-1");
+  const first = ministryStore.useMinistryStore.getState().fetchUserMinistries(true);
+  setSessionUserId(authStore, "user-2");
+  const second = ministryStore.useMinistryStore.getState().fetchUserMinistries(true);
+  resolvers[1]({ data: [{ id: "new" }], error: null });
+  await second;
+  resolvers[0]({ data: [{ id: "old" }], error: null });
+  await first;
+  assert.equal(ministryStore.useMinistryStore.getState().userMinistries[0].id, "new");
+});
+
+test("same-user ministry refresh accepts only the newest response", async () => {
+  const resolvers: ((value: { data: unknown[]; error: string | null }) => void)[] = [];
+  const { authStore, ministryStore } = loadStoresWithMinistryMock(() => new Promise(r => resolvers.push(r)));
+  setSessionUserId(authStore, "user-1");
+  const first = ministryStore.useMinistryStore.getState().fetchUserMinistries(true);
+  const second = ministryStore.useMinistryStore.getState().fetchUserMinistries(true);
+  resolvers[1]({ data: [{ id: "new" }], error: null });
+  await second;
+  resolvers[0]({ data: [], error: "old failure" });
+  await first;
+  assert.equal(ministryStore.useMinistryStore.getState().userMinistries[0].id, "new");
+  assert.equal(ministryStore.useMinistryStore.getState().error, null);
+});
+
 test("fetchUserMinistries reloads when the authenticated user changes", async () => {
   const loadedUserIds: string[] = [];
   const { authStore, ministryStore } = loadStoresWithMinistryMock(async (userId) => {

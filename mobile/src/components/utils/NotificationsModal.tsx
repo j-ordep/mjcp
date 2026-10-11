@@ -8,7 +8,7 @@ import {
   View,
 } from "react-native";
 import { Divider, Modal, Portal, Text } from "react-native-paper";
-import type { RootStackParamList } from "../../navigation/AppNavigator";
+import type { RootStackParamList } from "../../types/navigation";
 import type { AppNotification } from "../../services/notificationService";
 import { useNotificationStore } from "../../stores/useNotificationStore";
 import { getNotificationNavigationTarget } from "../../types/notifications";

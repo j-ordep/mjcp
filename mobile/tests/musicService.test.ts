@@ -9,6 +9,7 @@ function createSongsMock(config: {
   songById?: unknown | null;
   songByIdError?: { message: string } | null;
   eventSetlists?: unknown[];
+  eventSetlistReadError?: { message: string } | null;
   eventSetlistDeleteError?: { message: string } | null;
   eventSetlistInsertError?: { message: string } | null;
   replaceEventSetlistRpcError?: { message: string } | null;
@@ -106,7 +107,7 @@ function createSongsMock(config: {
 
       return Promise.resolve({
         data: config.eventSetlists ?? [],
-        error: null,
+        error: config.eventSetlistReadError ?? null,
       }).then(onfulfilled, onrejected);
     },
   };
@@ -352,8 +353,21 @@ test("replaceEventSetlist returns rpc errors without fetching stale setlist data
 
   assert.equal(result.data, null);
   assert.equal(result.error, "duplicate key value violates unique constraint");
+  assert.equal(result.saved, false);
   assert.equal(calls.rpcCalls.length, 1);
   assert.equal(calls.eventSetlistSelects.length, 0);
   assert.equal(calls.eventSetlistDeletes, 0);
   assert.equal(calls.eventSetlistInserts.length, 0);
+});
+
+test("replaceEventSetlist reports a confirmed write when rereading fails", async () => {
+  createUpcomingEventsMock([]);
+  const { calls, supabaseMock } = createSongsMock({ eventSetlistReadError: { message: "read unavailable" } });
+  const { replaceEventSetlist } = loadServiceModule<MusicService>("../src/services/musicService", supabaseMock);
+  const result = await replaceEventSetlist({ eventId: "event-example", items: [] });
+  assert.equal(result.saved, true);
+  assert.equal(result.data, null);
+  assert.equal(result.error, "read unavailable");
+  assert.deepEqual(calls.rpcCalls[0], ["replace_event_setlist", { p_event_id: "event-example", p_items: [] }]);
+  assert.equal(calls.eventSetlistSelects.length, 1);
 });

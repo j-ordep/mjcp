@@ -19,79 +19,44 @@ function buildEventPayload(eventData: Partial<Event>) {
   return payload;
 }
 
-async function syncEventAudience(
-  eventId: string,
-  isPublic: boolean,
-  visibleUserIds: string[],
-) {
-  const { error: deleteError } = await supabase
-    .from('event_audiences')
-    .delete()
-    .eq('event_id', eventId);
+async function fetchEvents(limit: number, upcomingOnly: boolean) {
+  try {
+    let query = supabase
+      .from('events')
+      .select('*');
 
-  if (deleteError) throw deleteError;
+    if (upcomingOnly) {
+      query = query.gte('end_at', new Date().toISOString());
+    }
 
-  if (isPublic || visibleUserIds.length === 0) {
-    return;
-  }
+    const { data, error } = await query
+      .order('start_at', { ascending: true })
+      .limit(limit);
 
-  const { error: insertError } = await supabase
-    .from('event_audiences')
-    .insert(
-      visibleUserIds.map((userId) => ({
-        event_id: eventId,
-        user_id: userId,
-      })),
+    if (error) throw error;
+
+    return { data: data as Event[], error: null };
+  } catch (error: unknown) {
+    console.error(
+      upcomingOnly ? 'Erro ao buscar proximos eventos:' : 'Erro ao buscar eventos:',
+      getRawErrorMessage(error),
     );
-
-  if (insertError) throw insertError;
+    return {
+      data: null,
+      error: getGenericUserFacingError(
+        error,
+        'Nao foi possivel carregar os eventos. Tente novamente em alguns instantes.',
+      ),
+    };
+  }
 }
 
 export async function getUpcomingEvents(limit: number = 20) {
-  try {
-    const { data, error } = await supabase
-      .from('events')
-      .select('*')
-      .gte('end_at', new Date().toISOString())
-      .order('start_at', { ascending: true })
-      .limit(limit);
-
-    if (error) throw error;
-
-    return { data: data as Event[], error: null };
-  } catch (error: unknown) {
-    console.error('Erro ao buscar proximos eventos:', getRawErrorMessage(error));
-    return {
-      data: null,
-      error: getGenericUserFacingError(
-        error,
-        'Nao foi possivel carregar os eventos. Tente novamente em alguns instantes.',
-      ),
-    };
-  }
+  return fetchEvents(limit, true);
 }
 
 export async function getEvents(limit: number = 100) {
-  try {
-    const { data, error } = await supabase
-      .from('events')
-      .select('*')
-      .order('start_at', { ascending: true })
-      .limit(limit);
-
-    if (error) throw error;
-
-    return { data: data as Event[], error: null };
-  } catch (error: unknown) {
-    console.error('Erro ao buscar eventos:', getRawErrorMessage(error));
-    return {
-      data: null,
-      error: getGenericUserFacingError(
-        error,
-        'Nao foi possivel carregar os eventos. Tente novamente em alguns instantes.',
-      ),
-    };
-  }
+  return fetchEvents(limit, false);
 }
 
 export async function getEventById(eventId: string) {
@@ -187,54 +152,6 @@ export async function getEventEditorData(eventId: string) {
   }
 }
 
-export async function createEvent(eventData: Partial<Event>) {
-  try {
-    const visibleUserIds = normalizeAudienceUserIds(eventData.visible_to_user_ids);
-    const isPublic = eventData.is_public !== false;
-
-    const normalizedRange = normalizeEventRange({
-      startAt: eventData.start_at,
-      endAt: eventData.end_at,
-      requireFutureStart: true,
-    });
-
-    if (normalizedRange.error || !normalizedRange.data) {
-      throw new Error(normalizedRange.error ?? 'Intervalo do evento invalido.');
-    }
-
-    const { data, error } = await supabase
-      .from('events')
-      .insert([
-        {
-          ...buildEventPayload(eventData),
-          category: normalizeEventCategory(eventData.category),
-          is_public: isPublic,
-          start_at: normalizedRange.data.startAt,
-          end_at: normalizedRange.data.endAt,
-        },
-      ])
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    if (!isPublic && visibleUserIds.length > 0) {
-      await syncEventAudience(data.id, false, visibleUserIds);
-    }
-
-    return { data: data as Event, error: null };
-  } catch (error: unknown) {
-    console.error('Erro ao criar evento:', getRawErrorMessage(error));
-    return {
-      data: null,
-      error: getGenericUserFacingError(
-        error,
-        'Nao foi possivel criar o evento. Tente novamente em alguns instantes.',
-      ),
-    };
-  }
-}
-
 export async function createMultipleEvents(eventsData: Partial<Event>[]) {
   try {
     const normalizedEvents = eventsData.map((eventData) => {
@@ -283,111 +200,6 @@ export async function createMultipleEvents(eventsData: Partial<Event>[]) {
       error: getGenericUserFacingError(
         error,
         'Nao foi possivel criar os eventos. Tente novamente em alguns instantes.',
-      ),
-    };
-  }
-}
-
-export async function updateEvent(eventId: string, updates: Partial<Event>) {
-  try {
-    const payload = { ...buildEventPayload(updates) };
-    const hasStartAt = Object.prototype.hasOwnProperty.call(updates, 'start_at');
-    const hasEndAt = Object.prototype.hasOwnProperty.call(updates, 'end_at');
-    const hasCategory = Object.prototype.hasOwnProperty.call(updates, 'category');
-    const hasIsPublic = Object.prototype.hasOwnProperty.call(updates, 'is_public');
-    const hasVisibleUserIds = Object.prototype.hasOwnProperty.call(
-      updates,
-      'visible_to_user_ids',
-    );
-
-    const visibleUserIds = normalizeAudienceUserIds(updates.visible_to_user_ids);
-    let currentEvent:
-      | Pick<Event, 'start_at' | 'is_public'>
-      | null = null;
-
-    const getCurrentEvent = async () => {
-      if (currentEvent) return currentEvent;
-
-      const { data, error } = await supabase
-        .from('events')
-        .select('start_at,is_public')
-        .eq('id', eventId)
-        .single();
-
-      if (error) throw error;
-
-      currentEvent = data as Pick<Event, 'start_at' | 'is_public'> | null;
-
-      if (!currentEvent) {
-        throw new Error('Evento nao encontrado para validar alteracoes.');
-      }
-
-      return currentEvent;
-    };
-
-    if (hasCategory) {
-      payload.category = normalizeEventCategory(updates.category);
-    }
-
-    if (hasStartAt || hasEndAt) {
-      let startAt = updates.start_at;
-
-      if (!startAt && hasEndAt) {
-        startAt = (await getCurrentEvent()).start_at;
-
-        if (!startAt) {
-          throw new Error('Evento nao encontrado para validar intervalo.');
-        }
-      }
-
-      const normalizedRange = normalizeEventRange({
-        startAt,
-        endAt: updates.end_at,
-        requireFutureStart: true,
-      });
-
-      if (normalizedRange.error || !normalizedRange.data) {
-        throw new Error(normalizedRange.error ?? 'Intervalo do evento invalido.');
-      }
-
-      if (hasStartAt) {
-        payload.start_at = normalizedRange.data.startAt;
-      }
-      payload.end_at = normalizedRange.data.endAt;
-    }
-
-    if (hasIsPublic || hasVisibleUserIds) {
-      const effectiveIsPublic =
-        updates.is_public ?? (await getCurrentEvent()).is_public;
-
-      payload.is_public = effectiveIsPublic;
-    }
-
-    const { data, error } = await supabase
-      .from('events')
-      .update(payload)
-      .eq('id', eventId)
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    if (hasIsPublic || hasVisibleUserIds) {
-      await syncEventAudience(
-        eventId,
-        payload.is_public !== false,
-        visibleUserIds,
-      );
-    }
-
-    return { data: data as Event, error: null };
-  } catch (error: unknown) {
-    console.error('Erro ao atualizar evento:', getRawErrorMessage(error));
-    return {
-      data: null,
-      error: getGenericUserFacingError(
-        error,
-        'Nao foi possivel atualizar o evento. Tente novamente em alguns instantes.',
       ),
     };
   }

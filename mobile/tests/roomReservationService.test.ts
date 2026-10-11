@@ -276,7 +276,7 @@ test("getRoomsForWindow returns room availability with overlapping reservation s
   assert.equal(result.data?.[0].reservation?.purpose, "Reunião do louvor");
 });
 
-test("getRoomsDailyAgenda groups daily reservations per room and attaches linked schedule summaries", async () => {
+test("getRoomsDailyAgenda groups daily reservations without consulting teams", async () => {
   const { calls, supabaseMock } = createRoomsWindowMock({
     rooms: [
       { id: "room-1", name: "Sala 1", capacity: 20, description: null },
@@ -339,18 +339,13 @@ test("getRoomsDailyAgenda groups daily reservations per room and attaches linked
   assert.deepEqual(calls.reservationEqs[0], ["status", "active"]);
   assert.deepEqual(calls.reservationLts[0], ["start_at", expectedDayEnd]);
   assert.deepEqual(calls.reservationGts[0], ["end_at", expectedDayStart]);
-  assert.equal(calls.scheduleSelects.length, 1);
-  assert.deepEqual(calls.scheduleIns[0], ["event_id", ["event-1"]]);
+  assert.equal(calls.scheduleSelects.length, 0);
+  assert.equal(calls.scheduleIns.length, 0);
   assert.equal(result.data?.[0].agenda.length, 1);
   assert.equal(result.data?.[0].agenda[0].isEventLinked, true);
   assert.equal(result.data?.[0].agenda[0].reservedBy, "user-1");
-  assert.deepEqual(result.data?.[0].agenda[0].linkedScheduleSummary, {
-    schedulesCount: 2,
-    assignmentsCount: 3,
-    confirmedAssignmentsCount: 2,
-    pendingAssignmentsCount: 1,
-  });
-  assert.equal(result.data?.[1].agenda[0].linkedScheduleSummary, null);
+  assert.equal("linkedScheduleSummary" in result.data![0].agenda[0], false);
+  assert.equal(result.data?.[1].agenda[0].eventId, null);
 });
 
 test("getRoomsDailyAgenda skips schedule loading when the day has no event-linked reservations", async () => {
@@ -383,7 +378,7 @@ test("getRoomsDailyAgenda skips schedule loading when the day has no event-linke
   assert.equal(result.data?.[0].agenda[0].isEventLinked, false);
 });
 
-test("getRoomsDailyAgenda keeps agenda when linked schedules cannot be loaded", async () => {
+test("getRoomsDailyAgenda reads linked reservations without schedule permissions", async () => {
   const { calls, supabaseMock } = createRoomsWindowMock({
     rooms: [{ id: "room-1", name: "Sala 1", capacity: 20, description: null }],
     reservations: [
@@ -409,11 +404,11 @@ test("getRoomsDailyAgenda keeps agenda when linked schedules cannot be loaded", 
 
   const result = await getRoomsDailyAgenda("2026-05-05");
 
-  assert.equal(calls.scheduleSelects.length, 1);
+  assert.equal(calls.scheduleSelects.length, 0);
   assert.equal(result.error, null);
   assert.equal(result.data?.[0].agenda.length, 1);
   assert.equal(result.data?.[0].agenda[0].isEventLinked, true);
-  assert.equal(result.data?.[0].agenda[0].linkedScheduleSummary, null);
+  assert.equal("linkedScheduleSummary" in result.data![0].agenda[0], false);
 });
 
 test("createStandaloneRoomReservation includes the current user and maps overlap conflicts", async () => {

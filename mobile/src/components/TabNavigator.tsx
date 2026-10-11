@@ -1,100 +1,62 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { DoorOpen, Home, Music, User, Users } from "lucide-react-native";
-import { useEffect, useMemo } from "react";
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import HomeScreen from "../screens/app/HomeScreen";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { CalendarDays, DoorOpen, Music, Users } from "lucide-react-native";
+import { useEffect, useState } from "react";
+import { View } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import ScheduleScreen from "../screens/app/ScheduleScreen";
 import ManageMinistryMembersScreen from "../screens/app/ManageMinistryMembersScreen";
 import MusicScreen from "../screens/app/MusicScreen";
-import ProfileScreen from "../screens/app/ProfileScreen";
 import RoomsScreen from "../screens/app/RoomsScreen";
 import { useAuthStore } from "../stores/useAuthStore";
 import { useMinistryStore } from "../stores/useMinistryStore";
+import { useNotificationStore } from "../stores/useNotificationStore";
+import type { MainTabParamList, RootStackParamList } from "../types/navigation";
+import { getProfileAvatarUri } from "../utils/profileAvatar";
+import HeaderPrimary from "./Header/HeaderPrimary";
+import NotificationsModal from "./utils/NotificationsModal";
 
-const Tab = createBottomTabNavigator();
+const Tab = createBottomTabNavigator<MainTabParamList>();
+const titles: Record<keyof MainTabParamList, string> = {
+  Schedules: "Escalas", Rooms: "Salas", Music: "Músicas", ManageMembers: "Equipe",
+};
 
 export default function TabNavigator() {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { profile, session } = useAuthStore();
-  const { userMinistries, fetchUserMinistries } = useMinistryStore();
-
+  const { userMinistries, userMinistriesUserId, error, fetchUserMinistries } = useMinistryStore();
+  const unreadCount = useNotificationStore((state) => state.unreadCount);
+  const [notificationsVisible, setNotificationsVisible] = useState(false);
   useEffect(() => {
-    if (!session?.user?.id) return;
-    void fetchUserMinistries();
+    if (session?.user?.id) void fetchUserMinistries();
   }, [fetchUserMinistries, session?.user?.id]);
-
-  const showMemberManagementTab = useMemo(() => {
-    if (profile?.role === "admin") return true;
-    return userMinistries.some((ministry) => ministry.is_leader);
-  }, [profile?.role, userMinistries]);
-
+  const showTeam = profile?.role === "admin" ||
+    (!error && userMinistriesUserId === session?.user?.id && userMinistries.some((ministry) => ministry.is_leader));
   return (
-    <Tab.Navigator
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: '#000000',
-        tabBarInactiveTintColor: '#9ca3af',
-        tabBarStyle: {
-          borderTopWidth: 0,
-          borderTopColor: '#e5e7eb',
-          height: 45 + (insets.bottom > 0 ? insets.bottom : 24),          
-        },
-        tabBarLabelStyle: {
-          fontSize: 12,
-        },
-      }}
-    >
-      <Tab.Screen
-        name="Home"
-        component={HomeScreen}
-        options={{
-          tabBarLabel: 'Início',
-          tabBarIcon: ({ color, size }) => (
-            <Home color={color} size={size ?? 24} />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Rooms"
-        component={RoomsScreen}
-        options={{
-          tabBarLabel: 'Salas',
-          tabBarIcon: ({ color, size }) => (
-            <DoorOpen color={color} size={size ?? 24} />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Music"
-        component={MusicScreen}
-        options={{
-          tabBarLabel: 'Músicas',
-          tabBarIcon: ({ color, size }) => (
-            <Music color={color} size={size ?? 24} />
-          ),
-        }}
-      />
-      {showMemberManagementTab ? (
-        <Tab.Screen
-          name="ManageMembers"
-          component={ManageMinistryMembersScreen}
-          options={{
-            tabBarLabel: "Membros",
-            tabBarIcon: ({ color, size }) => (
-              <Users color={color} size={size ?? 24} />
-            ),
-          }}
-        />
-      ) : null}
-      <Tab.Screen
-        name="Profile"
-        component={ProfileScreen}
-        options={{
-          tabBarLabel: 'Perfil',
-          tabBarIcon: ({ color, size }) => (
-            <User color={color} size={size ?? 24} />
-          ),
-        }}
-      />
-    </Tab.Navigator>
+    <>
+      <Tab.Navigator initialRouteName="Schedules" screenOptions={({ route }) => ({
+        header: () => (
+          <SafeAreaView edges={["top", "left", "right"]} style={{ backgroundColor: "white" }}>
+            <View style={{ paddingHorizontal: 20, paddingTop: 10 }}>
+              <HeaderPrimary title={titles[route.name]} avatarUri={getProfileAvatarUri(profile?.avatar_url) ?? undefined}
+                avatarLabel={profile?.full_name ?? undefined} notificationUnreadCount={unreadCount}
+                onAvatarPress={() => navigation.navigate("Profile")}
+                onNotificationPress={() => setNotificationsVisible(true)} />
+            </View>
+          </SafeAreaView>
+        ),
+        tabBarActiveTintColor: "#000000", tabBarInactiveTintColor: "#9ca3af",
+        tabBarStyle: { borderTopWidth: 0, height: 45 + (insets.bottom > 0 ? insets.bottom : 24) },
+        tabBarLabelStyle: { fontSize: 12 },
+      })}>
+        <Tab.Screen name="Schedules" component={ScheduleScreen} options={{ tabBarLabel: "Escalas", tabBarIcon: ({ color, size }) => <CalendarDays color={color} size={size} /> }} />
+        <Tab.Screen name="Rooms" component={RoomsScreen} options={{ tabBarLabel: "Salas", tabBarIcon: ({ color, size }) => <DoorOpen color={color} size={size} /> }} />
+        <Tab.Screen name="Music" component={MusicScreen} options={{ tabBarLabel: "Músicas", tabBarIcon: ({ color, size }) => <Music color={color} size={size} /> }} />
+        {showTeam ? <Tab.Screen name="ManageMembers" component={ManageMinistryMembersScreen} options={{ tabBarLabel: "Equipe", tabBarIcon: ({ color, size }) => <Users color={color} size={size} /> }} /> : null}
+      </Tab.Navigator>
+      <NotificationsModal visible={notificationsVisible} onDismiss={() => setNotificationsVisible(false)} />
+    </>
   );
 }

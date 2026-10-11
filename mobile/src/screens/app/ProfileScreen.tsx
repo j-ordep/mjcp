@@ -1,4 +1,7 @@
 import { useEffect, useState } from "react";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import type { RootStackParamList } from "../../types/navigation";
+import { canManageEvents } from "../../utils/eventPermissions";
 import {
   ActivityIndicator,
   Alert,
@@ -20,7 +23,7 @@ import {
   getProfileInitials,
 } from "../../utils/profileAvatar";
 
-export default function ProfileScreen({ navigation }) {
+export default function ProfileScreen({ navigation }: NativeStackScreenProps<RootStackParamList, "Profile">) {
   const [showMenu, setShowMenu] = useState(false);
   const { profile } = useAuthStore();
   const { userMinistries, isLoadingMinistries, fetchUserMinistries } =
@@ -38,7 +41,7 @@ export default function ProfileScreen({ navigation }) {
       return;
     }
 
-    navigation.navigate("Home");
+    navigation.navigate("Main", { screen: "Schedules" });
   }
 
   return (
@@ -93,6 +96,15 @@ export default function ProfileScreen({ navigation }) {
             <Divider style={{ marginTop: 10, marginBottom: 0 }} />
           </View>
         </View>
+
+        {canManageEvents(profile) ? (
+          <View className="mt-8 px-6">
+            <TouchableOpacity onPress={() => navigation.navigate("EventsScreen")} style={{ borderRadius: 18, padding: 18, backgroundColor: "#f3f4f6" }}>
+              <Text style={{ fontWeight: "700", fontSize: 16 }}>Eventos de apoio</Text>
+              <Text style={{ color: "#6b7280", marginTop: 6 }}>Gerencie os eventos usados nas escalas.</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
 
         {profile?.role === "admin" ? (
           <View className="mt-8 px-6">

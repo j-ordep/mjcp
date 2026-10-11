@@ -5,7 +5,7 @@ import { ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import EventInfoCard from "../../components/card/EventInfoCard";
 import HeaderSecondary from "../../components/Header/HeaderSecondary";
-import type { EventDetailsScreenProps } from "../../navigation/AppNavigator";
+import type { EventDetailsScreenProps } from "../../types/navigation";
 import { getEventById } from "../../services/eventService";
 import { useAuthStore } from "../../stores/useAuthStore";
 import { canManageEvents as canManageEventsForProfile } from "../../utils/eventPermissions";

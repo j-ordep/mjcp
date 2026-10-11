@@ -68,9 +68,6 @@ function createEventQueryMock(response: MockResponse | MockResponse[]) {
     gte: [] as unknown[][],
     order: [] as unknown[][],
     limit: [] as unknown[][],
-    insert: [] as unknown[][],
-    update: [] as unknown[][],
-    delete: [] as unknown[][],
     eq: [] as unknown[][],
   };
 
@@ -89,18 +86,6 @@ function createEventQueryMock(response: MockResponse | MockResponse[]) {
     },
     limit: (...args: unknown[]) => {
       calls.limit.push(args);
-      return builder;
-    },
-    insert: (...args: unknown[]) => {
-      calls.insert.push(args);
-      return builder;
-    },
-    update: (...args: unknown[]) => {
-      calls.update.push(args);
-      return builder;
-    },
-    delete: (...args: unknown[]) => {
-      calls.delete.push(args);
       return builder;
     },
     eq: (...args: unknown[]) => {
@@ -140,31 +125,17 @@ function createEventQueryMock(response: MockResponse | MockResponse[]) {
 function createEventAudienceMock(config: {
   eventResponses?: MockResponse[];
   audienceSelectResponse?: MockResponse;
-  audienceInsertResponse?: MockResponse;
-  audienceDeleteResponse?: MockResponse;
 }) {
   const eventResponses = [...(config.eventResponses ?? [])];
   const calls = {
     from: [] as string[],
-    eventInserts: [] as unknown[][],
-    eventUpdates: [] as unknown[][],
     eventSelects: [] as unknown[][],
     eventEqs: [] as unknown[][],
-    audienceInserts: [] as unknown[][],
-    audienceDeletes: 0,
     audienceSelects: [] as unknown[][],
     audienceEqs: [] as unknown[][],
   };
 
   const eventsBuilder: any = {
-    insert: (...args: unknown[]) => {
-      calls.eventInserts.push(args);
-      return eventsBuilder;
-    },
-    update: (...args: unknown[]) => {
-      calls.eventUpdates.push(args);
-      return eventsBuilder;
-    },
     select: (...args: unknown[]) => {
       calls.eventSelects.push(args);
       return eventsBuilder;
@@ -187,14 +158,6 @@ function createEventAudienceMock(config: {
       calls.audienceSelects.push(args);
       return eventAudiencesBuilder;
     },
-    insert: (...args: unknown[]) => {
-      calls.audienceInserts.push(args);
-      return eventAudiencesBuilder;
-    },
-    delete: () => {
-      calls.audienceDeletes += 1;
-      return eventAudiencesBuilder;
-    },
     eq: (...args: unknown[]) => {
       calls.audienceEqs.push(args);
       return eventAudiencesBuilder;
@@ -204,18 +167,8 @@ function createEventAudienceMock(config: {
       onrejected?: (reason: unknown) => unknown,
     ) =>
       Promise.resolve({
-        data:
-          calls.audienceDeletes > 0 && calls.audienceInserts.length === 0 && calls.audienceSelects.length === 0
-            ? config.audienceDeleteResponse?.data ?? null
-            : calls.audienceSelects.length > 0
-              ? config.audienceSelectResponse?.data ?? null
-              : config.audienceInsertResponse?.data ?? null,
-        error:
-          calls.audienceDeletes > 0 && calls.audienceInserts.length === 0 && calls.audienceSelects.length === 0
-            ? config.audienceDeleteResponse?.error ?? null
-            : calls.audienceSelects.length > 0
-              ? config.audienceSelectResponse?.error ?? null
-              : config.audienceInsertResponse?.error ?? null,
+        data: config.audienceSelectResponse?.data ?? null,
+        error: config.audienceSelectResponse?.error ?? null,
       }).then(onfulfilled, onrejected),
   };
 
@@ -365,6 +318,34 @@ function createBatchEventRpcMock(response: MockResponse) {
 
   return { calls, supabaseMock };
 }
+
+for (const [method, defaultLimit] of [
+  ["getUpcomingEvents", 20],
+  ["getEvents", 100],
+] as const) {
+  test(`${method} keeps its default limit`, async () => {
+    const { calls, supabaseMock } = createEventQueryMock({ data: [] });
+    const service = loadEventServiceModule(supabaseMock);
+    assert.deepEqual(await service[method](), { data: [], error: null });
+    assert.deepEqual(calls.limit, [[defaultLimit]]);
+    assert.equal(calls.gte.length, method === "getUpcomingEvents" ? 1 : 0);
+  });
+
+  test(`${method} keeps null data returned by the backend`, async () => {
+    const { supabaseMock } = createEventQueryMock({ data: null });
+    const service = loadEventServiceModule(supabaseMock);
+    assert.deepEqual(await service[method](), { data: null, error: null });
+  });
+}
+
+test("getEvents keeps the friendly error fallback", async () => {
+  const { supabaseMock } = createEventQueryMock({ error: { message: "JWT expired" } });
+  const service = loadEventServiceModule(supabaseMock);
+  assert.deepEqual(await service.getEvents(), {
+    data: null,
+    error: "Nao foi possivel carregar os eventos. Tente novamente em alguns instantes.",
+  });
+});
 
 test("getUpcomingEvents queries public events by end date and start order", { concurrency: false }, async () => {
   const { calls, supabaseMock } = createEventQueryMock({
@@ -529,36 +510,6 @@ test("getEventEditorData skips audience lookup for public event", { concurrency:
   assert.deepEqual(calls.audienceSelects, []);
 });
 
-test("createEvent normalizes dates and uses the default end time", { concurrency: false }, async () => {
-  const { calls, supabaseMock } = createEventQueryMock({
-    data: { id: "event-1", title: "Culto" },
-  });
-  const { createEvent } = loadServiceModule<EventService>(
-    "../src/services/eventService",
-    supabaseMock,
-  );
-
-  const result = await withFixedDate("2026-04-24T10:00:00.000Z", () =>
-    createEvent({
-      title: "Culto",
-      start_at: "2026-04-24T22:00:00.000Z",
-    }),
-  );
-
-  assert.equal(result.error, null);
-  assert.deepEqual(calls.insert[0], [
-    [
-      {
-        title: "Culto",
-        category: "geral",
-        is_public: true,
-        start_at: "2026-04-24T22:00:00.000Z",
-        end_at: "2026-04-25T01:00:00.000Z",
-      },
-    ],
-  ]);
-});
-
 test("createMultipleEvents sends normalized events and audiences to the transactional rpc", { concurrency: false }, async () => {
   const { calls, supabaseMock } = createBatchEventRpcMock({
     data: [
@@ -635,181 +586,75 @@ test("createMultipleEvents sends normalized events and audiences to the transact
   });
 });
 
-test("updateEvent normalizes date ranges before saving", { concurrency: false }, async () => {
-  const { calls, supabaseMock } = createEventQueryMock({
-    data: { id: "event-1", title: "Culto atualizado" },
+test("saveEventWithOptionalRoom creates private events without a room or selected members", async () => {
+  const { calls, supabaseMock } = createEventRpcMock({ rpcResponse: { data: { id: "event-1" } } });
+  const { saveEventWithOptionalRoom } = loadEventServiceModule(supabaseMock);
+  const result = await saveEventWithOptionalRoom({
+    event: { title: "Equipe", is_public: false, visible_to_user_ids: [" ", ""], start_at: "2099-05-02T16:00:00-03:00" },
   });
-  const { updateEvent } = loadServiceModule<EventService>(
-    "../src/services/eventService",
-    supabaseMock,
-  );
-
-  const result = await withFixedDate("2026-04-24T10:00:00.000Z", () =>
-    updateEvent("event-1", {
-      title: "Culto atualizado",
-      start_at: "2026-04-24T22:00:00.000Z",
-      end_at: "2026-04-25T00:00:00.000Z",
-    }),
-  );
-
   assert.equal(result.error, null);
-  assert.deepEqual(calls.update[0], [
-    {
-      title: "Culto atualizado",
-      start_at: "2026-04-24T22:00:00.000Z",
-      end_at: "2026-04-25T00:00:00.000Z",
-    },
-  ]);
-  assert.deepEqual(calls.eq[0], ["id", "event-1"]);
+  assert.deepEqual(calls.from, []);
+  assert.deepEqual(calls.rpc[0].args, {
+    p_event_id: null, p_title: "Equipe", p_category: "geral", p_description: null,
+    p_location: null, p_start_at: "2099-05-02T19:00:00.000Z", p_end_at: "2099-05-02T22:00:00.000Z",
+    p_is_public: false, p_visible_user_ids: [], p_room_id: null,
+  });
 });
 
-test("updateEvent keeps the current start date when only endAt changes", { concurrency: false }, async () => {
-  const { calls, supabaseMock } = createEventQueryMock([
-    {
-      data: { start_at: "2099-04-24T22:00:00.000Z" },
-    },
-    {
-      data: { id: "event-1", title: "Culto" },
-    },
-  ]);
-  const { updateEvent } = loadServiceModule<EventService>(
-    "../src/services/eventService",
-    supabaseMock,
-  );
+for (const scenario of [
+  { name: "both date boundaries", event: { start_at: "2099-05-02T16:00:00-03:00", end_at: "2099-05-02T17:00:00-03:00" }, expectedEnd: "2099-05-02T20:00:00.000Z" },
+  { name: "only the end boundary", event: { end_at: "2099-05-02T17:00:00-03:00" }, expectedEnd: "2099-05-02T20:00:00.000Z" },
+  { name: "an explicit null end", event: { end_at: null }, expectedEnd: "2099-05-02T22:00:00.000Z" },
+]) {
+  test(`saveEventWithOptionalRoom normalizes ${scenario.name} and preserves omitted fields`, async () => {
+    const { calls, supabaseMock } = createEventRpcMock({
+      currentEventResponse: { data: {
+        id: "event-1", title: "Equipe", category: "reunião", description: "Atual", location: "Sala",
+        start_at: "2099-05-02T19:00:00.000Z", end_at: "2099-05-02T21:00:00.000Z", is_public: true,
+      } },
+      rpcResponse: { data: { id: "event-1" } },
+    });
+    const { saveEventWithOptionalRoom } = loadEventServiceModule(supabaseMock);
+    const result = await saveEventWithOptionalRoom({ eventId: "event-1", event: scenario.event });
+    assert.equal(result.error, null);
+    assert.equal(calls.rpc[0].args.p_start_at, "2099-05-02T19:00:00.000Z");
+    assert.equal(calls.rpc[0].args.p_end_at, scenario.expectedEnd);
+    assert.equal(calls.rpc[0].args.p_description, "Atual");
+    assert.equal(calls.rpc[0].args.p_location, "Sala");
+    assert.equal(calls.rpc[0].args.p_is_public, true);
+  });
+}
 
-  const result = await withFixedDate("2026-04-24T10:00:00.000Z", () =>
-    updateEvent("event-1", {
-      end_at: "2099-04-25T00:00:00.000Z",
-    }),
-  );
-
+test("saveEventWithOptionalRoom replaces private audience with normalized ids during editing", async () => {
+  const { calls, supabaseMock } = createEventRpcMock({
+    currentEventResponse: { data: {
+      id: "event-1", title: "Equipe", category: "geral", description: null, location: null,
+      start_at: "2099-05-02T19:00:00.000Z", end_at: "2099-05-02T21:00:00.000Z", is_public: false,
+    } },
+    currentAudienceResponse: { data: [{ user_id: "user-old" }] },
+    rpcResponse: { data: { id: "event-1" } },
+  });
+  const { saveEventWithOptionalRoom } = loadEventServiceModule(supabaseMock);
+  const result = await saveEventWithOptionalRoom({
+    eventId: "event-1", event: { visible_to_user_ids: [" user-3 ", "user-3", "", " user-4"] },
+  });
   assert.equal(result.error, null);
-  assert.deepEqual(calls.select[0], ["start_at,is_public"]);
-  assert.deepEqual(calls.eq[0], ["id", "event-1"]);
-  assert.deepEqual(calls.update[0], [
-    {
-      end_at: "2099-04-25T00:00:00.000Z",
-    },
-  ]);
-  assert.deepEqual(calls.eq[1], ["id", "event-1"]);
+  assert.equal(calls.rpc[0].args.p_is_public, false);
+  assert.deepEqual(calls.rpc[0].args.p_visible_user_ids, ["user-3", "user-4"]);
 });
 
-test("createEvent allows a private event without selected members", { concurrency: false }, async () => {
-  const { calls, supabaseMock } = createEventAudienceMock({
-    eventResponses: [{ data: { id: "event-1", title: "Reuniao interna" } }],
+test("saveEventWithOptionalRoom rejects an invalid partial date interval before writing", async () => {
+  const { calls, supabaseMock } = createEventRpcMock({
+    currentEventResponse: { data: {
+      id: "event-1", title: "Equipe", category: "geral", description: null, location: null,
+      start_at: "2099-05-02T19:00:00.000Z", end_at: "2099-05-02T21:00:00.000Z", is_public: true,
+    } },
   });
-  const { createEvent } = loadServiceModule<EventService>(
-    "../src/services/eventService",
-    supabaseMock,
-  );
-
-  const result = await withFixedDate("2026-04-24T10:00:00.000Z", () =>
-    createEvent({
-      title: "Reuniao interna",
-      is_public: false,
-      visible_to_user_ids: [" ", ""],
-      start_at: "2026-04-24T22:00:00.000Z",
-    }),
-  );
-
-  assert.equal(result.error, null);
-  assert.deepEqual(calls.eventInserts[0], [
-    [
-      {
-        title: "Reuniao interna",
-        category: "geral",
-        is_public: false,
-        start_at: "2026-04-24T22:00:00.000Z",
-        end_at: "2026-04-25T01:00:00.000Z",
-      },
-    ],
-  ]);
-  assert.equal(calls.audienceInserts.length, 0);
-});
-
-test("createEvent normalizes and saves selected members for private events", { concurrency: false }, async () => {
-  const { calls, supabaseMock } = createEventAudienceMock({
-    eventResponses: [{ data: { id: "event-1", title: "Reuniao interna" } }],
-    audienceInsertResponse: { data: [{ event_id: "event-1", user_id: "user-1" }] },
-  });
-  const { createEvent } = loadServiceModule<EventService>(
-    "../src/services/eventService",
-    supabaseMock,
-  );
-
-  const result = await withFixedDate("2026-04-24T10:00:00.000Z", () =>
-    createEvent({
-      title: "Reuniao interna",
-      is_public: false,
-      visible_to_user_ids: [" user-1 ", "user-1", "", "user-2 ", "   "],
-      start_at: "2026-04-24T22:00:00.000Z",
-    }),
-  );
-
-  assert.equal(result.error, null);
-  assert.deepEqual(calls.eventInserts[0], [
-    [
-      {
-        title: "Reuniao interna",
-        category: "geral",
-        is_public: false,
-        start_at: "2026-04-24T22:00:00.000Z",
-        end_at: "2026-04-25T01:00:00.000Z",
-      },
-    ],
-  ]);
-  assert.deepEqual(calls.audienceInserts[0], [
-    [
-      { event_id: "event-1", user_id: "user-1" },
-      { event_id: "event-1", user_id: "user-2" },
-    ],
-  ]);
-});
-
-test("updateEvent rewrites the audience list for private events", { concurrency: false }, async () => {
-  const { calls, supabaseMock } = createEventAudienceMock({
-    eventResponses: [{ data: { id: "event-1", title: "Reuniao interna" } }],
-    audienceInsertResponse: { data: [{ event_id: "event-1", user_id: "user-3" }] },
-  });
-  const { updateEvent } = loadServiceModule<EventService>(
-    "../src/services/eventService",
-    supabaseMock,
-  );
-
-  const result = await withFixedDate("2026-04-24T10:00:00.000Z", () =>
-    updateEvent("event-1", {
-      is_public: false,
-      visible_to_user_ids: ["user-3"],
-    }),
-  );
-
-  assert.equal(result.error, null);
-  assert.equal(calls.audienceDeletes, 1);
-  assert.deepEqual(calls.audienceEqs[0], ["event_id", "event-1"]);
-  assert.deepEqual(calls.audienceInserts[0], [[{ event_id: "event-1", user_id: "user-3" }]]);
-});
-
-test("updateEvent allows a private event to keep an empty audience", { concurrency: false }, async () => {
-  const { calls, supabaseMock } = createEventAudienceMock({
-    eventResponses: [{ data: { id: "event-1", title: "Reuniao interna" } }],
-  });
-  const { updateEvent } = loadServiceModule<EventService>(
-    "../src/services/eventService",
-    supabaseMock,
-  );
-
-  const result = await withFixedDate("2026-04-24T10:00:00.000Z", () =>
-    updateEvent("event-1", {
-      is_public: false,
-      visible_to_user_ids: [" ", ""],
-    }),
-  );
-
-  assert.equal(result.error, null);
-  assert.deepEqual(calls.eventUpdates[0], [{ is_public: false }]);
-  assert.equal(calls.audienceDeletes, 1);
-  assert.deepEqual(calls.audienceEqs[0], ["event_id", "event-1"]);
-  assert.equal(calls.audienceInserts.length, 0);
+  const { saveEventWithOptionalRoom } = loadEventServiceModule(supabaseMock);
+  const result = await saveEventWithOptionalRoom({ eventId: "event-1", event: { end_at: "2099-05-02T18:00:00.000Z" } });
+  assert.equal(result.data, null);
+  assert.ok(result.error);
+  assert.deepEqual(calls.rpc, []);
 });
 
 test("saveEventWithOptionalRoom normalizes audience ids before calling the rpc", { concurrency: false }, async () => {
@@ -1018,6 +863,8 @@ test("saveEventWithOptionalRoom distinguishes explicit audience and room clearin
       eventId: "event-1",
       event: {
         visible_to_user_ids: [],
+        description: null,
+        location: null,
       },
       roomId: null,
     }),
@@ -1030,8 +877,8 @@ test("saveEventWithOptionalRoom distinguishes explicit audience and room clearin
       p_event_id: "event-1",
       p_title: "Reuniao interna",
       p_category: "reunião",
-      p_description: "Atual",
-      p_location: "Sala antiga",
+      p_description: null,
+      p_location: null,
       p_start_at: "2026-05-02T19:00:00.000Z",
       p_end_at: "2026-05-02T21:00:00.000Z",
       p_is_public: false,

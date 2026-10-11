@@ -1,3 +1,6 @@
+// Os joins do Supabase podem vir como objeto, lista ou relação ausente.
+export type SupabaseRelation<T> = T | T[] | null;
+
 export interface RelationRoleLike {
   id: string;
   name: string;
@@ -11,7 +14,7 @@ export interface RelationProfileLike {
 
 export interface MinistryMemberCapabilityLike {
   role_id: string;
-  ministry_roles: RelationRoleLike | RelationRoleLike[] | null;
+  ministry_roles: SupabaseRelation<RelationRoleLike>;
 }
 
 export interface MinistryMemberDetailedLike {
@@ -20,27 +23,21 @@ export interface MinistryMemberDetailedLike {
   user_id: string;
   is_leader: boolean;
   joined_at: string;
-  profiles: RelationProfileLike | RelationProfileLike[] | null;
+  profiles: SupabaseRelation<RelationProfileLike>;
   ministry_member_roles: MinistryMemberCapabilityLike[] | null;
+}
+
+interface RelationMinistryLike {
+  id: string;
+  name: string;
+  description: string | null;
+  color: string | null;
 }
 
 export interface UserMinistryLike {
   is_leader: boolean;
   joined_at: string;
-  ministries:
-    | {
-        id: string;
-        name: string;
-        description: string | null;
-        color: string | null;
-      }
-    | {
-        id: string;
-        name: string;
-        description: string | null;
-        color: string | null;
-      }[]
-    | null;
+  ministries: SupabaseRelation<RelationMinistryLike>;
 }
 
 export interface SearchableUserLike {
@@ -51,7 +48,7 @@ export interface SearchableUserLike {
   role: "admin" | "leader" | "member";
 }
 
-export function firstRelation<T>(value: T | T[] | null | undefined) {
+export function firstRelation<T>(value: SupabaseRelation<T> | undefined) {
   if (Array.isArray(value)) return value[0] ?? null;
   return value ?? null;
 }

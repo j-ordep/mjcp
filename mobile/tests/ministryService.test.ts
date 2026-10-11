@@ -5,6 +5,59 @@ import {
   loadServiceModule,
 } from "./serviceTestHelpers";
 
+test("manageable ministries require membership leadership rather than a global role", async () => {
+  const filters: unknown[][] = [];
+  const builder = createQueryBuilder({ select: { data: [
+    { is_leader: true, joined_at: "2030-01-01", ministries: { id: "led", name: "Equipe A" } },
+    { is_leader: false, joined_at: "2030-01-01", ministries: { id: "served", name: "Equipe B" } },
+    { is_leader: true, joined_at: "2030-01-01", ministries: null },
+  ] } });
+  builder.eq = (...args: unknown[]) => { filters.push(args); return builder; };
+  const service = loadServiceModule<typeof import("../src/services/ministryService")>("../src/services/ministryService", {
+    from(table: string) { assert.equal(table, "ministry_members"); return builder; },
+  });
+  const result = await service.getManageableMinistries({ userId: "user-example", isAdmin: false });
+  assert.equal(result.error, null);
+  assert.deepEqual(result.data?.map((item) => item.id), ["led"]);
+  assert.deepEqual(filters, [["user_id", "user-example"]]);
+});
+
+test("admins load all manageable ministries but missing identity never queries", async () => {
+  let reads = 0;
+  const builder = createQueryBuilder({ select: { data: [{ id: "ministry-example", name: "Equipe" }] } });
+  const service = loadServiceModule<typeof import("../src/services/ministryService")>("../src/services/ministryService", {
+    from(table: string) { reads++; assert.equal(table, "ministries"); return builder; },
+  });
+  assert.equal((await service.getManageableMinistries({ userId: "", isAdmin: true })).data, null);
+  assert.equal(reads, 0);
+  assert.deepEqual((await service.getManageableMinistries({ userId: "admin-example", isAdmin: true })).data?.map((item) => item.id), ["ministry-example"]);
+  assert.equal(reads, 1);
+});
+
+test("getUserMinistries keeps user scoping and object/array relation fallbacks", async () => {
+  const filters: unknown[][] = [];
+  const builder = createQueryBuilder({ select: { data: [
+    {
+      is_leader: true, joined_at: "2030-01-01T00:00:00.000Z",
+      ministries: [{ id: "ministry-example", name: "Exemplo", description: null, color: null }],
+    },
+    { is_leader: false, joined_at: "2030-01-02T00:00:00.000Z", ministries: null },
+  ] } });
+  builder.eq = (...args: unknown[]) => { filters.push(args); return builder; };
+  const { getUserMinistries } = loadServiceModule<typeof import("../src/services/ministryService")>(
+    "../src/services/ministryService",
+    { from(table: string) { assert.equal(table, "ministry_members"); return builder; } },
+  );
+  assert.deepEqual(await getUserMinistries("user-example"), {
+    data: [
+      { id: "ministry-example", name: "Exemplo", description: null, color: "#000000", is_leader: true, joined_at: "2030-01-01T00:00:00.000Z" },
+      { id: "", name: "Ministério", description: null, color: "#000000", is_leader: false, joined_at: "2030-01-02T00:00:00.000Z" },
+    ],
+    error: null,
+  });
+  assert.deepEqual(filters, [["user_id", "user-example"]]);
+});
+
 test("removeUserFromMinistry delegates removal and history preservation to the secure rpc", async () => {
   const rpcCalls: Array<{ fn: string; args: Record<string, unknown> }> = [];
   const supabaseMock = {

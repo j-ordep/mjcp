@@ -1,5 +1,6 @@
 import { supabase } from "../lib/supabase";
 import type { Event, Song } from "../types/models";
+import { firstRelation, type SupabaseRelation } from "../utils/ministryMappers";
 import {
   getGenericUserFacingError,
   getRawErrorMessage,
@@ -21,7 +22,7 @@ interface EventSetlistRow {
   song_id: string;
   position: number;
   song_key: string | null;
-  songs: Song | Song[] | null;
+  songs: SupabaseRelation<Song>;
 }
 
 function getErrorMessage(error: unknown) {
@@ -35,14 +36,6 @@ function getErrorMessage(error: unknown) {
     return error.message;
   }
   return "Erro inesperado.";
-}
-
-function firstRelation<T>(value: T | T[] | null | undefined) {
-  if (Array.isArray(value)) {
-    return value[0] ?? null;
-  }
-
-  return value ?? null;
 }
 
 function mapEventSetlistRow(row: EventSetlistRow): EventSetlistSong | null {
@@ -191,6 +184,7 @@ export async function replaceEventSetlist(input: {
     song_key?: string | null;
   }>;
 }) {
+  let saved = false;
   try {
     const { error } = await supabase.rpc("replace_event_setlist", {
       p_event_id: input.eventId,
@@ -201,7 +195,7 @@ export async function replaceEventSetlist(input: {
     });
 
     if (error) throw error;
-
+    saved = true;
     const setlistResult = await getEventSetlist(input.eventId);
 
     if (setlistResult.error) {
@@ -211,11 +205,13 @@ export async function replaceEventSetlist(input: {
     return {
       data: setlistResult.data ?? [],
       error: null,
+      saved,
     };
   } catch (error: unknown) {
     return {
       data: null,
       error: getErrorMessage(error),
+      saved,
     };
   }
 }

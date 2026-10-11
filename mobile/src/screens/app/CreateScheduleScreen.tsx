@@ -1,16 +1,15 @@
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { ShieldAlert } from "lucide-react-native";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { Alert, ScrollView, View } from "react-native";
 import { Text } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import HeaderSecondary from "../../components/Header/HeaderSecondary";
 import ScheduleContextSection from "../../components/schedule/ScheduleContextSection";
-import type { RootStackParamList } from "../../navigation/AppNavigator";
+import type { RootStackParamList } from "../../types/navigation";
 import {
-  getAllMinistries,
-  getUserMinistries,
+  getManageableMinistries,
   type UserMinistry,
 } from "../../services/ministryService";
 import { createScheduleValidated } from "../../services/scheduleService";
@@ -19,6 +18,8 @@ import { useEventStore } from "../../stores/useEventStore";
 import { useScheduleStore } from "../../stores/useScheduleStore";
 import type { Ministry } from "../../types/models";
 import { formatDateTime } from "../../utils/formatDate";
+import { isEventDateEditable } from "../../utils/scheduleRules";
+import { canManageEvents } from "../../utils/eventPermissions";
 
 type ManageableMinistry = Ministry | UserMinistry;
 
@@ -26,7 +27,7 @@ export default function CreateScheduleScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { profile, session } = useAuthStore();
-  const { events, fetchUpcomingEvents } = useEventStore();
+  const { events, fetchUpcomingEvents, isLoadingEvents, error: eventError } = useEventStore();
   const { fetchScheduleCards } = useScheduleStore();
 
   const [isSaving, setIsSaving] = useState(false);
@@ -36,38 +37,45 @@ export default function CreateScheduleScreen() {
   const [selectedMinistryId, setSelectedMinistryId] = useState<string | null>(null);
 
   const isAdmin = profile?.role === "admin";
+  const loadRevision = useRef(0);
+  const [ministryError, setMinistryError] = useState<string | null>(null);
+  const upcomingEvents = events.filter((event) => isEventDateEditable(event.start_at));
 
-  useEffect(() => {
-    void fetchUpcomingEvents();
-    void loadManageableMinistries();
-  }, [fetchUpcomingEvents, profile?.role, session?.user?.id]);
-
-  const loadManageableMinistries = async () => {
-    if (!session?.user?.id) return;
-
+  const loadContext = useCallback(async () => {
+    if (!session?.user.id) return;
+    const request = ++loadRevision.current;
+    const authRevision = useAuthStore.getState().sessionRevision;
+    const current = () => request === loadRevision.current && authRevision === useAuthStore.getState().sessionRevision;
     setIsLoadingMinistries(true);
+    setIsSaving(false);
+    setMinistryError(null);
     try {
-      if (isAdmin) {
-        const { data, error } = await getAllMinistries();
-        if (error) throw new Error(error);
-        setMinistries(data ?? []);
+      const [result] = await Promise.all([
+        getManageableMinistries({ userId: session.user.id, isAdmin }),
+        fetchUpcomingEvents(true),
+      ]);
+      if (!current()) return;
+      if (result.error) {
+        setMinistries([]);
+        setMinistryError(result.error);
       } else {
-        const { data, error } = await getUserMinistries(session.user.id);
-        if (error) throw new Error(error);
-        setMinistries((data ?? []).filter((ministry) => ministry.is_leader));
+        const next = result.data ?? [];
+        setMinistries(next);
+        setSelectedMinistryId((id) => next.some((ministry) => ministry.id === id) ? id : null);
       }
-    } catch {
-      Alert.alert(
-        "Nao foi possivel carregar ministerios",
-        "Tente novamente em alguns instantes.",
-      );
+      const available = useEventStore.getState().events.filter((event) => isEventDateEditable(event.start_at));
+      setSelectedEventId((id) => available.some((event) => event.id === id) ? id : null);
     } finally {
-      setIsLoadingMinistries(false);
+      if (current()) setIsLoadingMinistries(false);
     }
-  };
+  }, [session?.user.id, isAdmin, fetchUpcomingEvents]);
+  useFocusEffect(useCallback(() => {
+    void loadContext();
+    return () => { ++loadRevision.current; };
+  }, [loadContext]));
 
   const selectedEvent = useMemo(
-    () => events.find((event) => event.id === selectedEventId),
+    () => events.find((event) => event.id === selectedEventId && isEventDateEditable(event.start_at)),
     [events, selectedEventId],
   );
   const selectedMinistry = useMemo(
@@ -91,19 +99,24 @@ export default function CreateScheduleScreen() {
       return;
     }
 
-    if (!selectedEventId || !selectedMinistryId) {
+    if (!selectedEvent || !isEventDateEditable(selectedEvent.start_at) || !selectedMinistry || isLoadingMinistries || isLoadingEvents || ministryError || eventError || isSaving) {
       Alert.alert("Campos obrigatorios", "Selecione evento e ministerio.");
       return;
     }
 
     setIsSaving(true);
-    const { error } = await createScheduleValidated({
-      eventId: selectedEventId,
-      ministryId: selectedMinistryId,
+    const authRevision = useAuthStore.getState().sessionRevision;
+    const visit = loadRevision.current;
+    const { data, error } = await createScheduleValidated({
+      eventId: selectedEvent.id,
+      ministryId: selectedMinistry.id,
     });
-    setIsSaving(false);
+    if (authRevision !== useAuthStore.getState().sessionRevision) return;
+    const currentVisit = visit === loadRevision.current;
+    if (currentVisit) setIsSaving(false);
 
-    if (error) {
+    if (error || !data?.id) {
+      if (!currentVisit) return;
       Alert.alert(
         "Nao foi possivel salvar a escala",
         "Tente novamente em alguns instantes.",
@@ -119,12 +132,13 @@ export default function CreateScheduleScreen() {
 
     await fetchScheduleCards({
       userId: session.user.id,
+      viewMode: useScheduleStore.getState().viewMode,
       isAdmin,
       leaderMinistryIds,
       forceRefresh: true,
     });
 
-    navigation.goBack();
+    if (authRevision === useAuthStore.getState().sessionRevision && visit === loadRevision.current) navigation.replace("EditSchedule", { scheduleId: data.id });
   };
 
   return (
@@ -135,7 +149,7 @@ export default function CreateScheduleScreen() {
         contentContainerStyle={{ padding: 20, paddingBottom: 32, backgroundColor: "#f8fafc" }}
         showsVerticalScrollIndicator={false}
       >
-        {!canCreateSchedule ? (
+        {!isLoadingMinistries && !ministryError && !canCreateSchedule ? (
           <View
             style={{
               backgroundColor: "#fff7ed",
@@ -160,8 +174,19 @@ export default function CreateScheduleScreen() {
           </View>
         ) : null}
 
+        {isLoadingEvents ? <Text>Carregando eventos...</Text> : eventError || ministryError ? (
+          <View style={{ marginBottom: 18 }}>
+            <Text>Não foi possível carregar o contexto. {eventError || ministryError}</Text>
+            <Text onPress={() => void loadContext()} style={{ paddingVertical: 12 }}>Tentar novamente</Text>
+          </View>
+        ) : upcomingEvents.length === 0 ? (
+          <View style={{ marginBottom: 18 }}>
+            <Text>Nenhum evento futuro disponível. Solicite um evento a um responsável autorizado.</Text>
+            {canManageEvents(profile) ? <Text onPress={() => navigation.navigate("EventsScreen")} style={{ paddingVertical: 12 }}>Eventos de apoio</Text> : null}
+          </View>
+        ) : null}
         <ScheduleContextSection
-          events={events}
+          events={upcomingEvents}
           ministries={ministries}
           selectedEventId={selectedEventId}
           selectedMinistryId={selectedMinistryId}
@@ -169,6 +194,7 @@ export default function CreateScheduleScreen() {
           selectedMinistry={selectedMinistry}
           isLoadingMinistries={isLoadingMinistries}
           isLoadingSchedule={isSaving}
+          submitDisabled={isLoadingMinistries || isLoadingEvents || !!ministryError || !!eventError || !selectedEvent || !selectedMinistry || !canCreateSchedule}
           scheduleId={null}
           onSelectEvent={setSelectedEventId}
           onSelectMinistry={setSelectedMinistryId}

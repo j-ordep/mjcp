@@ -1,12 +1,37 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  filterSwapRequests,
+  canActOnSwapRequest,
   getParticipationStatusLabel,
   getOwnAssignments,
   getOwnRoleLabel,
   hasConfirmableAssignments,
   type ScheduleParticipationLike,
 } from "../src/utils/scheduleParticipation";
+
+test("swap filters separate personal pending requests from visible history", () => {
+  const own = { id: "own", status: "pending", from_assignment: { user_id: "me", event_start_at: "2099-01-01T12:00:00Z" } };
+  const available = { ...own, id: "other", from_assignment: { ...own.from_assignment, user_id: "other" } };
+  const history = { ...available, id: "closed", status: "approved" };
+  const missing = { id: "missing", status: "pending", from_assignment: null };
+  const cancelled = { ...missing, id: "cancelled", status: "cancelled" };
+  const rejected = { ...missing, id: "rejected", status: "rejected" };
+  const items = [own, available, history, missing, cancelled, rejected];
+  assert.deepEqual(filterSwapRequests(items, "mine", "me"), [own]);
+  assert.deepEqual(filterSwapRequests(items, "available", "me"), [available]);
+  assert.deepEqual(filterSwapRequests(items, "history", "me"), [history, cancelled, rejected]);
+  assert.deepEqual(filterSwapRequests(items, "mine", null), []);
+});
+
+test("swap actions require context and stop exactly at the event start", () => {
+  const item = { status: "pending", from_assignment: { user_id: "other", event_start_at: "2026-10-12T12:00:00Z" } };
+  assert.equal(canActOnSwapRequest(item, new Date("2026-10-12T11:59:59Z")), true);
+  assert.equal(canActOnSwapRequest(item, new Date("2026-10-12T12:00:00Z")), false);
+  assert.equal(canActOnSwapRequest({ ...item, from_assignment: null }), false);
+  assert.equal(canActOnSwapRequest({ ...item, status: "approved" }), false);
+  assert.equal(canActOnSwapRequest({ ...item, from_assignment: { ...item.from_assignment, event_start_at: "invalid" } }), false);
+});
 
 const assignments: ScheduleParticipationLike[] = [
   {

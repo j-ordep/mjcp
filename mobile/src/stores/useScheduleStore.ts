@@ -5,10 +5,11 @@ import {
   type ScheduleCard,
 } from "../services/scheduleService";
 
-type ScheduleViewMode = "manageable" | "personal";
+export type ScheduleViewMode = "manageable" | "personal";
 
 interface FetchScheduleCardsInput {
   userId: string;
+  viewMode: ScheduleViewMode;
   isAdmin?: boolean;
   leaderMinistryIds?: string[];
   forceRefresh?: boolean;
@@ -24,71 +25,86 @@ interface ScheduleState {
   clearScheduleCards: () => void;
 }
 
-export const useScheduleStore = create<ScheduleState>((set, get) => ({
-  scheduleCards: [],
-  scheduleCardsCacheKey: null,
-  viewMode: "personal",
-  isLoadingSchedules: false,
-  error: null,
+export const useScheduleStore = create<ScheduleState>((set, get) => {
+  let revision = 0;
+  return {
+    scheduleCards: [],
+    scheduleCardsCacheKey: null,
+    viewMode: "personal",
+    isLoadingSchedules: false,
+    error: null,
 
-  fetchScheduleCards: async ({
-    userId,
-    isAdmin = false,
-    leaderMinistryIds = [],
-    forceRefresh = false,
-  }) => {
-    if (!userId) return;
-    const shouldUseManageableView = isAdmin || leaderMinistryIds.length > 0;
-    const cacheKey = [
+    fetchScheduleCards: async ({
       userId,
-      shouldUseManageableView ? "manageable" : "personal",
-      isAdmin ? "admin" : leaderMinistryIds.slice().sort().join(","),
-    ].join("|");
-    const currentState = get();
-    if (!forceRefresh && currentState.scheduleCardsCacheKey === cacheKey) return;
+      viewMode,
+      isAdmin = false,
+      leaderMinistryIds = [],
+      forceRefresh = false,
+    }) => {
+      if (!userId) return;
+      leaderMinistryIds = [...new Set(leaderMinistryIds.filter((id) => !!id?.trim()))];
+      const shouldUseManageableView = viewMode === "manageable";
+      if (shouldUseManageableView && !isAdmin && leaderMinistryIds.length === 0) {
+        ++revision;
+        set({ scheduleCards: [], scheduleCardsCacheKey: null, viewMode, isLoadingSchedules: false, error: "Nenhum ministério autorizado para gerenciar escalas." });
+        return;
+      }
+      const cacheKey = [
+        userId,
+        viewMode,
+        shouldUseManageableView ? (isAdmin ? "admin" : [...new Set(leaderMinistryIds)].sort().join(",")) : "own",
+      ].join("|");
+      const currentState = get();
+      if (!forceRefresh && currentState.scheduleCardsCacheKey === cacheKey) return;
+      const request = ++revision;
 
-    set({
-      isLoadingSchedules: true,
-      error: null,
-      scheduleCards:
-        currentState.scheduleCardsCacheKey === cacheKey
-          ? currentState.scheduleCards
-          : [],
-      scheduleCardsCacheKey:
-        currentState.scheduleCardsCacheKey === cacheKey ? cacheKey : null,
-    });
-
-    const result = shouldUseManageableView
-      ? await getManageableScheduleCards(
-          userId,
-          isAdmin ? undefined : leaderMinistryIds,
-        )
-      : await getUserScheduleCards(userId);
-
-    if (result.error) {
       set({
-        error: result.error,
+        viewMode,
+        isLoadingSchedules: true,
+        error: null,
+        scheduleCards:
+          currentState.scheduleCardsCacheKey === cacheKey
+            ? currentState.scheduleCards
+            : [],
+        scheduleCardsCacheKey:
+          currentState.scheduleCardsCacheKey === cacheKey ? cacheKey : null,
+      });
+
+      const result = shouldUseManageableView
+        ? await getManageableScheduleCards(
+            userId,
+            isAdmin ? undefined : leaderMinistryIds,
+          )
+        : await getUserScheduleCards(userId);
+
+      if (request !== revision) return;
+      if (result.error) {
+        set({
+          error: result.error,
+          isLoadingSchedules: false,
+          scheduleCards: [],
+          scheduleCardsCacheKey: null,
+        });
+        return;
+      }
+
+      set({
+        scheduleCards: result.data ?? [],
+        scheduleCardsCacheKey: cacheKey,
+        viewMode: shouldUseManageableView ? "manageable" : "personal",
         isLoadingSchedules: false,
+      });
+    },
+
+    clearScheduleCards: () => {
+      ++revision;
+      set({
         scheduleCards: [],
         scheduleCardsCacheKey: null,
+        error: null,
+        viewMode: "personal",
+        isLoadingSchedules: false,
       });
-      return;
-    }
-
-    set({
-      scheduleCards: result.data ?? [],
-      scheduleCardsCacheKey: cacheKey,
-      viewMode: shouldUseManageableView ? "manageable" : "personal",
-      isLoadingSchedules: false,
-    });
-  },
-
-  clearScheduleCards: () => {
-    set({
-      scheduleCards: [],
-      scheduleCardsCacheKey: null,
-      error: null,
-      viewMode: "personal",
-    });
-  },
-}));
+    },
+  };
+});

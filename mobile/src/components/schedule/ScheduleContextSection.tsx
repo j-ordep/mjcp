@@ -17,6 +17,7 @@ interface ScheduleContextSectionProps {
   selectedMinistry?: ManageableMinistry;
   isLoadingMinistries: boolean;
   isLoadingSchedule: boolean;
+  submitDisabled?: boolean;
   scheduleId: string | null;
   onSelectEvent: (eventId: string) => void;
   onSelectMinistry: (ministryId: string) => void;
@@ -33,6 +34,7 @@ export default function ScheduleContextSection({
   selectedMinistry,
   isLoadingMinistries,
   isLoadingSchedule,
+  submitDisabled,
   scheduleId,
   onSelectEvent,
   onSelectMinistry,
@@ -165,7 +167,7 @@ export default function ScheduleContextSection({
         />
       ) : null}
 
-      <DefaultButton onPress={onSubmit} isLoading={isLoadingSchedule}>
+      <DefaultButton onPress={onSubmit} isLoading={isLoadingSchedule} disabled={submitDisabled}>
         {scheduleId ? "Atualizar contexto da escala" : "Criar escala"}
       </DefaultButton>
     </View>
