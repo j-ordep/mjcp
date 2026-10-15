@@ -136,7 +136,6 @@ export function canCancelStandaloneRoomAgendaItem(input: {
         category?: string | null;
         eventId: string | null;
         isEventLinked?: boolean;
-        linkedScheduleSummary?: unknown;
         reservedBy: string;
       }
     | null

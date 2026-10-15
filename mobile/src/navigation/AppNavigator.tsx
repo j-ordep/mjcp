@@ -1,13 +1,8 @@
 import { NavigationContainer } from "@react-navigation/native";
-import {
-  createNativeStackNavigator,
-  NativeStackScreenProps,
-} from "@react-navigation/native-stack";
-import { useEffect } from "react";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { ActivityIndicator, View } from "react-native";
 
 import TabNavigator from "../components/TabNavigator";
-import { supabase } from "../lib/supabase";
 import BlockDatesScreen from "../screens/app/BlockDatesScreen";
 import CreateEventScreen from "../screens/app/CreateEventScreen";
 import CreateScheduleScreen from "../screens/app/CreateScheduleScreen";
@@ -18,166 +13,24 @@ import EventsScreen from "../screens/app/EventsScreen";
 import ManageMinistryMembersScreen from "../screens/app/ManageMinistryMembersScreen";
 import ManageEventPermissionsScreen from "../screens/app/ManageEventPermissionsScreen";
 import MusicDetailsScreen from "../screens/app/MusicDetailsScreen";
-import ScheduleScreen from "../screens/app/ScheduleScreen";
+import EventSetlistScreen from "../screens/app/EventSetlistScreen";
 import ProfileScreen from "../screens/app/ProfileScreen";
 import SwapRequestsScreen from "../screens/app/SwapRequestsScreen";
 import SignInScreen from "../screens/auth/SignInScreen";
 import SignUpScreen from "../screens/auth/SignUpScreen";
-import { getProfile } from "../services/profileService";
 import { useAuthStore } from "../stores/useAuthStore";
-import { useNotificationStore } from "../stores/useNotificationStore";
+import type { RootStackParamList } from "../types/navigation";
+import { useAuthBootstrap } from "../hooks/useAuthBootstrap";
+import { useNotificationSubscription } from "../hooks/useNotificationSubscription";
 
-export type RootStackParamList = {
-  SignIn: undefined;
-  SignUp: undefined;
-  Main: undefined;
-  EventsScreen: undefined;
-  EventDetails: {
-    event: Pick<
-      import("../types/models").Event,
-      "id" | "title" | "description" | "location" | "start_at"
-    > &
-      Partial<
-        Pick<import("../types/models").Event, "category" | "end_at" | "is_public">
-      >;
-  };
-  Profile: undefined;
-  EditProfile: undefined;
-  BlockDatesScreen: undefined;
-  ScheduleScreen: undefined;
-  CreateEvent:
-    | {
-        mode: "edit";
-        eventId: string;
-        initialData?: import("../utils/eventPresentation").EventEditorInitialData;
-      }
-    | {
-        mode?: undefined;
-        eventId?: never;
-        initialData?: never;
-      }
-    | undefined;
-  CreateSchedule: undefined;
-  EditSchedule: {
-    scheduleId: string;
-  };
-  MusicDetails: {
-    songId: string;
-  };
-  ManageMinistryMembers:
-    | {
-        ministryId?: string;
-      }
-    | undefined;
-  ManageEventPermissions: undefined;
-  SwapRequests: undefined;
-};
-
-export type EventDetailsScreenProps = NativeStackScreenProps<
-  RootStackParamList,
-  "EventDetails"
->;
-
-export type CreateEventScreenProps = NativeStackScreenProps<
-  RootStackParamList,
-  "CreateEvent"
->;
+export type { RootStackParamList, EventDetailsScreenProps, CreateEventScreenProps } from "../types/navigation";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
-  const { session, isLoading, setSession, setProfile, setLoading } =
-    useAuthStore();
-  const bootstrapNotifications = useNotificationStore(
-    (state) => state.bootstrap,
-  );
-  const connectNotificationRealtime = useNotificationStore(
-    (state) => state.connectRealtime,
-  );
-  const disconnectNotificationRealtime = useNotificationStore(
-    (state) => state.disconnectRealtime,
-  );
-  const clearNotifications = useNotificationStore((state) => state.clear);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const bootstrapAuth = async () => {
-      try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-
-        if (!isMounted) return;
-
-        setSession(session);
-
-        if (session?.user?.id) {
-          const { profile } = await getProfile(session.user.id);
-          if (isMounted) {
-            setProfile(profile);
-          }
-        } else {
-          setProfile(null);
-        }
-      } catch (error) {
-        console.error("Erro ao restaurar sessao:", error);
-        if (isMounted) {
-          setSession(null);
-          setProfile(null);
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    bootstrapAuth();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setSession(session);
-
-      if (session?.user?.id) {
-        const { profile } = await getProfile(session.user.id);
-        setProfile(profile);
-      } else {
-        setProfile(null);
-      }
-
-      setLoading(false);
-    });
-
-    return () => {
-      isMounted = false;
-      subscription.unsubscribe();
-    };
-  }, [setLoading, setProfile, setSession]);
-
-  useEffect(() => {
-    const userId = session?.user?.id;
-
-    if (!userId) {
-      void disconnectNotificationRealtime();
-      clearNotifications();
-      return;
-    }
-
-    void bootstrapNotifications(userId);
-    void connectNotificationRealtime(userId);
-
-    return () => {
-      void disconnectNotificationRealtime();
-    };
-  }, [
-    bootstrapNotifications,
-    clearNotifications,
-    connectNotificationRealtime,
-    disconnectNotificationRealtime,
-    session?.user?.id,
-  ]);
+  const { session, isLoading, sessionRevision } = useAuthStore();
+  useAuthBootstrap();
+  useNotificationSubscription(session?.user?.id, sessionRevision);
 
   if (isLoading) {
     return (
@@ -195,7 +48,7 @@ export default function AppNavigator() {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer key={sessionRevision}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!session ? (
           <>
@@ -211,10 +64,7 @@ export default function AppNavigator() {
               name="BlockDatesScreen"
               component={BlockDatesScreen}
             />
-            <Stack.Screen
-              name="ScheduleScreen"
-              component={ScheduleScreen}
-            />
+            <Stack.Screen name="EventSetlist" component={EventSetlistScreen} getId={({ params }) => params.eventId} />
             <Stack.Screen name="Profile" component={ProfileScreen} />
             <Stack.Screen name="EditProfile" component={EditProfile} />
             <Stack.Screen name="CreateEvent" component={CreateEventScreen} />

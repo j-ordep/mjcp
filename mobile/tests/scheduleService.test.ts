@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   createQueryBuilder,
+  clearScheduleServiceCache,
   loadServiceModule,
 } from "./serviceTestHelpers";
 
@@ -18,9 +19,8 @@ function loadScheduleServiceWithProfileLookup(
 ) {
   const supabaseModulePath = require.resolve("../src/lib/supabase");
   const profileServiceModulePath = require.resolve("../src/services/profileService");
-  const scheduleServiceModulePath = require.resolve("../src/services/scheduleService");
 
-  delete require.cache[scheduleServiceModulePath];
+  clearScheduleServiceCache();
   delete require.cache[profileServiceModulePath];
   require.cache[supabaseModulePath] = ({
     id: supabaseModulePath,

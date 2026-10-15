@@ -7,7 +7,6 @@ export interface RoomAgendaDisplayItem {
   categoryLabel: string;
   timeLabel: string;
   badgeLabel: string | null;
-  scheduleSummaryLabel: string | null;
   isPrimary: boolean;
 }
 
@@ -29,22 +28,6 @@ function formatTimeLabel(value: string) {
   });
 }
 
-function pluralize(count: number, singular: string, plural: string) {
-  return `${count} ${count === 1 ? singular : plural}`;
-}
-
-function buildScheduleSummaryLabel(item: RoomDailyAgendaItem) {
-  if (!item.linkedScheduleSummary) {
-    return null;
-  }
-
-  return `Escalas vinculadas: ${[
-    pluralize(item.linkedScheduleSummary.schedulesCount, "ministério", "ministérios"),
-    pluralize(item.linkedScheduleSummary.assignmentsCount, "pessoa", "pessoas"),
-    `${item.linkedScheduleSummary.confirmedAssignmentsCount} confirmadas`,
-  ].join(" · ")}`;
-}
-
 export function buildRoomAgendaDisplayItems(
   items: RoomDailyAgendaItem[],
   options: BuildRoomAgendaDisplayItemsOptions = {},
@@ -59,7 +42,6 @@ export function buildRoomAgendaDisplayItems(
     categoryLabel: getEventCategoryLabel(item.category),
     timeLabel: `${formatTimeLabel(item.startAt)} - ${formatTimeLabel(item.endAt)}`,
     badgeLabel: item.isEventLinked ? "Evento" : null,
-    scheduleSummaryLabel: buildScheduleSummaryLabel(item),
     isPrimary: index === 0,
   }));
 }

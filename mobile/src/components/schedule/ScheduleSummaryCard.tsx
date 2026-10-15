@@ -6,6 +6,8 @@ interface ScheduleSummaryCardProps {
   eventDate?: string | null;
   eventLocation?: string | null;
   ministryName?: string | null;
+  participationLabel?: string;
+  roleLabel?: string;
 }
 
 export default function ScheduleSummaryCard({
@@ -13,6 +15,8 @@ export default function ScheduleSummaryCard({
   eventDate,
   eventLocation,
   ministryName,
+  participationLabel,
+  roleLabel,
 }: ScheduleSummaryCardProps) {
   return (
     <View
@@ -40,6 +44,8 @@ export default function ScheduleSummaryCard({
           Ministerio: {ministryName}
         </Text>
       ) : null}
+      {roleLabel ? <Text style={{ color: "#374151", marginTop: 6 }}>Função: {roleLabel}</Text> : null}
+      {participationLabel ? <Text style={{ color: "#374151", marginTop: 6 }}>Participação: {participationLabel}</Text> : null}
     </View>
   );
 }

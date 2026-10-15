@@ -102,12 +102,22 @@ export function createQueryBuilder(
   return builder;
 }
 
+export function clearScheduleServiceCache() {
+  const path = require("node:path");
+  const directory = path.resolve(__dirname, "../src/services/scheduling") + path.sep;
+  delete require.cache[require.resolve("../src/services/scheduleService")];
+  for (const filename of Object.keys(require.cache)) {
+    if (filename.startsWith(directory)) delete require.cache[filename];
+  }
+}
+
 export function loadServiceModule<T>(modulePath: string, supabaseMock: unknown): T {
   const supabaseModulePath = require.resolve("../src/lib/supabase");
   const scheduleRulesModulePath = require.resolve("../src/utils/scheduleRules");
   const targetModulePath = require.resolve(modulePath);
 
   delete require.cache[targetModulePath];
+  if (modulePath.endsWith("/scheduleService")) clearScheduleServiceCache();
   delete require.cache[scheduleRulesModulePath];
   require.cache[supabaseModulePath] = ({
     id: supabaseModulePath,

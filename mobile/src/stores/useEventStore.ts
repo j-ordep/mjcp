@@ -1,15 +1,14 @@
 import { create } from "zustand";
 import {
-  createEvent,
   createMultipleEvents,
   getEvents,
   getUpcomingEvents,
   saveEventWithOptionalRoom,
-  updateEvent,
 } from "../services/eventService";
-import { Event } from "../types/models";
+import type { Event } from "../types/models";
 
 interface EventState {
+  clearEvents: () => void;
   events: Event[];
   allEvents: Event[];
   isLoadingEvents: boolean;
@@ -17,19 +16,12 @@ interface EventState {
   error: string | null;
   fetchUpcomingEvents: (forceRefresh?: boolean) => Promise<void>;
   fetchEvents: (forceRefresh?: boolean) => Promise<void>;
-  createNewEvent: (
-    eventData: Partial<Event>,
-  ) => Promise<{ data: Event | null; error: string | null }>;
   createBatchEvents: (
     eventsData: Partial<Event>[],
   ) => Promise<{ data: Event[] | null; error: string | null }>;
   createEventWithRoom: (
     eventData: Partial<Event>,
     roomId: string | null,
-  ) => Promise<{ data: Event | null; error: string | null }>;
-  updateExistingEvent: (
-    eventId: string,
-    updates: Partial<Event>,
   ) => Promise<{ data: Event | null; error: string | null }>;
   updateEventWithRoom: (
     eventId: string,
@@ -38,166 +30,128 @@ interface EventState {
   ) => Promise<{ data: Event | null; error: string | null }>;
 }
 
-export const useEventStore = create<EventState>((set, get) => ({
-  events: [],
-  allEvents: [],
-  isLoadingEvents: false,
-  isLoadingAllEvents: false,
-  error: null,
-
-  fetchUpcomingEvents: async (forceRefresh = false) => {
-    if (!forceRefresh && get().events.length > 0) return;
-
-    set({ isLoadingEvents: true, error: null });
-
-    const { data, error } = await getUpcomingEvents();
-
-    if (error) {
-      set({ error, isLoadingEvents: false });
-    } else {
-      set({ events: data || [], isLoadingEvents: false });
-    }
-  },
-
-  fetchEvents: async (forceRefresh = false) => {
-    if (!forceRefresh && get().allEvents.length > 0) return;
-
-    set({ isLoadingAllEvents: true, error: null });
-
-    const { data, error } = await getEvents();
-
-    if (error) {
-      set({ error, isLoadingAllEvents: false });
-    } else {
-      set({ allEvents: data || [], isLoadingAllEvents: false });
-    }
-  },
-
-  createEventWithRoom: async (
-    eventData: Partial<Event>,
-    roomId: string | null,
-  ) => {
-    set({ isLoadingEvents: true, error: null });
-    const { data, error } = await saveEventWithOptionalRoom({
-      event: eventData,
-      roomId,
-    });
-
-    if (error) {
-      set({ error, isLoadingEvents: false });
-      return { data: null, error };
-    }
-
-    const [{ data: freshEvents }, { data: freshAllEvents }] = await Promise.all([
+export const useEventStore = create<EventState>((set, get) => {
+  let sessionRevision = 0;
+  let upcomingRevision = 0;
+  let allRevision = 0;
+  async function refreshEventLists(session: number) {
+    if (session !== sessionRevision) return;
+    // Reads started before this commit can contain the state before the write.
+    const upcomingRequest = ++upcomingRevision;
+    const allRequest = ++allRevision;
+    const [{ data: events }, { data: allEvents }] = await Promise.all([
       getUpcomingEvents(),
       getEvents(),
     ]);
 
-    set({
-      events: freshEvents || [],
-      allEvents: freshAllEvents || [],
-      isLoadingEvents: false,
-      isLoadingAllEvents: false,
-    });
+    if (session !== sessionRevision) return;
+    if (upcomingRequest === upcomingRevision) set({ events: events || [], isLoadingEvents: false });
+    if (allRequest === allRevision) set({ allEvents: allEvents || [], isLoadingAllEvents: false });
+  }
 
-    return { data, error: null };
-  },
+  return {
+    events: [],
+    allEvents: [],
+    isLoadingEvents: false,
+    isLoadingAllEvents: false,
+    error: null,
+    clearEvents: () => {
+      ++sessionRevision;
+      ++upcomingRevision;
+      ++allRevision;
+      set({ events: [], allEvents: [], isLoadingEvents: false, isLoadingAllEvents: false, error: null });
+    },
 
-  createNewEvent: async (eventData: Partial<Event>) => {
-    set({ isLoadingEvents: true, error: null });
-    const { data, error } = await createEvent(eventData);
+    fetchUpcomingEvents: async (forceRefresh = false) => {
+      if (!forceRefresh && get().events.length > 0) return;
+      const request = ++upcomingRevision;
 
-    if (error) {
-      set({ error, isLoadingEvents: false });
-      return { data: null, error };
-    } else {
-      const [{ data: freshEvents }, { data: freshAllEvents }] = await Promise.all([
-        getUpcomingEvents(),
-        getEvents(),
-      ]);
-      set({
-        events: freshEvents || [],
-        allEvents: freshAllEvents || [],
-        isLoadingEvents: false,
-        isLoadingAllEvents: false,
+      set({ isLoadingEvents: true, error: null });
+
+      const { data, error } = await getUpcomingEvents();
+      if (request !== upcomingRevision) return;
+
+      if (error) {
+        set({ error, isLoadingEvents: false });
+      } else {
+        set({ events: data || [], isLoadingEvents: false });
+      }
+    },
+
+    fetchEvents: async (forceRefresh = false) => {
+      if (!forceRefresh && get().allEvents.length > 0) return;
+      const request = ++allRevision;
+
+      set({ isLoadingAllEvents: true, error: null });
+
+      const { data, error } = await getEvents();
+      if (request !== allRevision) return;
+
+      if (error) {
+        set({ error, isLoadingAllEvents: false });
+      } else {
+        set({ allEvents: data || [], isLoadingAllEvents: false });
+      }
+    },
+
+    createEventWithRoom: async (
+      eventData: Partial<Event>,
+      roomId: string | null,
+    ) => {
+      const session = sessionRevision, upcoming = ++upcomingRevision;
+      set({ isLoadingEvents: true, error: null });
+      const { data, error } = await saveEventWithOptionalRoom({
+        event: eventData,
+        roomId,
       });
+      if (session !== sessionRevision) return { data: error ? null : data, error };
+
+      if (error) {
+        if (upcoming === upcomingRevision) set({ error, isLoadingEvents: false });
+        return { data: null, error };
+      }
+
+      await refreshEventLists(session);
       return { data, error: null };
-    }
-  },
+    },
 
-  createBatchEvents: async (eventsData: Partial<Event>[]) => {
-    set({ isLoadingEvents: true, error: null });
-    const { data, error } = await createMultipleEvents(eventsData);
+    createBatchEvents: async (eventsData: Partial<Event>[]) => {
+      const session = sessionRevision, upcoming = ++upcomingRevision;
+      set({ isLoadingEvents: true, error: null });
+      const { data, error } = await createMultipleEvents(eventsData);
+      if (session !== sessionRevision) return { data: error ? null : data, error };
 
-    if (error) {
-      set({ error, isLoadingEvents: false });
-      return { data: null, error };
-    } else {
-      const [{ data: freshEvents }, { data: freshAllEvents }] = await Promise.all([
-        getUpcomingEvents(),
-        getEvents(),
-      ]);
-      set({
-        events: freshEvents || [],
-        allEvents: freshAllEvents || [],
-        isLoadingEvents: false,
-        isLoadingAllEvents: false,
+      if (error) {
+        if (upcoming === upcomingRevision) set({ error, isLoadingEvents: false });
+        return { data: null, error };
+      }
+
+      await refreshEventLists(session);
+      return { data, error: null };
+    },
+
+    updateEventWithRoom: async (
+      eventId: string,
+      updates: Partial<Event>,
+      roomId?: string | null,
+    ) => {
+      const session = sessionRevision, upcoming = ++upcomingRevision;
+      set({ isLoadingEvents: true, error: null });
+      const { data, error } = await saveEventWithOptionalRoom({
+        eventId,
+        event: updates,
+        roomId,
       });
+      if (session !== sessionRevision) return { data: error ? null : data, error };
+
+      if (error) {
+        if (upcoming === upcomingRevision) set({ error, isLoadingEvents: false });
+        return { data: null, error };
+      }
+
+      await refreshEventLists(session);
       return { data, error: null };
-    }
-  },
+    },
 
-  updateEventWithRoom: async (
-    eventId: string,
-    updates: Partial<Event>,
-    roomId?: string | null,
-  ) => {
-    set({ isLoadingEvents: true, error: null });
-    const { data, error } = await saveEventWithOptionalRoom({
-      eventId,
-      event: updates,
-      roomId,
-    });
-
-    if (error) {
-      set({ error, isLoadingEvents: false });
-      return { data: null, error };
-    }
-
-    const [{ data: freshEvents }, { data: freshAllEvents }] = await Promise.all([
-      getUpcomingEvents(),
-      getEvents(),
-    ]);
-
-    set({
-      events: freshEvents || [],
-      allEvents: freshAllEvents || [],
-      isLoadingEvents: false,
-      isLoadingAllEvents: false,
-    });
-
-    return { data, error: null };
-  },
-
-  updateExistingEvent: async (eventId: string, updates: Partial<Event>) => {
-    set({ isLoadingEvents: true, error: null });
-    const { data, error } = await updateEvent(eventId, updates);
-
-    if (error) {
-      set({ error, isLoadingEvents: false });
-      return { data: null, error };
-    } else {
-      const [{ data: freshEvents }, { data: freshAllEvents }] = await Promise.all([
-        getUpcomingEvents(),
-        getEvents(),
-      ]);
-      set({
-        events: freshEvents || [],
-        allEvents: freshAllEvents || [],
-        isLoadingEvents: false,
-        isLoadingAllEvents: false,
-      });
-      return { data, error: null };
-    }
-  },
-}));
+  };
+});

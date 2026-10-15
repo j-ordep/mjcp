@@ -1,236 +1,117 @@
-# MJCP Mobile - Contexto do Projeto
+# Contexto do MJCP
 
-Data de reconciliacao: 2026-06-14 (America/Sao_Paulo)
+Revisado em 2026-10-11. Comportamento atual: código e migrations.
+A direção futura abaixo exige mudanças de banco; o recorte mobile já usa Escalas como entrada.
 
-## O que e
+## Dor e objetivo
 
-Aplicativo mobile para gestao de igreja/ministerio com foco em:
+As equipes precisam saber quem vai servir, quando, em qual função e quem pode substituir
+uma pessoa. Também precisam organizar o uso das salas e consultar o tom adequado de cada
+música para seus cantores. O objetivo é reunir essas informações em um aplicativo interno,
+com poucos fluxos e manutenção simples.
 
-- eventos
-- escalas
-- membros e capabilities por ministerio
-- confirmacao de presenca
-- trocas de assignment
-- indisponibilidades
-- reservas de sala
+O público são administradores, líderes de ministério e integrantes das equipes.
 
-O dominio principal hoje e o fluxo de escalas.
+## Produto que vamos construir
 
----
+| Área | Responsabilidade |
+| --- | --- |
+| Escalas, tela inicial | Escalas independentes por ministério, equipe, funções, confirmação, trocas e indisponibilidade |
+| Salas | Agenda por data/horário, disponibilidade, reserva e cancelamento |
+| Músicas | Catálogo, tom por cantor e repertório das escalas de louvor |
+| Equipe | Administradores e líderes consultam e gerenciam integrantes dos ministérios |
+| Perfil e notificações | Acesso pelo cabeçalho/menu; dados pessoais e avisos relacionados ao serviço |
 
-## Stack tecnologica
+Cada escala terá seu ministério, data, horário e identificação, como “Culto da manhã”.
+Escalas de ministérios diferentes serão independentes. Um ministério poderá ter mais de
+uma escala no mesmo dia; a data sozinha não identifica uma escala.
 
-| Tecnologia | Versao | Uso |
+O módulo de eventos será retirado: criar escala deixará de exigir criar um evento.
+Reservas terão agenda própria. O repertório ficará ligado à escala de louvor.
+Uma música poderá ter vários cantores cadastrados, cada um com seu tom preferido.
+O repertório registrará o cantor e o tom daquela execução, preservando o histórico quando
+a preferência mudar. O artista original da música e o cantor da equipe são informações distintas.
+
+A página inicial geral e vídeos do YouTube foram retirados. Eventos e gestão de audiência
+continuam como apoio, fora das abas principais, enquanto sustentarem os contratos atuais.
+Visitantes, escola bíblica, relatórios gerais e SaaS para várias igrejas ficam
+fora deste recorte.
+
+## Regras de negócio a preservar
+
+- Admin gerencia o domínio. Líder gerencia escalas e equipe dos ministérios que lidera.
+  Membro confirma a própria participação e opera trocas quando elegível.
+- Liderança depende do vínculo com o ministério; o papel global `leader` sozinho não basta.
+  A gestão de equipe fica disponível somente a administradores e líderes, respeitando esse escopo.
+- Capability é a função que alguém sabe exercer; assignment é a função que fará na escala.
+  A atribuição exige vínculo e capability compatíveis. Novas atribuições não repetem a pessoa na escala.
+- Confirmação e gestão da escala/trocas bloqueiam exatamente no início; o histórico continua legível.
+  Hoje o horário vem do evento; passará a pertencer à escala.
+- Na troca, a primeira pessoa elegível do mesmo ministério e função assume, sem aprovação do líder.
+  Ela não pode já estar na escala nem aceitar o próprio pedido. Apenas um aceite pode vencer.
+- Abrir troca retorna a participação para `pending`; assumir também exige nova confirmação.
+  O solicitante pode cancelar o pedido pendente antes do início.
+- Conflitos de escala e datas bloqueadas geram avisos. Sobreposição de reservas da mesma sala é bloqueada.
+- Remover integrante de um ministério remove suas atribuições futuras ali e preserva o histórico.
+- Edição pessoal envia somente nome, telefone e avatar. Papel e outros privilégios exigem operação autorizada.
+- Formulários apresentam hora local e persistem instantes em UTC. Estados persistidos são em inglês;
+  os rótulos da interface são em português.
+
+## Confirmado no codigo
+
+O mobile usa Supabase diretamente para autenticação, dados e notificações internas.
+Escalas ainda dependem de `events`, com uma escala por `(event_id, ministry_id)`.
+Repertórios também dependem de eventos; reservas podem ser avulsas ou vinculadas a eles.
+Eventos públicos são visíveis a usuários autenticados; privados usam audiência e permissões próprias.
+
+Escalas abre em Minhas; Gerenciadas consulta apenas o escopo de administração/liderança.
+A lista filtra por ministério, busca e próximas/anteriores; confirmação e troca ficam no detalhe.
+Trocas separa pendentes próprios, disponíveis e histórico, sem inferir o solicitante original
+de uma atribuição já transferida. Perfil e notificações ficam no cabeçalho das abas.
+
+Já existem equipe/funções, confirmação, trocas, indisponibilidade, reservas, catálogo musical,
+tom base e tom por repertório. Equipe é restrita a administradores e líderes com vínculo confirmado.
+Repertório é acessível por Músicas ou escala, identificado pelo evento compartilhado, com edição
+por gestor antes do início e rascunho preservado em erro. Salas consulta ocupação e reservas,
+sem contadores de integrantes. Eventos de apoio ficam no Perfil dos gestores autorizados.
+Os caches são invalidados ao sair/trocar de usuário e descartam respostas ultrapassadas.
+Salvar liderança/integrante e capabilities ainda pode resultar em gravação parcial: a tela relê
+o estado persistido e mantém a edição para conferência; não existe transação simulada no cliente.
+Tons por cantor, escalas sem eventos e integração Fastify ainda não existem.
+CRUD completo dos catálogos administrativos e push externo também não estão implementados no mobile.
+
+A autorização atual depende de RLS, triggers e RPCs. Gestão de eventos ainda usa admin ou
+`profiles.can_manage_events`; perfis usam `profiles.role` e liderança usa `ministry_members.is_leader`.
+Essas estruturas precisam continuar protegidas enquanto fizerem parte do sistema.
+
+## Tecnologia e manutenção
+
+| Parte | Atual | Direção aprovada |
 | --- | --- | --- |
-| React Native | 0.81.5 | App mobile |
-| Expo | ~54.0.30 | Toolchain e build |
-| TypeScript | ~5.9.2 | Tipagem |
-| React Navigation | 7.x | Stack + tabs |
-| Zustand | 5.x | Estado global |
-| Supabase JS | 2.99.3 | Auth, banco e RLS |
-| React Native Paper | 5.14.5 | Componentes visuais |
-| NativeWind | 4.2.1 | Estilizacao |
-| Lucide React Native | 0.554.0 | Icones |
+| Cliente | React Native, Expo, TypeScript, React Navigation, Zustand, Paper e NativeWind | Manter; trocar acesso direto ao Supabase por HTTP para a API |
+| Backend | Serviços de Auth/API/Realtime do Supabase | API própria com Node.js, Fastify e TypeScript |
+| Banco | PostgreSQL gerenciado pelo Supabase | PostgreSQL independente do Supabase |
 
----
+A migração inclui substituir Supabase Auth, acesso a dados e entrega de notificações.
+O destino é `mobile → API Fastify → PostgreSQL`; a API Fastify ainda precisa ser criada.
+A implementação anterior em Go permanece no repositório e não é o backend integrado ao mobile.
 
-## Estado atual do codigo
+Telas/componentes apresentam e coordenam interação; services acessam dados; stores mantêm estado.
+Na API, regras e permissões ficam no servidor. O PostgreSQL mantém constraints e transações,
+inclusive proteção de concorrência em trocas e reservas.
+As proteções atuais só serão retiradas após existir substituto verificado.
 
-### Confirmado no codigo
+Organize por responsabilidade e reaproveite lógica real. Evite interfaces, wrappers e camadas
+para uso único. Componentizar deve facilitar leitura, preservando erros, estado, permissões
+e contratos de atualização parcial durante a transição. Versões atuais estão em `package.json`.
 
-- O app nao esta mais em estado de UI puramente mockada para o dominio principal.
-- Existe autenticacao Supabase parcial no projeto.
-- O bootstrap agora falha de forma amigavel quando o `.env` publico do Supabase estiver ausente, placeholder ou invalido:
-  - `App.tsx` valida `EXPO_PUBLIC_SUPABASE_URL` e `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` antes de montar o fluxo autenticado
-  - `src/lib/publicEnv.ts` concentra o contrato de leitura segura dessas variaveis
-- Existe integracao real com Supabase para eventos, ministerios, membros, escalas, assignments e trocas.
-- O app agora possui leitura real da inbox de notificacoes pela tabela `notifications`:
-  - `NotificationsModal` deixou de ser mockado
-  - existe `notificationService` para listar e marcar notificacoes como lidas
-  - existe `useNotificationStore` como fonte de verdade da inbox no cliente
-  - a Home exibe badge de nao lidas no sino
-  - a inbox recebe `INSERT` e `UPDATE` em realtime filtrados por `user_id`
-  - tocar em uma notificacao navega para `SwapRequests` ou `EditSchedule`, conforme o payload
-- O fluxo de criacao de escala foi separado da montagem da equipe:
-  - `CreateScheduleScreen` cria o contexto da escala
-  - `EditScheduleScreen` faz a montagem da equipe e operacao da escala
-  - `ScheduleScreen` funciona como hub principal do dominio de escalas
-- `EventsScreen` e `EventDetailsScreen` sao somente informativas; presenca, troca e equipe escalada ficam no fluxo de escala
-- `EventsScreen` e `EventDetailsScreen` agora consomem o mesmo contrato canonico de apresentacao informativa (`toInformationalEventViewModel`), evitando payload fragmentado entre lista e detalhe
-- o payload usado para abrir a edicao de evento a partir de `EventDetailsScreen` agora passa por sanitizer/whitelist (`toEventEditorInitialData`), impedindo vazamento acidental de campos operacionais de escala para o fluxo de evento
-- `EventsScreen` mostra proximos eventos e historico real; a classificacao entre atual/futuro e historico considera `end_at` quando existir, mantendo a ordenacao por `start_at`
-- criacao e edicao de evento agora ficam disponiveis para:
-  - `admin`
-  - usuarios com `profiles.can_manage_events = true`
-- `CreateEventScreen` agora reidrata a edicao de evento pelo backend via `eventId`, em vez de depender apenas dos dados passados pela navegacao
-- `CreateEventScreen` agora usa um contrato compartilhado de datas para converter o formulario local em UTC ISO:
-  - `buildUtcRangeFromLocalForm(...)` concentra a regra base
-  - a reidratacao da data deixou de depender de `split("T")` e volta para o fuso local do usuario
-- a audiencia de eventos privados volta carregada corretamente ao editar o evento
-- no MVP atual, `event_audiences` representa ao mesmo tempo visibilidade e lista de convite/convocacao do evento privado
-- reuniao continua sendo um evento; nao existe entidade separada para esse caso
-- `EBD` continua coberta pela categoria `ensino`
-- mesmo para `admin`, o detalhe de evento permanece informativo; escalas vinculadas continuam no fluxo de escalas
-- evento privado pode existir sem audiencia explicita; nesse caso ele fica visivel para:
-  - `admin`
-  - usuarios com `profiles.can_manage_events = true`
-- `CreateEventScreen` agora permite vincular sala opcionalmente quando houver uma unica data, carregando disponibilidade real por janela
-- a edicao de evento reidrata e preserva corretamente audiencia privada e reserva vinculada; limpeza automatica de sala por indisponibilidade temporaria nao remove a reserva sem intencao
-- `RoomsScreen` deixou de ser mockado e agora cria reservas independentes reais em `room_reservations`
-- `RoomsScreen` agora tambem mostra agenda diaria por sala:
-  - todas as reservas ativas do dia
-  - badge `Evento` quando a reserva veio de `room_reservations.event_id`
-  - resumo simples somente leitura das escalas vinculadas ao evento
-- `RoomsScreen` agora mantem a superficie principal mais limpa:
-  - a tela principal ficou focada na agenda do dia
-  - o fluxo de reserva avulsa abre um modal dedicado por sala
-  - titulo, categoria, data e horario da reserva deixaram de aparecer no topo como pseudo-filtros
-- `RoomsScreen` agora tambem permite cancelar a propria reserva avulsa ativa, sem tocar em reservas vinculadas a evento
-- se a leitura de `schedules` falhar por permissao/RLS, a agenda diaria continua carregando e apenas omite o resumo de escalas
-- o vinculo estrutural entre evento e sala nesta fase passa por `room_reservations.event_id`, sem introduzir `events.room_id`
-- `save_event_with_optional_room_reservation` salva evento + audiencia + reserva opcional de forma atomica, bloqueando conflito de horario
-- os nomes de sala continuam vindo do banco (`rooms`), nao de mock local
-- o catalogo padrao de salas foi normalizado para:
-  - `Sala 1`
-  - `Sala 2`
-  - `Sala 3`
-  - `Sala 4`
-  - `Casa de Missoes`
-  - `Templo`
-- a migration segura `20260504000122_normalize_room_catalog.sql` renomeia legado conhecido e insere faltantes sem apagar salas extras ja existentes
-- a UI de salas deixou de exibir lotacao/capacidade; `capacity` continua no banco apenas como dado estrutural legado
-- `BlockDatesScreen` deixou de ser placeholder e agora carrega/salva as indisponibilidades reais do usuario em `blocked_dates`
-- `blocked_dates` continua como warning soft no fluxo de escala; nao virou bloqueio hard
-- `MusicScreen` deixou de ser mock:
-  - o catalogo agora vem de `songs`
-  - o proximo setlist agora vem de `event_setlists`
-  - usuarios com permissao de gerenciar eventos agora conseguem editar de forma simples o setlist do proximo evento
-  - a troca completa do setlist agora acontece via RPC transacional `replace_event_setlist`, evitando apagar a setlist atual em caso de falha parcial
-- `MusicDetailsScreen` agora abre a partir do catalogo e do proximo setlist:
-  - exibe metadados basicos da musica
-  - tenta abrir `lyrics_url` de forma amigavel quando existir
-- o perfil deixou de depender de fallbacks externos de avatar:
-  - `HeaderPrimary`, `ProfileScreen` e `EditProfileScreen` agora usam apenas `avatar_url` real ou iniciais locais
-  - a edicao de perfil nao exibe mais CTA falso para trocar foto
-- `BottomSheetMenu` deixou de expor acoes placeholder de compartilhar perfil e configuracoes de notificacao
-- `ProfileScreen` trocou os cards mockados de atividade por um resumo simples com dados reais da POC
-- `ProfileScreen` passou a formatar telefone de forma legivel no resumo do usuario
-- `CalendarModal` volta a abrir sincronizado com a data real do formulario, sem reaproveitar selecao cancelada da abertura anterior
-- `BlockDatesScreen` agora trava interacoes durante o salvamento para evitar perda silenciosa de alteracoes
-- `YoutubeCarousel` ja ignora placeholders publicos de `EXPO_PUBLIC_YOUTUBE_API_KEY`, evitando requests inuteis enquanto o `.env` ainda nao estiver configurado
-- Ao tocar em uma escala a partir de `ScheduleScreen`, admin, lider e membro agora abrem a mesma tela `EditScheduleScreen`:
-  - admin/lider entram em modo gerencial
-  - membro entra em modo de acompanhamento da propria participacao, sem acoes administrativas
-- O fluxo de troca ja existe do banco ate a UI:
-  - criar solicitacao
-  - cancelar solicitacao propria
-  - aceitar troca como primeira pessoa elegivel
-  - acompanhar trocas em `SwapRequestsScreen`
-- A janela de read-only do dominio de escala agora bloqueia exatamente em `start_at`, nao no dia inteiro do evento:
-  - antes de `start_at`, mutacoes seguem as permissoes do papel
-  - em `start_at` ou depois, confirmacao, trocas e alteracoes operacionais ficam bloqueadas
+Componentes específicos de uma tela são úteis quando assumem um fluxo completo e seu estado
+local, como montagem de equipe, participação, edição de integrante ou busca de pessoas.
+A tela mantém o contexto compartilhado e a atualização dos dados. Evite extrair apenas JSX
+para continuar repassando todos os estados e setters da tela.
 
-### PENDENTE DE DEFINICAO
+## PENDENTE DE DEFINICAO e INFORMACAO INSUFICIENTE
 
-- Notificacoes de evento privado e reserva de sala ainda seguem fora do escopo atual
-- Estrategia futura de retencao/limpeza de escalas antigas
-
-### INFORMACAO INSUFICIENTE
-
-- Estrategia oficial de testes automatizados em execucao no CI
-
----
-
-## Fluxo principal atual
-
-### Escalas
-
-1. Lider/admin cria uma escala para um `(evento, ministerio)`.
-2. Depois disso, a equipe e montada na tela de editar escala.
-3. O lider adiciona membros respeitando:
-   - membership no ministerio
-   - capability da role
-   - warnings de conflito/indisponibilidade
-   - regra de no maximo um assignment por membro na mesma escala
-4. O proprio usuario pode confirmar sua participacao.
-5. O proprio usuario pode solicitar troca do proprio assignment.
-6. Outra pessoa elegivel pode aceitar a troca.
-
-### Trocas
-
-O modelo atual e:
-
-- o lider nao aprova a troca
-- a primeira pessoa elegivel que aceitar assume o assignment
-- no banco ja existem regras para:
-  - evitar mais de uma solicitacao pendente invalida
-  - garantir elegibilidade
-  - impedir criacao/aceite/cancelamento em `start_at` ou depois
-
----
-
-## Papeis
-
-### `admin`
-
-- gerencia tudo
-
-### `leader`
-
-- gerencia escalas, assignments e membros do proprio ministerio
-
-### `member`
-
-- interage apenas com o que e dele, especialmente:
-  - confirmar presenca
-  - solicitar troca
-  - cancelar a propria troca
-  - aceitar troca quando elegivel
-
----
-
-## Telas principais do dominio de escalas
-
-- `src/screens/app/CreateScheduleScreen.tsx`
-  - cria o contexto da escala
-- `src/screens/app/EditScheduleScreen.tsx`
-  - operacao da escala, equipe, contexto e participacao do proprio usuario
-- `src/screens/app/ScheduleScreen.tsx`
-  - hub operacional de escalas e participacoes
-- `src/screens/app/EventDetailsScreen.tsx`
-  - visao informativa do evento; nao deve concentrar acoes de escala
-- `src/screens/app/EventsScreen.tsx`
-  - listagem informativa de eventos, com proximos e anteriores
-  - eventos publicos aparecem para todos os usuarios autenticados
-  - eventos privados aparecem para:
-    - audiencia selecionada em `event_audiences`
-    - `admin`
-    - usuarios com `profiles.can_manage_events = true`
-- `src/screens/app/SwapRequestsScreen.tsx`
-  - acompanhamento de trocas disponiveis e proprias
-- `src/screens/app/ManageMinistryMembersScreen.tsx`
-  - base operacional para membership e capabilities
-
----
-
-## Observacoes importantes
-
-- A verdade atual do dominio esta nas migrations e no service layer.
-- `docs/TASKS.md` e `docs/ROADMAP.md` servem como mapa de trabalho, nao como fonte primaria.
-- A UX do modal de adicionar membro foi alinhada ao padrao do modal central de troca; o fluxo nao usa mais visual de bottom sheet nesse ponto.
-- O backend de notificacoes de swap ja esta operacional no projeto Supabase remoto e produz notificacoes reais na inbox in-app.
-- O backend de notificacao de `schedule.assigned` tambem ja esta operacional no remoto, completando a inbox em tempo real desta rodada.
-- `docs/TASKS.md`, `docs/CONTEXT.md` e `docs/ROADMAP.md` passam a ser a superficie viva; planos antigos foram arquivados em `docs/history/`.
-- Nao colocar observacoes, `notes` ou `note` em nenhum lugar da escala.
-- O acesso primario ao fluxo de trocas deve sair de `ScheduleScreen`, nao da Home.
-- A confirmacao de presenca e a solicitacao/cancelamento de troca nao usam mais alerts nativos de sucesso; o feedback principal agora e o proprio estado da interface.
-- Eventos permanecem apenas como superficie informativa; qualquer acao operacional fica restrita ao dominio de escala.
-- Eventos possuem `category` informativa em portugues para badge visual minimalista; isso nao altera escala, participacao ou permissao.
-- Escala representa servico/funcao; reunioes privadas usam audiencia do evento, e nao assignments, para definir quem participa.
-- A permissao granular de eventos usa a flag `profiles.can_manage_events` e agora possui tela administrativa no app para grant/revoke por `admin`; o SQL manual no Supabase continua como fallback operacional.
-- Notificacoes para eventos privados ficam como backlog futuro; o estado atual preserva `event_audiences` para suportar isso depois.
-- `location` textual continua existindo em eventos; sala vinculada e opcional e nao substitui local livre.
-- A direcao atual para salas e reservas passa a ser concreta nesta fase: usar `room_reservations.event_id` opcional em vez de `events.room_id`.
-- Ao aplicar as migrations remotas de salas, conferir tambem a normalizacao do catalogo em `20260504000122_normalize_room_catalog.sql`.
-- O banco continua persistindo enums em ingles por compatibilidade de schema, mas a UI deve exibir status em pt-BR.
-- No estado remoto atual, as migrations locais ja aparecem sincronizadas ate `20260522000128`; a pendencia operacional que resta e validar constraints `NOT VALID` e outros checks manuais de dados historicos.
+Decisões abertas e trabalho de migração ficam somente em [TASKS](TASKS.md).
+Aplicação remota de migrations, execução de CI e validação integral em Android/iOS
+exigem verificação específica; código local não comprova esses estados.

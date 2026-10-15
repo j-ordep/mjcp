@@ -17,23 +17,16 @@ function createAgendaItem(
     category: input.category ?? "culto",
     eventId: input.eventId ?? null,
     isEventLinked: input.isEventLinked ?? false,
-    linkedScheduleSummary: input.linkedScheduleSummary ?? null,
   };
 }
 
-test("buildRoomAgendaDisplayItems adds event badge and linked schedule summary for event reservations", () => {
+test("buildRoomAgendaDisplayItems keeps the event badge without team counts", () => {
   const items = buildRoomAgendaDisplayItems([
     createAgendaItem({
       id: "reservation-1",
       roomId: "room-1",
       eventId: "event-1",
       isEventLinked: true,
-      linkedScheduleSummary: {
-        schedulesCount: 2,
-        assignmentsCount: 5,
-        confirmedAssignmentsCount: 3,
-        pendingAssignmentsCount: 2,
-      },
     }),
   ]);
 
@@ -42,7 +35,6 @@ test("buildRoomAgendaDisplayItems adds event badge and linked schedule summary f
     badgeLabel: "Evento",
     categoryLabel: "Culto",
     isPrimary: true,
-    scheduleSummaryLabel: "Escalas vinculadas: 2 ministérios · 5 pessoas · 3 confirmadas",
     timeLabel: "19:00 - 21:00",
     title: "Culto da noite",
   });
@@ -63,7 +55,6 @@ test("buildRoomAgendaDisplayItems keeps standalone reservations without event ba
     badgeLabel: null,
     categoryLabel: "Reunião",
     isPrimary: true,
-    scheduleSummaryLabel: null,
     timeLabel: "19:00 - 21:00",
     title: "Reunião de alinhamento",
   });

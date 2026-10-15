@@ -44,11 +44,13 @@ function normalizeNotificationRecord(record: NotificationRecord): AppNotificatio
   };
 }
 
-export async function getNotifications(limit: number = 50) {
+export async function getNotifications(userId: string, limit: number = 50) {
   try {
+    if (!userId) throw new Error("Usuario nao autenticado.");
     const { data, error } = await supabase
       .from("notifications")
       .select("*")
+      .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .limit(limit);
 
@@ -66,11 +68,13 @@ export async function getNotifications(limit: number = 50) {
   }
 }
 
-export async function markNotificationAsRead(notificationId: string) {
+export async function markNotificationAsRead(notificationId: string, userId: string) {
   try {
+    if (!userId) throw new Error("Usuario nao autenticado.");
     const { error } = await supabase
       .from("notifications")
       .update({ read: true })
+      .eq("user_id", userId)
       .eq("id", notificationId)
       .eq("read", false);
 
@@ -82,11 +86,13 @@ export async function markNotificationAsRead(notificationId: string) {
   }
 }
 
-export async function markAllNotificationsAsRead() {
+export async function markAllNotificationsAsRead(userId: string) {
   try {
+    if (!userId) throw new Error("Usuario nao autenticado.");
     const { error } = await supabase
       .from("notifications")
       .update({ read: true })
+      .eq("user_id", userId)
       .eq("read", false);
 
     if (error) throw error;
@@ -97,11 +103,13 @@ export async function markAllNotificationsAsRead() {
   }
 }
 
-export async function getUnreadNotificationsCount() {
+export async function getUnreadNotificationsCount(userId: string) {
   try {
+    if (!userId) throw new Error("Usuario nao autenticado.");
     const { count, error } = await supabase
       .from("notifications")
       .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
       .eq("read", false);
 
     if (error) throw error;

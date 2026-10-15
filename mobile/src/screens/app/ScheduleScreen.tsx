@@ -1,583 +1,109 @@
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { ArrowRight, Plus, RefreshCcw, Search } from "lucide-react-native";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, FlatList, ScrollView, TouchableOpacity, View } from "react-native";
 import { Text, TextInput } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
-import EventCard from "../../components/card/EventCard";
-import HeaderSecondary from "../../components/Header/HeaderSecondary";
-import RequestSwapModal, {
-  type SwapAssignmentOption,
-} from "../../components/schedule/RequestSwapModal";
-import { RootStackParamList } from "../../navigation/AppNavigator";
-import {
-  cancelOwnSwapRequest,
-  confirmMyAssignmentsForSchedule,
-  createSwapRequest,
-  getOwnPendingSwapRequestForAssignments,
-  getOwnPendingSwapRequestsForAssignments,
-  getSwapCandidatesForAssignment,
-  type SwapCandidateOption,
-  type ScheduleCard,
-} from "../../services/scheduleService";
+import ScheduleSummaryCard from "../../components/schedule/ScheduleSummaryCard";
+import type { RootStackParamList } from "../../types/navigation";
 import { useAuthStore } from "../../stores/useAuthStore";
 import { useMinistryStore } from "../../stores/useMinistryStore";
-import { useScheduleStore } from "../../stores/useScheduleStore";
+import { useScheduleStore, type ScheduleViewMode } from "../../stores/useScheduleStore";
 import { formatDateTime } from "../../utils/formatDate";
-import {
-  getOwnRoleLabel,
-  hasConfirmableAssignments,
-} from "../../utils/scheduleParticipation";
-import {
-  compareScheduleDatesByFilter,
-  isEventDateReadOnly,
-  matchesScheduleTimeFilter,
-} from "../../utils/scheduleRules";
-
-type Filter = "current" | "past";
+import { getOwnRoleLabel, getParticipationStatusLabel } from "../../utils/scheduleParticipation";
+import { compareScheduleDatesByFilter, matchesScheduleTimeFilter } from "../../utils/scheduleRules";
 
 export default function ScheduleScreen() {
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const [activeFilter, setActiveFilter] = useState<Filter>("current");
-  const [search, setSearch] = useState("");
-  const [isSwapModalVisible, setIsSwapModalVisible] = useState(false);
-  const [isSavingSwapRequest, setIsSavingSwapRequest] = useState(false);
-  const [swapReason, setSwapReason] = useState("");
-  const [selectedSwapAssignmentId, setSelectedSwapAssignmentId] = useState<string | null>(null);
-  const [swapAssignments, setSwapAssignments] = useState<SwapAssignmentOption[]>([]);
-  const [swapCandidates, setSwapCandidates] = useState<SwapCandidateOption[]>([]);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [pendingSwapRequestByAssignmentId, setPendingSwapRequestByAssignmentId] = useState<
-    Record<string, string>
-  >({});
-
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { profile, session } = useAuthStore();
-  const { userMinistries, fetchUserMinistries, isLoadingMinistries } =
-    useMinistryStore();
-  const { scheduleCards, viewMode, isLoadingSchedules, fetchScheduleCards } =
-    useScheduleStore();
-
+  const { userMinistries, userMinistriesUserId, fetchUserMinistries } = useMinistryStore();
+  const { scheduleCards, isLoadingSchedules, error, fetchScheduleCards } = useScheduleStore();
+  const [mode, setMode] = useState<ScheduleViewMode>("personal");
+  const [timeFilter, setTimeFilter] = useState<"current" | "past">("current");
+  const [search, setSearch] = useState("");
+  const [ministryId, setMinistryId] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [loadingScope, setLoadingScope] = useState(false);
+  const [scopeError, setScopeError] = useState<string | null>(null);
+  const requestRevision = useRef(0);
   const isAdmin = profile?.role === "admin";
-  const leaderMinistryIds = useMemo(
-    () =>
-      userMinistries
-        .filter((ministry) => ministry.is_leader)
-        .map((ministry) => ministry.id),
-    [userMinistries],
-  );
-  const hasManageableScope = isAdmin || leaderMinistryIds.length > 0;
-  const canCreate = hasManageableScope;
-
-  const filteredSchedules = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase();
-
-    return scheduleCards
-      .filter((schedule) => {
-        const matchesFilter = matchesScheduleTimeFilter(
-          schedule.event.start_at,
-          activeFilter,
-        );
-        const matchesSearch =
-          !normalizedSearch ||
-          schedule.event.title.toLowerCase().includes(normalizedSearch) ||
-          schedule.ministry.name.toLowerCase().includes(normalizedSearch);
-
-        return matchesFilter && matchesSearch;
-      })
-      .sort((left, right) =>
-        compareScheduleDatesByFilter(
-          left.event.start_at,
-          right.event.start_at,
-          activeFilter,
-        ),
-      );
-  }, [activeFilter, scheduleCards, search]);
-
-  const filters: { key: Filter; label: string }[] = useMemo(
-    () => [
-      { key: "current", label: "Proximas" },
-      { key: "past", label: "Anteriores" },
-    ],
-    [],
-  );
-
-  const loadSwapCandidates = useCallback(async (assignmentId: string | null) => {
-    if (!assignmentId) {
-      setSwapCandidates([]);
-      return;
-    }
-
-    const { data, error } = await getSwapCandidatesForAssignment(assignmentId);
-    if (error) {
-      Alert.alert(
-        "Nao foi possivel carregar candidatos",
-        "Tente novamente em alguns instantes.",
-      );
-      setSwapCandidates([]);
-      return;
-    }
-
-    setSwapCandidates(data ?? []);
-  }, []);
-
-  const loadPendingSwapRequests = useCallback(async (cards: ScheduleCard[]) => {
-    const assignmentIds = cards.flatMap((schedule) =>
-      schedule.my_assignments.map((assignment) => assignment.id),
-    );
-
-    const { data, error } = await getOwnPendingSwapRequestsForAssignments(assignmentIds);
-    if (error) {
-      setPendingSwapRequestByAssignmentId({});
-      return;
-    }
-
-    const nextMap = Object.fromEntries(
-      (data ?? []).map((request) => [request.from_assignment_id, request.id]),
-    );
-    setPendingSwapRequestByAssignmentId(nextMap);
-  }, []);
-
-  const refreshScheduleData = useCallback(
-    async (withRefreshIndicator = false) => {
-      if (!session?.user?.id) return;
-
-      if (withRefreshIndicator) {
-        setIsRefreshing(true);
+  const canManage = isAdmin || (userMinistriesUserId === session?.user?.id && userMinistries.some((ministry) => ministry.is_leader));
+  const load = useCallback(async (refresh = false) => {
+    const userId = session?.user.id;
+    if (!userId) return;
+    const request = ++requestRevision.current;
+    const authRevision = useAuthStore.getState().sessionRevision;
+    const current = () => request === requestRevision.current && authRevision === useAuthStore.getState().sessionRevision;
+    setRefreshing(refresh);
+    setLoadingScope(true);
+    setScopeError(null);
+    try {
+      await fetchUserMinistries(true);
+      if (!current()) return;
+      const scope = useMinistryStore.getState();
+      if (scope.error || scope.userMinistriesUserId !== userId) {
+        setScopeError(scope.error ?? "Não foi possível confirmar seus ministérios.");
+        return;
       }
-
-      try {
-        await fetchUserMinistries(true);
-
-        const refreshedUserMinistries =
-          useMinistryStore.getState().userMinistries;
-        const refreshedLeaderMinistryIds = refreshedUserMinistries
-          .filter((ministry) => ministry.is_leader)
-          .map((ministry) => ministry.id);
-
-        await fetchScheduleCards({
-          userId: session.user.id,
-          isAdmin,
-          leaderMinistryIds: isAdmin ? [] : refreshedLeaderMinistryIds,
-          forceRefresh: true,
-        });
-
-        await loadPendingSwapRequests(useScheduleStore.getState().scheduleCards);
-      } finally {
-        if (withRefreshIndicator) {
-          setIsRefreshing(false);
-        }
-      }
-    },
-    [
-      fetchScheduleCards,
-      fetchUserMinistries,
-      isAdmin,
-      loadPendingSwapRequests,
-      session?.user?.id,
-    ],
-  );
-
-  useFocusEffect(
-    useCallback(() => {
-      void refreshScheduleData(false);
-    }, [refreshScheduleData]),
-  );
-
+      const leaderMinistryIds = scope.userMinistries.filter((ministry) => ministry.is_leader).map((ministry) => ministry.id);
+      const effectiveMode = mode === "manageable" && !isAdmin && !leaderMinistryIds.length ? "personal" : mode;
+      if (effectiveMode !== mode) setMode(effectiveMode);
+      await fetchScheduleCards({ userId, viewMode: effectiveMode, isAdmin, leaderMinistryIds, forceRefresh: true });
+    } finally {
+      if (current()) { setRefreshing(false); setLoadingScope(false); }
+    }
+  }, [session?.user.id, mode, isAdmin, fetchUserMinistries, fetchScheduleCards]);
+  useFocusEffect(useCallback(() => {
+    void load();
+    return () => { ++requestRevision.current; };
+  }, [load]));
+  const ministries = useMemo(() => Array.from(new Map(scheduleCards.map((card) => [card.ministry.id, card.ministry])).values()), [scheduleCards]);
   useEffect(() => {
-    void loadPendingSwapRequests(scheduleCards);
-  }, [loadPendingSwapRequests, scheduleCards]);
-
-  const handleOpenSwapForAssignments = useCallback(
-    async (assignments: SwapAssignmentOption[]) => {
-      if (assignments.length === 0) return;
-
-      const { data: pendingRequest, error } =
-        await getOwnPendingSwapRequestForAssignments(
-          assignments.map((assignment) => assignment.id),
-        );
-
-      if (error) {
-        Alert.alert(
-          "Nao foi possivel verificar a troca",
-          "Tente novamente em alguns instantes.",
-        );
-        return;
-      }
-
-      if (pendingRequest) {
-        setPendingSwapRequestByAssignmentId((current) => ({
-          ...current,
-          [pendingRequest.from_assignment_id]: pendingRequest.id,
-        }));
-        return;
-      }
-
-      setSwapAssignments(assignments);
-      const nextAssignmentId = assignments[0]?.id ?? null;
-      setSelectedSwapAssignmentId(nextAssignmentId);
-      void loadSwapCandidates(nextAssignmentId);
-      setSwapReason("");
-      setIsSwapModalVisible(true);
-    },
-    [loadSwapCandidates],
+    if (!loadingScope && !isLoadingSchedules && ministryId && !ministries.some((ministry) => ministry.id === ministryId)) setMinistryId(null);
+  }, [loadingScope, isLoadingSchedules, ministryId, ministries]);
+  const filtered = useMemo(() => scheduleCards.filter((card) =>
+    matchesScheduleTimeFilter(card.event.start_at, timeFilter) && (!ministryId || card.ministry.id === ministryId) &&
+    (!search.trim() || `${card.event.title} ${card.ministry.name}`.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()))
+  ).sort((a, b) => compareScheduleDatesByFilter(a.event.start_at, b.event.start_at, timeFilter)), [scheduleCards, ministryId, search, timeFilter]);
+  const chip = (label: string, selected: boolean, onPress: () => void, key = label) => (
+    <TouchableOpacity key={key} onPress={onPress} style={{ padding: 10, borderRadius: 12, backgroundColor: selected ? "#111827" : "#f3f4f6" }}>
+      <Text style={{ color: selected ? "white" : "#111827" }}>{label}</Text>
+    </TouchableOpacity>
   );
-
-  const renderItem = useCallback(
-    ({ item }: { item: ScheduleCard }) => {
-      const roleLabel =
-        item.my_assignments.length > 0
-          ? getOwnRoleLabel(item.my_assignments)
-          : undefined;
-      const showOwnActions = item.my_assignments.length > 0;
-      const hasPendingOwnAssignments = hasConfirmableAssignments(item.my_assignments);
-      const isReadOnly = isEventDateReadOnly(item.event.start_at);
-      const pendingOwnSwapRequestId =
-        item.my_assignments
-          .map((assignment) => pendingSwapRequestByAssignmentId[assignment.id])
-          .find(Boolean) ?? null;
-      const hasPendingOwnSwapRequest = !!pendingOwnSwapRequestId;
-      const confirmDisabled = isReadOnly || !hasPendingOwnAssignments;
-      const swapDisabled = isReadOnly;
-      const actionHint = isReadOnly
-        ? "Escala encerrada. Nao e mais possivel confirmar ou solicitar troca no horario do evento ou depois dele."
-        : hasPendingOwnSwapRequest
-          ? "Troca pendente para esta escala."
-          : undefined;
-
-      return (
-        <EventCard
-          title={item.event.title}
-          date={formatDateTime(item.event.start_at)}
-          location={item.event.location ?? undefined}
-          description={item.event.description || undefined}
-          department={item.ministry.name}
-          role={roleLabel || undefined}
-          showActions={showOwnActions}
-          swapLabel={hasPendingOwnSwapRequest ? "Cancelar troca" : "Preciso trocar"}
-          swapVariant={hasPendingOwnSwapRequest ? "destructive" : "outline"}
-          confirmLabel={hasPendingOwnAssignments ? "Confirmar" : "Confirmado"}
-          confirmDisabled={confirmDisabled}
-          swapDisabled={swapDisabled}
-          actionHint={actionHint}
-          onDetails={() => {
-            navigation.navigate("EditSchedule", {
-              scheduleId: item.id,
-            });
-          }}
-          onSwap={() => {
-            if (hasPendingOwnSwapRequest && pendingOwnSwapRequestId) {
-              void (async () => {
-                const { error } = await cancelOwnSwapRequest(pendingOwnSwapRequestId);
-                if (error) {
-                  Alert.alert(
-                    "Nao foi possivel cancelar",
-                    "A solicitacao de troca nao foi cancelada. Tente novamente em alguns instantes.",
-                  );
-                  return;
-                }
-
-                setPendingSwapRequestByAssignmentId((current) => {
-                  const next = { ...current };
-                  for (const assignment of item.my_assignments) {
-                    delete next[assignment.id];
-                  }
-                  return next;
-                });
-
-                if (session?.user?.id) {
-                  await fetchScheduleCards({
-                    userId: session.user.id,
-                    isAdmin,
-                    leaderMinistryIds,
-                    forceRefresh: true,
-                  });
-                }
-              })();
-              return;
-            }
-
-            void handleOpenSwapForAssignments(item.my_assignments);
-          }}
-          onConfirm={async () => {
-            if (!session?.user?.id || !hasPendingOwnAssignments) return;
-
-            const { error } = await confirmMyAssignmentsForSchedule({
-              scheduleId: item.id,
-              userId: session.user.id,
-            });
-
-            if (error) {
-              Alert.alert(
-                "Nao foi possivel confirmar",
-                "Sua presenca nao foi confirmada. Tente novamente em alguns instantes.",
-              );
-              return;
-            }
-
-            await fetchScheduleCards({
-              userId: session.user.id,
-              isAdmin,
-              leaderMinistryIds,
-              forceRefresh: true,
-            });
-          }}
-        />
-      );
-    },
-    [
-      fetchScheduleCards,
-      handleOpenSwapForAssignments,
-      isAdmin,
-      leaderMinistryIds,
-      navigation,
-      pendingSwapRequestByAssignmentId,
-      session?.user?.id,
-    ],
-  );
-
-  const keyExtractor = useCallback((item: ScheduleCard) => item.id, []);
-
-  const ListEmpty = useCallback(() => {
-    if (isLoadingSchedules || isLoadingMinistries) return null;
-
-    const hasSearch = search.trim().length > 0;
-    const emptyMessage = hasSearch
-      ? "Nenhuma escala encontrada para a busca atual."
-      : activeFilter === "past"
-        ? viewMode === "manageable"
-          ? "Nenhuma escala anterior para os ministerios que voce gerencia."
-          : "Voce ainda nao possui escalas anteriores."
-        : viewMode === "manageable"
-          ? "Nenhuma proxima escala para os ministerios que voce gerencia."
-          : "Voce ainda nao possui proximas escalas.";
-
-    return (
-      <View className="items-center justify-center py-16 px-10">
-        <Text style={{ color: "#888", fontSize: 16, textAlign: "center" }}>
-          {emptyMessage}
-        </Text>
-        {hasSearch ? (
-          <TouchableOpacity
-            onPress={() => {
-              setSearch("");
-              setActiveFilter("current");
-            }}
-            style={{
-              marginTop: 14,
-              paddingHorizontal: 16,
-              paddingVertical: 10,
-              borderRadius: 999,
-              backgroundColor: "#111827",
-            }}
-          >
-            <Text style={{ color: "#fff", fontWeight: "700" }}>
-              Limpar busca e voltar para proximas
-            </Text>
-          </TouchableOpacity>
-        ) : activeFilter === "past" ? (
-          <TouchableOpacity
-            onPress={() => setActiveFilter("current")}
-            style={{
-              marginTop: 14,
-              paddingHorizontal: 16,
-              paddingVertical: 10,
-              borderRadius: 999,
-              backgroundColor: "#111827",
-            }}
-          >
-            <Text style={{ color: "#fff", fontWeight: "700" }}>Voltar para proximas</Text>
-          </TouchableOpacity>
-        ) : null}
-      </View>
-    );
-  }, [activeFilter, isLoadingMinistries, isLoadingSchedules, search, viewMode]);
-
-  const isInitialLoading =
-    scheduleCards.length === 0 &&
-    (isLoadingSchedules || (profile?.role === "leader" && isLoadingMinistries));
-
+  const loading = loadingScope || isLoadingSchedules;
+  const loadError = scopeError || error;
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={["top", "left", "right"]}>
-      <HeaderSecondary
-        title="Escalas"
-        onBack={() => navigation.goBack()}
-        rightIcon={canCreate ? <Plus size={22} color="#000" /> : undefined}
-        onRightPress={() => navigation.navigate("CreateSchedule")}
-      />
-
-      <View className="px-5">
-        <TouchableOpacity
-          onPress={() => navigation.navigate("SwapRequests")}
-          activeOpacity={0.85}
-          style={{
-            marginBottom: 14,
-            borderRadius: 18,
-            padding: 14,
-            backgroundColor: "#f8fafc",
-            borderWidth: 1,
-            borderColor: "#dbe3ec",
-          }}
-        >
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 12,
-            }}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 12, flex: 1 }}>
-              <View
-                style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 18,
-                  backgroundColor: "#e2e8f0",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <RefreshCcw size={16} color="#334155" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontWeight: "700", color: "#111827", marginBottom: 4 }}>
-                  Trocas de escala
-                </Text>
-                <Text style={{ color: "#475569" }}>
-                  Acompanhe as solicitações de trocas
-                </Text>
-              </View>
-            </View>
-            <ArrowRight size={16} color="#64748b" />
-          </View>
-        </TouchableOpacity>
-
-        <View className="flex-row items-center bg-gray-100 rounded-xl border border-gray-200 px-3 mb-4">
-          <Search size={18} color="#888" />
-          <TextInput
-            placeholder="Buscar escala..."
-            value={search}
-            onChangeText={setSearch}
-            style={{
-              flex: 1,
-              backgroundColor: "transparent",
-              fontSize: 15,
-              height: 44,
-            }}
-            underlineColor="transparent"
-            activeUnderlineColor="transparent"
-          />
+    <SafeAreaView className="flex-1 bg-white" edges={["left", "right"]}>
+      <View style={{ paddingHorizontal: 20, gap: 12, paddingBottom: 12 }}>
+        <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
+          {chip("Trocas", false, () => navigation.navigate("SwapRequests"))}
+          {chip("Indisponibilidades", false, () => navigation.navigate("BlockDatesScreen"))}
+          {canManage ? chip("Criar escala", false, () => navigation.navigate("CreateSchedule")) : null}
         </View>
-
-        <View className="flex-row gap-2 mb-4">
-          {filters.map((filter) => (
-            <TouchableOpacity
-              key={filter.key}
-              onPress={() => setActiveFilter(filter.key)}
-              style={{
-                paddingVertical: 8,
-                paddingHorizontal: 18,
-                borderRadius: 10,
-                backgroundColor: activeFilter === filter.key ? "#000" : "#f3f4f6",
-                borderWidth: activeFilter === filter.key ? 0 : 1,
-                borderColor: "#e5e7eb",
-              }}
-            >
-              <Text
-                style={{
-                  color: activeFilter === filter.key ? "#fff" : "#222",
-                  fontWeight: activeFilter === filter.key ? "bold" : "normal",
-                  fontSize: 14,
-                }}
-              >
-                {filter.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
+        {canManage ? <View style={{ flexDirection: "row", gap: 8 }}>
+          {chip("Minhas", mode === "personal", () => setMode("personal"))}
+          {chip("Gerenciadas", mode === "manageable", () => setMode("manageable"))}
+        </View> : null}
+        <TextInput label="Buscar escala" value={search} onChangeText={setSearch} style={{ backgroundColor: "#f3f4f6" }} />
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          {chip("Próximas", timeFilter === "current", () => setTimeFilter("current"))}
+          {chip("Anteriores", timeFilter === "past", () => setTimeFilter("past"))}
         </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+          {chip("Todos os ministérios", !ministryId, () => setMinistryId(null))}
+          {ministries.map((ministry) => chip(ministry.name, ministryId === ministry.id, () => setMinistryId(ministry.id), ministry.id))}
+        </ScrollView>
       </View>
-
-      {isInitialLoading ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#000" />
-        </View>
-      ) : (
-        <FlatList
-          data={filteredSchedules}
-          renderItem={renderItem}
-          keyExtractor={keyExtractor}
-          contentContainerStyle={{
-            paddingHorizontal: 20,
-            paddingBottom: 32,
-            paddingTop: 4,
-          }}
-          refreshing={isRefreshing}
-          onRefresh={() => void refreshScheduleData(true)}
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={ListEmpty}
-        />
-      )}
-
-      <RequestSwapModal
-        visible={isSwapModalVisible}
-        title="Escolha qual funcao desta escala voce precisa trocar."
-        assignments={swapAssignments}
-        candidates={swapCandidates}
-        selectedAssignmentId={selectedSwapAssignmentId}
-        reason={swapReason}
-        isSaving={isSavingSwapRequest}
-        onClose={() => setIsSwapModalVisible(false)}
-        onSelectAssignment={(assignmentId) => {
-          setSelectedSwapAssignmentId(assignmentId);
-          void loadSwapCandidates(assignmentId);
-        }}
-        onChangeReason={setSwapReason}
-        onSubmit={async () => {
-          if (!selectedSwapAssignmentId) return;
-
-          setIsSavingSwapRequest(true);
-          const { data, error } = await createSwapRequest({
-            fromAssignmentId: selectedSwapAssignmentId,
-            reason: swapReason,
-          });
-          setIsSavingSwapRequest(false);
-
-          if (error) {
-            Alert.alert(
-              "Nao foi possivel solicitar troca",
-              "Sua solicitacao de troca nao foi enviada. Tente novamente em alguns instantes.",
-            );
-            return;
-          }
-
-          setIsSwapModalVisible(false);
-          setSelectedSwapAssignmentId(null);
-          setSwapReason("");
-          setPendingSwapRequestByAssignmentId((current) => {
-            if (!data?.id) return current;
-            return {
-              ...current,
-              [selectedSwapAssignmentId]: data.id,
-            };
-          });
-          if (session?.user?.id) {
-            await fetchScheduleCards({
-              userId: session.user.id,
-              isAdmin,
-              leaderMinistryIds,
-              forceRefresh: true,
-            });
-          }
-        }}
-      />
+      {loading && !refreshing ? <ActivityIndicator style={{ margin: 24 }} /> : loadError ? <View style={{ padding: 20 }}>
+        <Text>Não foi possível carregar as escalas. {loadError}</Text>
+        {chip("Tentar novamente", false, () => void load())}
+      </View> : <FlatList data={filtered} keyExtractor={(item) => item.id} refreshing={refreshing} onRefresh={() => void load(true)}
+        contentContainerStyle={{ padding: 20, paddingBottom: 32 }}
+        ListEmptyComponent={<Text>{search.trim() || ministryId ? "Nenhuma escala encontrada para os filtros atuais." : mode === "personal" ? "Você não possui escalas neste período." : "Nenhuma escala dos ministérios gerenciados neste período."}</Text>}
+        renderItem={({ item }) => <TouchableOpacity onPress={() => navigation.navigate("EditSchedule", { scheduleId: item.id })} accessibilityRole="button" accessibilityLabel={`Abrir escala ${item.event.title}, ${item.ministry.name}`}>
+          <ScheduleSummaryCard eventTitle={item.event.title} eventDate={formatDateTime(item.event.start_at)} eventLocation={item.event.location}
+            ministryName={item.ministry.name} participationLabel={getParticipationStatusLabel(item.my_assignments)} roleLabel={getOwnRoleLabel(item.my_assignments)} />
+        </TouchableOpacity>} />}
     </SafeAreaView>
   );
 }

@@ -129,12 +129,6 @@ export default function RoomCard({
                   <Text style={{ color: "#6b7280", fontSize: 13 }}>{item.timeLabel}</Text>
                 </View>
 
-                {item.scheduleSummaryLabel ? (
-                  <Text style={{ color: "#374151", fontSize: 12, marginTop: 6 }}>
-                    {item.scheduleSummaryLabel}
-                  </Text>
-                ) : null}
-
                 {item.isPrimary ? (
                   <View
                     style={{

@@ -10,7 +10,6 @@ import {
 import { Text, TextInput } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import RoomCard from "../../components/card/RoomCard";
-import HeaderSecondary from "../../components/Header/HeaderSecondary";
 import RoomReservationModal from "../../components/rooms/RoomReservationModal";
 import CalendarModal from "../../components/utils/CalendarModal";
 import {
@@ -32,8 +31,8 @@ function pluralize(count: number, singular: string, plural: string) {
   return `${count} ${count === 1 ? singular : plural}`;
 }
 
-export default function RoomsScreen({ navigation }) {
-  const { session } = useAuthStore();
+export default function RoomsScreen() {
+  const { session, sessionRevision } = useAuthStore();
   const initialDate = formatLocalDateKey(getNow());
   const [selectedDateISO, setSelectedDateISO] = useState(initialDate);
   const [calendarVisible, setCalendarVisible] = useState(false);
@@ -48,6 +47,10 @@ export default function RoomsScreen({ navigation }) {
   const [submittingRoomId, setSubmittingRoomId] = useState<string | null>(null);
   const [cancellingReservationId, setCancellingReservationId] = useState<string | null>(null);
   const dailyAgendaRequestIdRef = useRef(0);
+  const mounted = useRef(true);
+  const selectedDateRef = useRef(selectedDateISO);
+  selectedDateRef.current = selectedDateISO;
+  const isCurrentSession = () => mounted.current && useAuthStore.getState().sessionRevision === sessionRevision;
   const currentUserId = session?.user?.id ?? null;
 
   const loadDailyAgenda = useCallback(async (dateKey = selectedDateISO) => {
@@ -58,7 +61,7 @@ export default function RoomsScreen({ navigation }) {
 
     const { data, error } = await getRoomsDailyAgenda(dateKey);
 
-    if (requestId !== dailyAgendaRequestIdRef.current) {
+    if (requestId !== dailyAgendaRequestIdRef.current || !mounted.current || dateKey !== selectedDateRef.current) {
       return;
     }
 
@@ -83,6 +86,11 @@ export default function RoomsScreen({ navigation }) {
   }, [loadDailyAgenda, selectedDateISO]);
 
   useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; dailyAgendaRequestIdRef.current++; };
+  }, []);
+
+  useEffect(() => {
     void loadDailyAgenda(selectedDateISO);
   }, [loadDailyAgenda, selectedDateISO]);
 
@@ -92,7 +100,7 @@ export default function RoomsScreen({ navigation }) {
     startAt: string;
     endAt: string;
   }) => {
-    if (!reservationTarget) {
+    if (!reservationTarget || !isCurrentSession()) {
       return;
     }
 
@@ -105,7 +113,7 @@ export default function RoomsScreen({ navigation }) {
       startAt: payload.startAt,
       endAt: payload.endAt,
     });
-
+    if (!isCurrentSession()) return;
     setSubmittingRoomId(null);
 
     if (error) {
@@ -118,7 +126,7 @@ export default function RoomsScreen({ navigation }) {
 
     setReservationTarget(null);
     Alert.alert("Reserva criada", "Sala reservada com sucesso.");
-    await loadDailyAgenda(selectedDateISO);
+    await loadDailyAgenda(selectedDateRef.current);
   };
 
   const handleCancelReservation = (reservationId: string) => {
@@ -132,10 +140,11 @@ export default function RoomsScreen({ navigation }) {
           style: "destructive",
           onPress: () => {
             void (async () => {
+              if (!isCurrentSession()) return;
               setCancellingReservationId(reservationId);
 
               const { error } = await cancelStandaloneRoomReservation(reservationId);
-
+              if (!isCurrentSession()) return;
               setCancellingReservationId(null);
 
               if (error) {
@@ -147,7 +156,7 @@ export default function RoomsScreen({ navigation }) {
               }
 
               Alert.alert("Reserva cancelada", "A sala voltou a ficar disponivel.");
-              await loadDailyAgenda(selectedDateISO);
+              await loadDailyAgenda(selectedDateRef.current);
             })();
           },
         },
@@ -167,19 +176,7 @@ export default function RoomsScreen({ navigation }) {
     isLoadingDailyAgenda && !dailyAgendaError && dailyAgendaRooms.length === 0;
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={["top", "left", "right"]}>
-      <HeaderSecondary
-        title="Salas"
-        onBack={() => {
-          if (navigation.canGoBack()) {
-            navigation.goBack();
-            return;
-          }
-
-          navigation.navigate("Home");
-        }}
-      />
-
+    <SafeAreaView className="flex-1 bg-white" edges={["left", "right"]}>
       <ScrollView
         contentContainerStyle={{
           paddingHorizontal: 20,
@@ -356,7 +353,10 @@ export default function RoomsScreen({ navigation }) {
         initialDate={selectedDateISO}
         onClose={() => setCalendarVisible(false)}
         onConfirm={(payload) => {
-          if (payload.date) {
+          if (payload.date && payload.date !== selectedDateRef.current) {
+            dailyAgendaRequestIdRef.current++;
+            selectedDateRef.current = payload.date;
+            setDailyAgendaRooms([]);
             setSelectedDateISO(payload.date);
           }
         }}

@@ -24,13 +24,6 @@ export interface RoomAvailability extends Room {
   reservation: RoomReservation | null;
 }
 
-export interface LinkedRoomScheduleSummary {
-  schedulesCount: number;
-  assignmentsCount: number;
-  confirmedAssignmentsCount: number;
-  pendingAssignmentsCount: number;
-}
-
 export interface RoomDailyAgendaItem {
   id: string;
   roomId: string;
@@ -41,22 +34,10 @@ export interface RoomDailyAgendaItem {
   category: RoomReservation["category"];
   eventId: string | null;
   isEventLinked: boolean;
-  linkedScheduleSummary: LinkedRoomScheduleSummary | null;
 }
 
 export interface RoomDailyAgendaRoom extends Room {
   agenda: RoomDailyAgendaItem[];
-}
-
-interface ScheduleSummaryRow {
-  id: string;
-  event_id: string;
-  schedule_assignments:
-    | {
-        id: string;
-        status: "pending" | "confirmed" | "declined" | "swapped";
-      }[]
-    | null;
 }
 
 function getErrorMessage(error: unknown) {
@@ -148,37 +129,6 @@ function normalizeDayWindow(dateKey: string) {
   };
 }
 
-function buildLinkedScheduleSummaryByEventId(rows: ScheduleSummaryRow[]) {
-  const summaryByEventId = new Map<string, LinkedRoomScheduleSummary>();
-
-  for (const row of rows) {
-    const currentSummary = summaryByEventId.get(row.event_id) ?? {
-      schedulesCount: 0,
-      assignmentsCount: 0,
-      confirmedAssignmentsCount: 0,
-      pendingAssignmentsCount: 0,
-    };
-
-    currentSummary.schedulesCount += 1;
-
-    for (const assignment of row.schedule_assignments ?? []) {
-      currentSummary.assignmentsCount += 1;
-
-      if (assignment.status === "confirmed") {
-        currentSummary.confirmedAssignmentsCount += 1;
-      }
-
-      if (assignment.status === "pending") {
-        currentSummary.pendingAssignmentsCount += 1;
-      }
-    }
-
-    summaryByEventId.set(row.event_id, currentSummary);
-  }
-
-  return summaryByEventId;
-}
-
 export function mapRoomReservationConflictMessage(error: unknown) {
   return mapRoomReservationError(error, ROOM_RESERVATION_CREATE_ERROR_MESSAGE);
 }
@@ -265,38 +215,6 @@ export async function getRoomsDailyAgenda(dateKey: string) {
     if (reservationsError) throw reservationsError;
 
     const typedReservations = (reservations ?? []) as RoomReservation[];
-    const eventIds = Array.from(
-      new Set(
-        typedReservations
-          .map((reservation) => reservation.event_id)
-          .filter(
-            (eventId): eventId is string =>
-              typeof eventId === "string" && eventId.length > 0,
-          ),
-      ),
-    );
-
-    let linkedScheduleSummaryByEventId = new Map<string, LinkedRoomScheduleSummary>();
-
-    if (eventIds.length > 0) {
-      const { data: schedules, error: schedulesError } = await supabase
-        .from("schedules")
-        .select(`
-          id,
-          event_id,
-          schedule_assignments (
-            id,
-            status
-          )
-        `)
-        .in("event_id", eventIds);
-
-      if (!schedulesError) {
-        linkedScheduleSummaryByEventId = buildLinkedScheduleSummaryByEventId(
-          (schedules ?? []) as ScheduleSummaryRow[],
-        );
-      }
-    }
 
     const agendaByRoomId = new Map<string, RoomDailyAgendaItem[]>();
 
@@ -313,9 +231,6 @@ export async function getRoomsDailyAgenda(dateKey: string) {
         category: reservation.category,
         eventId: reservation.event_id,
         isEventLinked: reservation.event_id != null,
-        linkedScheduleSummary: reservation.event_id
-          ? linkedScheduleSummaryByEventId.get(reservation.event_id) ?? null
-          : null,
       });
 
       agendaByRoomId.set(reservation.room_id, roomAgenda);

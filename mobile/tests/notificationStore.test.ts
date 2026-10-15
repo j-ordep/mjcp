@@ -15,10 +15,10 @@ function createModuleCacheEntry(exports: Record<string, unknown>, filename: stri
 }
 
 function loadNotificationStoreWithMocks(options: {
-  getNotifications?: () => Promise<{ data: unknown[]; error: string | null }>;
-  getUnreadNotificationsCount?: () => Promise<{ data: number | null; error: string | null }>;
-  markNotificationAsRead?: (notificationId: string) => Promise<{ error: string | null }>;
-  markAllNotificationsAsRead?: () => Promise<{ error: string | null }>;
+  getNotifications?: (userId: string) => Promise<{ data: unknown[]; error: string | null }>;
+  getUnreadNotificationsCount?: (userId: string) => Promise<{ data: number | null; error: string | null }>;
+  markNotificationAsRead?: (notificationId: string, userId: string) => Promise<{ error: string | null }>;
+  markAllNotificationsAsRead?: (userId: string) => Promise<{ error: string | null }>;
   subscribeToNotifications?: (input: {
     userId: string;
     onInsert?: (notification: any) => void;
@@ -111,6 +111,148 @@ test("bootstrap loads notifications and unread count for the requested user", as
   assert.equal(state.subscribedUserId, "user-1");
   assert.equal(state.notifications[0]?.id, "notification-1");
   assert.equal(state.unreadCount, 1);
+});
+
+test("notification store forwards the current user to every request", async () => {
+  const users: string[] = [];
+  const module = loadNotificationStoreWithMocks({
+    getNotifications: async userId => { users.push(userId); return { data: [], error: null }; },
+    getUnreadNotificationsCount: async userId => { users.push(userId); return { data: 1, error: null }; },
+    markNotificationAsRead: async (_id, userId) => { users.push(userId); return { error: null }; },
+    markAllNotificationsAsRead: async userId => { users.push(userId); return { error: null }; },
+  });
+  const store = module.useNotificationStore;
+  await store.getState().bootstrap("user-1");
+  await store.getState().refreshNotifications();
+  await store.getState().refreshUnreadCount();
+  store.setState({ notifications: [{ id: "notification-1", user_id: "user-1", read: false } as any] });
+  await store.getState().markAsRead("notification-1");
+  store.setState({ unreadCount: 1 });
+  await store.getState().markAllAsRead();
+  assert.deepEqual(users, Array(6).fill("user-1"));
+});
+
+test("a pending inbox response cannot restore notifications after logout", async () => {
+  let resolveNotifications!: (result: { data: unknown[]; error: null }) => void;
+  const module = loadNotificationStoreWithMocks({
+    getNotifications: () => new Promise(resolve => { resolveNotifications = resolve; }),
+    getUnreadNotificationsCount: async () => ({ data: 7, error: null }),
+  });
+  const store = module.useNotificationStore;
+  const pending = store.getState().bootstrap("user-1");
+  store.getState().clear();
+  resolveNotifications({ data: [], error: null });
+  await pending;
+  assert.equal(store.getState().subscribedUserId, null);
+  assert.equal(store.getState().unreadCount, 0);
+});
+
+test("an old realtime channel cannot add notifications after the user changes", async () => {
+  const handlers = new Map<string, (notification: any) => void>();
+  const module = loadNotificationStoreWithMocks({
+    subscribeToNotifications: ({ userId, onInsert }) => {
+      handlers.set(userId, onInsert!);
+      return { unsubscribe: () => undefined };
+    },
+  });
+  const store = module.useNotificationStore;
+  await store.getState().connectRealtime("user-1");
+  await store.getState().bootstrap("user-2");
+  await store.getState().connectRealtime("user-2");
+  handlers.get("user-1")!({ id: "old-notification", user_id: "user-1", read: false });
+  assert.equal(store.getState().notifications.length, 0);
+  assert.equal(store.getState().unreadCount, 0);
+  assert.ok(handlers.has("user-2"));
+});
+
+test("clearing the session cancels an in-progress realtime connection", async () => {
+  let subscriptions = 0;
+  const module = loadNotificationStoreWithMocks({
+    subscribeToNotifications: () => { subscriptions++; return { unsubscribe: () => undefined }; },
+  });
+  const store = module.useNotificationStore;
+  const pending = store.getState().connectRealtime("user-1");
+  store.getState().clear();
+  await pending;
+  assert.equal(subscriptions, 0);
+  assert.equal(store.getState().subscribedUserId, null);
+});
+
+test("waiting for an old channel to close does not discard the new inbox", async () => {
+  let finishUnsubscribe!: () => void;
+  const module = loadNotificationStoreWithMocks({
+    getUnreadNotificationsCount: async () => ({ data: 7, error: null }),
+    subscribeToNotifications: () => ({
+      unsubscribe: () => new Promise<void>(resolve => { finishUnsubscribe = resolve; }),
+    }),
+  });
+  const store = module.useNotificationStore;
+  await store.getState().connectRealtime("user-1");
+  const bootstrap = store.getState().bootstrap("user-2");
+  const connection = store.getState().connectRealtime("user-2");
+  await bootstrap;
+  const snapshot = store.getState();
+  finishUnsubscribe();
+  await connection;
+  assert.equal(snapshot.subscribedUserId, "user-2");
+  assert.equal(snapshot.unreadCount, 7);
+  assert.equal(snapshot.isLoading, false);
+});
+
+test("a previous login response cannot overwrite a new login by the same user", async () => {
+  let resolveOld!: (result: { data: unknown[]; error: null }) => void;
+  let requests = 0;
+  let counts = 0;
+  const module = loadNotificationStoreWithMocks({
+    getNotifications: () => ++requests === 1 ? new Promise(resolve => { resolveOld = resolve; }) :
+      Promise.resolve({ data: [], error: null }),
+    getUnreadNotificationsCount: async () => ({ data: ++counts === 1 ? 7 : 0, error: null }),
+  });
+  const store = module.useNotificationStore;
+  const old = store.getState().bootstrap("user-1");
+  store.getState().clear();
+  await store.getState().bootstrap("user-1");
+  resolveOld({ data: [], error: null });
+  await old;
+  assert.equal(store.getState().unreadCount, 0);
+});
+
+test("a previous channel is ignored after reconnecting the same user", async () => {
+  const inserts: Array<(notification: any) => void> = [];
+  const module = loadNotificationStoreWithMocks({
+    subscribeToNotifications: ({ onInsert }) => {
+      inserts.push(onInsert!);
+      return { unsubscribe: () => undefined };
+    },
+  });
+  const store = module.useNotificationStore;
+  await store.getState().connectRealtime("user-1");
+  store.getState().clear();
+  await store.getState().connectRealtime("user-1");
+  inserts[0]({ id: "old", user_id: "user-1", read: false });
+  assert.equal(store.getState().notifications.length, 0);
+  assert.equal(store.getState().unreadCount, 0);
+});
+
+test("reconnecting waits until the SDK has removed the previous channel", async () => {
+  let finishUnsubscribe!: () => void;
+  let subscriptions = 0;
+  const module = loadNotificationStoreWithMocks({
+    subscribeToNotifications: () => {
+      subscriptions++;
+      return { unsubscribe: () => new Promise<void>(resolve => { finishUnsubscribe = resolve; }) };
+    },
+  });
+  const store = module.useNotificationStore;
+  await store.getState().connectRealtime("user-1");
+  store.getState().clear();
+  const reconnect = store.getState().connectRealtime("user-1");
+  await Promise.resolve();
+  const subscriptionsBeforeClosing = subscriptions;
+  finishUnsubscribe();
+  await reconnect;
+  assert.equal(subscriptionsBeforeClosing, 1);
+  assert.equal(subscriptions, 2);
 });
 
 test("connectRealtime syncs insert and update events and replaces the previous subscription", async () => {

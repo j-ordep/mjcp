@@ -1,8 +1,37 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { loadServiceModule } from "./serviceTestHelpers";
+import { createQueryBuilder, loadServiceModule } from "./serviceTestHelpers";
 
 type ProfileService = typeof import("../src/services/profileService");
+
+test("updateProfile sends only personal fields even when the input contains privileges", async () => {
+  const builder = createQueryBuilder();
+  let payload: Record<string, unknown> = {};
+  builder.update = (value: Record<string, unknown>) => {
+    payload = value;
+    return builder;
+  };
+  const service = loadServiceModule<ProfileService>("../src/services/profileService", {
+    from: () => builder,
+  });
+  const input = {
+    full_name: "Pessoa ficticia",
+    phone: null,
+    avatar_url: null,
+    role: "admin" as const,
+    can_manage_events: true,
+    id: "other-user",
+    email: "other@example.com",
+    created_at: "2000-01-01T00:00:00.000Z",
+  };
+
+  const result = await service.updateProfile("user-1", input);
+
+  assert.equal(result.error, null);
+  assert.deepEqual(Object.keys(payload).sort(), ["avatar_url", "full_name", "phone", "updated_at"]);
+  assert.equal(payload.phone, null);
+  assert.equal(payload.full_name, input.full_name);
+});
 
 function createProfilesQueryMock(response: {
   data?: unknown[];

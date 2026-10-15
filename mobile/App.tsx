@@ -17,31 +17,12 @@ export default function App() {
         {AppNavigator ? (
           <AppNavigator />
         ) : (
-          <View
-            style={{
-              flex: 1,
-              justifyContent: "center",
-              paddingHorizontal: 24,
-              backgroundColor: "#fff",
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 24,
-                fontWeight: "800",
-                color: "#111827",
-                marginBottom: 12,
-              }}
-            >
-              Configuracao necessaria
+          <View className="flex-1 justify-center px-6 bg-white">
+            <Text className="text-2xl font-bold text-gray-900 mb-3">
+              Não foi possível iniciar o aplicativo
             </Text>
-            <Text style={{ color: "#4b5563", lineHeight: 22, marginBottom: 10 }}>
-              O app precisa das variaveis publicas do Supabase para iniciar com
-              seguranca.
-            </Text>
-            <Text style={{ color: "#6b7280", lineHeight: 22 }}>
-              Revise `EXPO_PUBLIC_SUPABASE_URL` e
-              `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` no `.env` e reinicie o app.
+            <Text className="text-gray-600 leading-6">
+              Por favor, entre em contato com o suporte ou tente novamente mais tarde.
             </Text>
           </View>
         )}

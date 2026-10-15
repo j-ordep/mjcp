@@ -5,7 +5,7 @@ import { Chip, Text } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import HeaderSecondary from "../../components/Header/HeaderSecondary";
 import DefaultButton from "../../components/button/DefaultButton";
-import type { RootStackParamList } from "../../navigation/AppNavigator";
+import type { RootStackParamList } from "../../types/navigation";
 import { getSongById } from "../../services/musicService";
 import type { Song, SongCategory } from "../../types/models";
 

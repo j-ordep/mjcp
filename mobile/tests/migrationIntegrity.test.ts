@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 const migrationPath = join(
@@ -71,7 +71,11 @@ test("schedule notification migration creates a notify-on-insert trigger for sch
 
 test("profile privacy services do not read joined profiles directly", () => {
   const ministryService = readFileSync(join(process.cwd(), "src", "services", "ministryService.ts"), "utf8");
-  const scheduleService = readFileSync(join(process.cwd(), "src", "services", "scheduleService.ts"), "utf8");
+  const schedulingDirectory = join(process.cwd(), "src", "services", "scheduling");
+  const scheduleService = readdirSync(schedulingDirectory)
+    .filter((file) => file.endsWith(".ts"))
+    .map((file) => readFileSync(join(schedulingDirectory, file), "utf8"))
+    .join("\n");
 
   assert.match(ministryService, /getProfilesByIds/);
   assert.doesNotMatch(ministryService, /profiles!inner\s*\(/i);

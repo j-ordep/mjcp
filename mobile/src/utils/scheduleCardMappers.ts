@@ -1,5 +1,5 @@
 import type { AssignmentStatus } from "../types/database.types";
-import { firstRelation } from "./ministryMappers";
+import { firstRelation, type SupabaseRelation } from "./ministryMappers";
 import { countAssignmentsByStatus } from "./scheduleRules";
 
 export interface ScheduleCardLike {
@@ -33,41 +33,23 @@ export interface ScheduleCardLike {
 export interface ManageableScheduleCardRowLike {
   id: string;
   created_at: string;
-  events:
-    | {
-        id: string;
-        title: string;
-        start_at: string;
-        location: string | null;
-        description: string | null;
-      }
-    | {
-        id: string;
-        title: string;
-        start_at: string;
-        location: string | null;
-        description: string | null;
-      }[]
-    | null;
-  ministries:
-    | {
-        id: string;
-        name: string;
-      }
-    | {
-        id: string;
-        name: string;
-      }[]
-    | null;
-  schedule_assignments:
-    | {
-        id: string;
-        user_id: string;
-        role_id: string;
-        status: AssignmentStatus;
-        ministry_roles: { name: string } | { name: string }[] | null;
-      }[]
-    | null;
+  events: SupabaseRelation<ScheduleCardLike["event"]>;
+  ministries: SupabaseRelation<ScheduleCardLike["ministry"]>;
+  schedule_assignments: {
+    id: string;
+    user_id: string;
+    role_id: string;
+    status: AssignmentStatus;
+    ministry_roles: SupabaseRelation<{ name: string }>;
+  }[] | null;
+}
+
+interface UserScheduleRowLike {
+  id: string;
+  created_at: string;
+  events: SupabaseRelation<ScheduleCardLike["event"]>;
+  ministries: SupabaseRelation<ScheduleCardLike["ministry"]>;
+  schedule_assignments: { id: string; status: AssignmentStatus }[] | null;
 }
 
 export interface UserScheduleCardRowLike {
@@ -75,79 +57,8 @@ export interface UserScheduleCardRowLike {
   schedule_id: string;
   role_id: string;
   status: AssignmentStatus;
-  ministry_roles: { name: string } | { name: string }[] | null;
-  schedules:
-    | {
-        id: string;
-        created_at: string;
-        events:
-          | {
-              id: string;
-              title: string;
-              start_at: string;
-              location: string | null;
-              description: string | null;
-            }
-          | {
-              id: string;
-              title: string;
-              start_at: string;
-              location: string | null;
-              description: string | null;
-            }[];
-        ministries:
-          | {
-              id: string;
-              name: string;
-            }
-          | {
-              id: string;
-              name: string;
-            }[]
-          | null;
-        schedule_assignments:
-          | {
-              id: string;
-              status: AssignmentStatus;
-            }[]
-          | null;
-      }
-    | {
-        id: string;
-        created_at: string;
-        events:
-          | {
-              id: string;
-              title: string;
-              start_at: string;
-              location: string | null;
-              description: string | null;
-            }
-          | {
-              id: string;
-              title: string;
-              start_at: string;
-              location: string | null;
-              description: string | null;
-            }[];
-        ministries:
-          | {
-              id: string;
-              name: string;
-            }
-          | {
-              id: string;
-              name: string;
-            }[]
-          | null;
-        schedule_assignments:
-          | {
-              id: string;
-              status: AssignmentStatus;
-            }[]
-          | null;
-      }[]
-    | null;
+  ministry_roles: SupabaseRelation<{ name: string }>;
+  schedules: SupabaseRelation<UserScheduleRowLike>;
 }
 
 export function compareScheduleCardsByDate(a: ScheduleCardLike, b: ScheduleCardLike) {

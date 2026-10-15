@@ -7,8 +7,10 @@ import {
 import type { TableRow } from "../types/database.types";
 import { Ministry } from "../types/models";
 import {
-  firstRelation,
   mapMinistryMemberWithCapabilities,
+  mapUserMinistries,
+  type MinistryMemberCapabilityLike,
+  type UserMinistryLike,
 } from "../utils/ministryMappers";
 
 export interface UserMinistry extends Ministry {
@@ -36,47 +38,13 @@ export interface MinistryMemberWithCapabilities {
   capability_roles: MinistryCapabilityOption[];
 }
 
-interface UserMinistryRow {
-  is_leader: boolean;
-  joined_at: string;
-  ministries:
-    | {
-        id: string;
-        name: string;
-        description: string | null;
-        color: string | null;
-        created_at: string;
-      }
-    | {
-        id: string;
-        name: string;
-        description: string | null;
-        color: string | null;
-        created_at: string;
-      }[];
-}
-
-interface MinistryMemberCapabilityRow {
-  role_id: string;
-  ministry_roles:
-    | {
-        id: string;
-        name: string;
-      }
-    | {
-        id: string;
-        name: string;
-      }[]
-    | null;
-}
-
 interface MinistryMemberDetailedRow {
   id: string;
   ministry_id: string;
   user_id: string;
   is_leader: boolean;
   joined_at: string;
-  ministry_member_roles: MinistryMemberCapabilityRow[] | null;
+  ministry_member_roles: MinistryMemberCapabilityLike[] | null;
 }
 
 function getErrorMessage(error: unknown) {
@@ -108,18 +76,9 @@ export async function getUserMinistries(userId: string) {
 
     if (error) throw error;
 
-    const formattedData: UserMinistry[] = ((data ?? []) as UserMinistryRow[]).map((membership) => {
-      const ministry = firstRelation(membership.ministries);
-
-      return {
-        id: ministry?.id ?? "",
-        name: ministry?.name ?? "Ministério",
-        description: ministry?.description ?? null,
-        color: ministry?.color ?? "#000000",
-        is_leader: membership.is_leader,
-        joined_at: membership.joined_at,
-      };
-    });
+    const formattedData: UserMinistry[] = mapUserMinistries(
+      (data ?? []) as UserMinistryLike[],
+    );
 
     return { data: formattedData, error: null };
   } catch (error: unknown) {
@@ -151,6 +110,17 @@ export async function getAllMinistries() {
 
 export async function searchRegisteredUsers(query: string) {
   return searchProfiles(query, { excludeRoles: ["admin"] });
+}
+
+// This scopes the management UI; RLS remains authoritative for every write.
+export async function getManageableMinistries(input: { userId: string; isAdmin: boolean }) {
+  if (!input.userId) return { data: null, error: "Usuário não autenticado." };
+  if (input.isAdmin) return getAllMinistries();
+  const result = await getUserMinistries(input.userId);
+  return {
+    data: result.data?.filter((ministry) => ministry.is_leader && !!ministry.id) ?? null,
+    error: result.error,
+  };
 }
 
 export async function getMinistryMembersDetailed(ministryId: string) {

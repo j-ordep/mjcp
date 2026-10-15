@@ -9,7 +9,7 @@
     "web": "expo start --web",
     "test": "npm run test:unit",
     "test:build": "tsc -p tsconfig.test.json",
-    "test:unit": "npm run test:build && node .tests-dist/tests/eventDate.test.js && node .tests-dist/tests/publicEnv.test.js && node .tests-dist/tests/eventCalendarSelection.test.js && node .tests-dist/tests/eventCategory.test.js && node .tests-dist/tests/eventAudience.test.js && node .tests-dist/tests/eventPermissions.test.js && node .tests-dist/tests/eventPresentation.test.js && node .tests-dist/tests/roomReservationService.test.js && node .tests-dist/tests/roomCardAgenda.test.js && node .tests-dist/tests/roomReservationModel.test.js && node .tests-dist/tests/roomReservationForm.test.js && node .tests-dist/tests/userFacingErrors.test.js && node .tests-dist/tests/authService.test.js && node .tests-dist/tests/eventService.test.js && node .tests-dist/tests/musicService.test.js && node .tests-dist/tests/eventFilters.test.js && node .tests-dist/tests/statusLabels.test.js && node .tests-dist/tests/formatDate.test.js && node .tests-dist/tests/scheduleParticipation.test.js && node .tests-dist/tests/scheduleRules.test.js && node .tests-dist/tests/ministryMappers.test.js && node .tests-dist/tests/scheduleCardMappers.test.js && node .tests-dist/tests/scheduleService.test.js && node .tests-dist/tests/blockedDateService.test.js && node .tests-dist/tests/ministryService.test.js && node .tests-dist/tests/profileService.test.js && node .tests-dist/tests/ministryStore.test.js && node .tests-dist/tests/scheduleStore.test.js && node .tests-dist/tests/migrationIntegrity.test.js && node .tests-dist/tests/notificationPayload.test.js && node .tests-dist/tests/notificationService.test.js && node .tests-dist/tests/notificationStore.test.js && node .tests-dist/tests/audienceResults.test.js && node .tests-dist/tests/roomAvailability.test.js"
+    "test:unit": "npm run test:build && node --test .tests-dist/tests/*.test.js"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
@@ -18,32 +18,34 @@
     "@react-navigation/native": "^7.1.21",
     "@react-navigation/native-stack": "^7.8.0",
     "@supabase/supabase-js": "^2.99.3",
-    "babel-preset-expo": "~54.0.10",
-    "expo": "~54.0.33",
-    "expo-secure-store": "~15.0.8",
-    "expo-status-bar": "~3.0.9",
+    "babel-preset-expo": "~57.0.0",
+    "expo": "^57.0.0",
+    "expo-secure-store": "~57.0.4",
+    "expo-status-bar": "~57.0.1",
     "lucide-react-native": "^0.554.0",
     "nativewind": "^4.2.1",
     "prettier-plugin-tailwindcss": "^0.5.14",
-    "react": "19.1.0",
-    "react-dom": "19.1.0",
-    "react-native": "0.81.5",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-native": "0.86.3",
     "react-native-calendars": "^1.1313.0",
     "react-native-paper": "^5.14.5",
-    "react-native-reanimated": "~4.1.1",
-    "react-native-safe-area-context": "~5.6.0",
-    "react-native-screens": "~4.16.0",
+    "react-native-reanimated": "4.5.1",
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-screens": "~4.26.0",
     "react-native-url-polyfill": "^3.0.0",
     "react-native-vector-icons": "^10.3.0",
     "react-native-web": "^0.21.0",
-    "react-native-worklets": "0.5.1",
+    "react-native-worklets": "0.10.1",
     "tailwindcss": "^3.4.18",
     "zustand": "^5.0.12"
   },
   "devDependencies": {
-    "@types/react": "~19.1.0",
+    "@expo/ngrok": "^4.1.0",
+    "@types/node": "^22.20.2",
+    "@types/react": "~19.2.4",
     "@types/react-native": "^0.73.0",
-    "typescript": "~5.9.2"
+    "typescript": "~6.0.3"
   },
   "private": true
 }

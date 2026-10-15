@@ -12,7 +12,7 @@ import { Text, TextInput } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import EventCard from "../../components/card/EventCard";
 import HeaderSecondary from "../../components/Header/HeaderSecondary";
-import { RootStackParamList } from "../../navigation/AppNavigator";
+import { RootStackParamList } from "../../types/navigation";
 import { useAuthStore } from "../../stores/useAuthStore";
 import { useEventStore } from "../../stores/useEventStore";
 import { Event } from "../../types/models";
@@ -123,7 +123,6 @@ export default function EventsScreen() {
           endAt={viewModel.endAt}
           location={viewModel.location}
           description={viewModel.description}
-          showActions={false}
           onDetails={() =>
             navigation.navigate("EventDetails", {
               event: item,

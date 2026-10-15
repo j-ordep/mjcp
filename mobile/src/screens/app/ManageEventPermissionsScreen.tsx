@@ -12,7 +12,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import DefaultButton from "../../components/button/DefaultButton";
 import HeaderSecondary from "../../components/Header/HeaderSecondary";
-import type { RootStackParamList } from "../../navigation/AppNavigator";
+import type { RootStackParamList } from "../../types/navigation";
 import {
   listProfilesForEventPermissionPage,
   setProfileEventManagementPermission,

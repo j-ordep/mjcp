@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { createQueryBuilder, loadServiceModule } from "./serviceTestHelpers";
 
 type NotificationServiceModule = {
-  getNotifications: (limit?: number) => Promise<{
+  getNotifications: (userId: string, limit?: number) => Promise<{
     data: Array<{
       id: string;
       type: string;
@@ -13,12 +13,13 @@ type NotificationServiceModule = {
     }> | null;
     error: string | null;
   }>;
-  markNotificationAsRead: (notificationId: string) => Promise<{
+  markNotificationAsRead: (notificationId: string, userId: string) => Promise<{
     error: string | null;
   }>;
-  markAllNotificationsAsRead: () => Promise<{
+  markAllNotificationsAsRead: (userId: string) => Promise<{
     error: string | null;
   }>;
+  getUnreadNotificationsCount: (userId: string) => Promise<{ data: number | null; error: string | null }>;
   subscribeToNotifications: (input: {
     userId: string;
     onInsert?: (notification: {
@@ -68,7 +69,7 @@ test("getNotifications normalizes payloads returned from Supabase", async () => 
     },
   );
 
-  const result = await notificationService.getNotifications();
+  const result = await notificationService.getNotifications("user-1");
 
   assert.equal(result.error, null);
   assert.equal(result.data?.[0]?.id, "notification-1");
@@ -96,12 +97,41 @@ test("markNotificationAsRead and markAllNotificationsAsRead return backend error
     },
   );
 
-  const singleResult = await notificationService.markNotificationAsRead("notification-1");
-  const allResult = await notificationService.markAllNotificationsAsRead();
+  const singleResult = await notificationService.markNotificationAsRead("notification-1", "user-1");
+  const allResult = await notificationService.markAllNotificationsAsRead("user-1");
 
   assert.equal(singleResult.error, "Falha no update");
   assert.equal(allResult.error, "Falha no update");
 });
+
+for (const operation of ["list", "count", "read", "readAll"] as const) {
+  test(`notification ${operation} explicitly scopes the query to the requested user`, async () => {
+    const builder = createQueryBuilder({ select: { data: [] } });
+    const filters: unknown[][] = [];
+    builder.eq = (...args: unknown[]) => { filters.push(args); return builder; };
+    const service = loadServiceModule<NotificationServiceModule>("../src/services/notificationService", {
+      from: () => builder,
+    });
+    if (operation === "list") await service.getNotifications("user-1", 10);
+    if (operation === "count") await service.getUnreadNotificationsCount("user-1");
+    if (operation === "read") await service.markNotificationAsRead("notification-1", "user-1");
+    if (operation === "readAll") await service.markAllNotificationsAsRead("user-1");
+    assert.ok(filters.some(([column, value]) => column === "user_id" && value === "user-1"));
+  });
+
+  test(`notification ${operation} rejects a missing user before accessing the database`, async () => {
+    let requests = 0;
+    const service = loadServiceModule<NotificationServiceModule>("../src/services/notificationService", {
+      from: () => { requests++; return createQueryBuilder(); },
+    });
+    const result = operation === "list" ? await service.getNotifications("") :
+      operation === "count" ? await service.getUnreadNotificationsCount("") :
+      operation === "read" ? await service.markNotificationAsRead("notification-1", "") :
+      await service.markAllNotificationsAsRead("");
+    assert.equal(requests, 0);
+    assert.ok(result.error);
+  });
+}
 
 test("subscribeToNotifications emits normalized insert and update events and unsubscribes", async () => {
   const handlers: Record<string, (payload: { new: Record<string, unknown> }) => void> = {};

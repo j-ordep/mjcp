@@ -109,11 +109,18 @@ export async function getProfile(userId: string) {
   }
 }
 
-export async function updateProfile(userId: string, updates: Partial<UserProfile>) {
+type PersonalProfileUpdates = Partial<Pick<UserProfile, 'full_name' | 'phone' | 'avatar_url'>>;
+
+export async function updateProfile(userId: string, updates: PersonalProfileUpdates) {
   try {
     const { error } = await supabase
       .from('profiles')
-      .update({ ...updates, updated_at: new Date().toISOString() })
+      .update({
+        full_name: updates.full_name,
+        phone: updates.phone,
+        avatar_url: updates.avatar_url,
+        updated_at: new Date().toISOString(),
+      })
       .eq('id', userId);
 
     if (error) throw error;

@@ -29,6 +29,23 @@ interface NotificationState {
 }
 
 let activeRealtimeSubscription: NotificationRealtimeSubscription | null = null;
+let activeRealtimeUserId: string | null = null;
+let closingRealtimeChannel: Promise<unknown> | undefined;
+// Requests and channels have separate lifecycles, even when the user logs in again.
+let realtimeRevision = 0;
+let inboxRevision = 0;
+
+function closeRealtimeChannel() {
+  realtimeRevision++;
+  const subscription = activeRealtimeSubscription;
+  activeRealtimeSubscription = null;
+  activeRealtimeUserId = null;
+  if (subscription) {
+    closingRealtimeChannel = Promise.resolve(subscription.unsubscribe());
+  }
+  // Supabase reuses channels with the same topic until removal has finished.
+  return closingRealtimeChannel;
+}
 
 function trimNotifications(notifications: AppNotification[]) {
   return notifications.slice(0, 50);
@@ -73,16 +90,21 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       return;
     }
 
+    const revision = ++inboxRevision;
     set({
+      notifications: [],
+      unreadCount: 0,
       isLoading: true,
       error: null,
       subscribedUserId: userId,
     });
 
     const [notificationsResult, unreadCountResult] = await Promise.all([
-      getNotifications(),
-      getUnreadNotificationsCount(),
+      getNotifications(userId),
+      getUnreadNotificationsCount(userId),
     ]);
+
+    if (revision !== inboxRevision || get().subscribedUserId !== userId) return;
 
     const error = notificationsResult.error ?? unreadCountResult.error;
 
@@ -98,9 +120,11 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   refreshNotifications: async () => {
     const { subscribedUserId } = get();
     if (!subscribedUserId) return;
+    const revision = inboxRevision;
 
     set({ isLoading: true, error: null });
-    const result = await getNotifications();
+    const result = await getNotifications(subscribedUserId);
+    if (revision !== inboxRevision || get().subscribedUserId !== subscribedUserId) return;
 
     set((state) => ({
       notifications: result.data ?? state.notifications,
@@ -112,8 +136,10 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   refreshUnreadCount: async () => {
     const { subscribedUserId } = get();
     if (!subscribedUserId) return;
+    const revision = inboxRevision;
 
-    const result = await getUnreadNotificationsCount();
+    const result = await getUnreadNotificationsCount(subscribedUserId);
+    if (revision !== inboxRevision || get().subscribedUserId !== subscribedUserId) return;
 
     set((state) => ({
       unreadCount: result.data ?? state.unreadCount,
@@ -122,13 +148,16 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   },
 
   markAsRead: async (notificationId) => {
+    const { subscribedUserId } = get();
+    if (!subscribedUserId) return;
+    const revision = inboxRevision;
     const previousNotifications = get().notifications;
     const previousUnreadCount = get().unreadCount;
     const targetNotification = previousNotifications.find(
       (notification) => notification.id === notificationId,
     );
 
-    if (!targetNotification || targetNotification.read) {
+    if (!targetNotification || targetNotification.read || targetNotification.user_id !== subscribedUserId) {
       return;
     }
 
@@ -142,8 +171,8 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       error: null,
     });
 
-    const result = await markNotificationAsRead(notificationId);
-    if (!result.error) {
+    const result = await markNotificationAsRead(notificationId, subscribedUserId);
+    if (!result.error || revision !== inboxRevision || get().subscribedUserId !== subscribedUserId) {
       return;
     }
 
@@ -155,6 +184,9 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   },
 
   markAllAsRead: async () => {
+    const { subscribedUserId } = get();
+    if (!subscribedUserId) return;
+    const revision = inboxRevision;
     const previousNotifications = get().notifications;
     const previousUnreadCount = get().unreadCount;
 
@@ -171,8 +203,8 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       error: null,
     });
 
-    const result = await markAllNotificationsAsRead();
-    if (!result.error) {
+    const result = await markAllNotificationsAsRead(subscribedUserId);
+    if (!result.error || revision !== inboxRevision || get().subscribedUserId !== subscribedUserId) {
       return;
     }
 
@@ -189,15 +221,20 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       return;
     }
 
-    if (activeRealtimeSubscription && get().subscribedUserId === userId) {
+    if (activeRealtimeSubscription && activeRealtimeUserId === userId) {
       return;
     }
 
-    await get().disconnectRealtime();
+    const disconnect = closeRealtimeChannel();
+    const revision = realtimeRevision;
+    await disconnect;
+    if (revision !== realtimeRevision) return;
 
+    activeRealtimeUserId = userId;
     activeRealtimeSubscription = subscribeToNotifications({
       userId,
       onInsert: (notification) => {
+        if (revision !== realtimeRevision || get().subscribedUserId !== userId) return;
         set((state) => ({
           notifications: upsertNotification(state.notifications, notification),
           unreadCount: notification.read
@@ -206,6 +243,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
         }));
       },
       onUpdate: (notification) => {
+        if (revision !== realtimeRevision || get().subscribedUserId !== userId) return;
         set((state) => {
           const previousNotification = state.notifications.find(
             (item) => item.id === notification.id,
@@ -233,18 +271,14 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   },
 
   disconnectRealtime: async () => {
-    if (!activeRealtimeSubscription) {
-      set({ subscribedUserId: null });
-      return;
-    }
-
-    await activeRealtimeSubscription.unsubscribe();
-    activeRealtimeSubscription = null;
+    inboxRevision++;
+    const disconnect = closeRealtimeChannel();
     set({ subscribedUserId: null });
+    await disconnect;
   },
 
   clear: () => {
-    activeRealtimeSubscription = null;
+    void get().disconnectRealtime();
     set({
       notifications: [],
       unreadCount: 0,
