@@ -41,6 +41,21 @@ bunx expo start --tunnel
 `@expo/ngrok` está nas dependências de desenvolvimento e é instalado por `npm ci`.
 O túnel exige internet no computador e no celular; use o QR Code exibido pelo Expo.
 
+## Componentes de interface
+
+Textos, campos e controles de formulário ficam em `src/components/ui`, com código local
+adaptado do [React Native Reusables](https://reactnativereusables.com/) e licença MIT preservada.
+Use `Text`, `Input`, `Textarea`, `SelectField`, `Button`, `Checkbox`, `Switch` e `Separator`.
+`Input` aceita rótulo, erro, ajuda e ícones; `containerStyle` controla espaçamento externo,
+`fieldClassName` aplica fundo/borda à caixa (sem pintar o rótulo) e `style` estiliza o campo nativo.
+Buscas usam placeholder e ícone em `left`, sem outra caixa externa. Refs e callbacks nativos
+continuam disponíveis.
+
+Tokens visuais ficam em `global.css` e `tailwind.config.js`, mantendo NativeWind 4.
+Seletores em modais nativos precisam de um PortalHost local e ajuste de posicionamento;
+`RoomReservationModal` contém o exemplo. Buscas e seleções múltiplas mantêm seus componentes.
+Paper permanece nos cartões, avatares, chips e modal de notificações ainda utilizados.
+
 ## Validar alterações
 
 ```sh

@@ -1,7 +1,50 @@
 # Próximos passos
 
-Revisado em 2026-10-11. Este é o único backlog.
+Revisado em 2026-10-20. Este é o único backlog.
 Produto e regras em [CONTEXT](CONTEXT.md); execução e banco atual no [README](../README.md).
+
+## Padronização com React Native Reusables
+
+Implementado: componentes locais `Text`, `Input`, `Textarea`, `Label`, `Button`, `Checkbox`,
+`Switch`, `Separator` e `SelectField`, adaptados do React Native Reusables com licença preservada.
+Textos e campos das telas usam a base compartilhada; categorias e ministérios simples usam select.
+Busca/seleção múltipla, refs, máscaras, callbacks e contratos permanecem nos fluxos existentes.
+Tokens e portals seguem NativeWind 4; reserva possui portal próprio e Voltar fecha primeiro o select.
+Paper permanece em avatares, cartões, chips e notificações; não foi removido como dependência.
+
+Correção visual: buscas de Escalas, Músicas, Eventos e repertório usam apenas a caixa do `Input`,
+sem fundo no rótulo nem bordas duplicadas. `fieldClassName` separa aparência da caixa e espaçamento
+externo. Textos respeitam a altura natural da fonte; botão cresce com o rótulo e select limita
+texto longo antes da seta. Preservados callbacks, filtros e persistência.
+
+Alinhamento vertical do `Input`: campos de uma linha têm altura de 48, alinhamento central,
+sem altura de linha imposta nem padding extra de fonte no Android. Inclui campos de leitura
+que abrem calendário (data da agenda de Salas); textareas mantêm o início no topo.
+
+Verificado em 2026-10-12 após as correções: TypeScript, 352 testes Node e bundles Android/web passaram.
+`npm test` ainda encontra `EPERM` na saída `.tests-dist`; a mesma configuração passa
+usando uma pasta nova em `.expo`, conforme o README. Nenhuma alteração de banco neste ciclo.
+
+Preparação do PR em 2026-10-20: TypeScript e `npm test` passaram em uma cópia limpa dos
+arquivos preparados para commit (352 testes), sem alterações locais de autenticação ou banco.
+Revisões de código concluídas sem problemas impeditivos. A conferência em dispositivo permanece
+pendente; o PR de interface fica em rascunho. Escalas independentes de eventos continuam futuras.
+
+- [ ] Conferir no celular: foco/teclado, senha e máscaras; erros e campos de leitura; selects
+  com muitas opções, rolagem, fonte ampliada e fechamento; categoria da reserva dentro do modal
+  (Voltar primeiro fecha o select, depois a reserva). Conferir Android/iOS; bundles não validam UI.
+
+## Refinamento da tela de Escalas
+
+Implementado: ações maiores com ícones, Criar escala preenchido e restrito ao escopo confirmado;
+filtro de ministério em modal inferior. Selecionar aplica e fecha; fechar sem selecionar preserva
+o filtro. Busca, Minhas/Gerenciadas e Próximas/Anteriores continuam usando os dados carregados.
+Componentes `ScheduleActions` e `ScheduleMinistryFilter`, sem novas dependências ou camadas.
+
+Verificado em 2026-10-12: TypeScript e 343 testes Node passaram, com saída alternativa em `.expo`.
+Cobertos seleção/limpeza, fechamento do modal, permissões, destinos e alteração das opções.
+- [ ] Conferir no celular o destaque das ações, nomes longos, lista extensa, fonte ampliada,
+  teclado e fechamento do modal pelo X, toque fora e voltar do Android.
 
 ## Validação do ciclo de simplificação
 
