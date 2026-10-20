@@ -1,6 +1,8 @@
+import { Separator } from "../ui/separator";
+import { Text } from "../ui/text";
 import { Edit3, LogOut, X } from "lucide-react-native";
 import { TouchableOpacity } from "react-native";
-import { Divider, Text } from "react-native-paper";
+
 import ModalBottomSheet from "./BottomSheet";
 
 interface BottomSheetMenuProps {
@@ -29,7 +31,7 @@ export default function BottomSheetMenu({
         <Text style={{ fontSize: 16 }}>Editar Perfil</Text>
       </TouchableOpacity>
 
-      <Divider style={{ marginVertical: 8 }} />
+      <Separator style={{ marginVertical: 8 }} />
 
       <TouchableOpacity
         onPress={() => {

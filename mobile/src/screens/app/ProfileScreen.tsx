@@ -1,3 +1,4 @@
+import { Text } from "../../components/ui/text";
 import { useEffect, useState } from "react";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../../types/navigation";
@@ -10,7 +11,8 @@ import {
   View,
 } from "react-native";
 import { ShieldCheck } from "lucide-react-native";
-import { Avatar, Divider, Text } from "react-native-paper";
+import { Avatar } from "react-native-paper";
+import { Separator as Divider } from "../../components/ui/separator";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ProfileHeader from "../../components/Header/ProfileHeader";
 import BottomSheetMenu from "../../components/utils/BottomSheetMenu";

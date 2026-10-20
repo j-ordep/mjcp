@@ -1,3 +1,5 @@
+import { Text } from "../../components/ui/text";
+import { Input } from "../../components/ui/input";
 import { Calendar as CalendarIcon } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -7,7 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Text, TextInput } from "react-native-paper";
+
 import { SafeAreaView } from "react-native-safe-area-context";
 import RoomCard from "../../components/card/RoomCard";
 import RoomReservationModal from "../../components/rooms/RoomReservationModal";
@@ -198,16 +200,12 @@ export default function RoomsScreen() {
 
           <TouchableOpacity activeOpacity={0.8} onPress={() => setCalendarVisible(true)}>
             <View pointerEvents="none">
-              <TextInput
+              <Input
                 label="Data da agenda"
-                mode="outlined"
                 value={formatDisplayDate(selectedDateISO)}
                 editable={false}
-                activeOutlineColor="#000"
                 right={
-                  <TextInput.Icon
-                    icon={() => <CalendarIcon size={20} color="#6b7280" />}
-                  />
+                  <CalendarIcon size={20} color="#6b7280" />
                 }
               />
             </View>

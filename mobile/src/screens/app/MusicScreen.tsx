@@ -1,3 +1,6 @@
+import { SelectField } from "../../components/ui/select-field";
+import { Text } from "../../components/ui/text";
+import { Input } from "../../components/ui/input";
 import { Music, Search } from "lucide-react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -9,7 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Text, TextInput } from "react-native-paper";
+
 import { SafeAreaView } from "react-native-safe-area-context";
 import NextEventSetlistCard from "../../components/music/NextEventSetlistCard";
 import type { RootStackParamList } from "../../types/navigation";
@@ -162,54 +165,22 @@ export default function MusicScreen() {
             />
           }
         >
-          <View className="flex-row items-center bg-gray-100 rounded-xl border border-gray-200 px-3 mb-4">
-            <Search size={18} color="#888" />
-            <TextInput
+          <Input
               placeholder="Buscar música ou artista..."
               value={search}
               onChangeText={setSearch}
-              style={{
-                flex: 1,
-                backgroundColor: "transparent",
-                fontSize: 15,
-                height: 44,
-              }}
-              underlineColor="transparent"
-              activeUnderlineColor="transparent"
+              accessibilityLabel="Buscar música ou artista"
+              left={<Search size={18} color="#6b7280" />}
+              fieldClassName="bg-muted border-border"
+              containerStyle={{ marginBottom: 16 }}
+              returnKeyType="search"
             />
-          </View>
 
           {categories.length > 1 ? (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ gap: 8, marginBottom: 16 }}
-            >
-              {categories.map((category) => (
-                <TouchableOpacity
-                  key={category.key}
-                  onPress={() => setActiveCategory(category.key)}
-                  style={{
-                    paddingVertical: 8,
-                    paddingHorizontal: 18,
-                    borderRadius: 10,
-                    backgroundColor: activeCategory === category.key ? "#000" : "#f3f4f6",
-                    borderWidth: activeCategory === category.key ? 0 : 1,
-                    borderColor: "#e5e7eb",
-                  }}
-                >
-                  <Text
-                    style={{
-                      color: activeCategory === category.key ? "#fff" : "#222",
-                      fontWeight: activeCategory === category.key ? "bold" : "normal",
-                      fontSize: 14,
-                    }}
-                  >
-                    {category.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
+            <SelectField label="Categoria" value={activeCategory}
+              options={categories.map((category) => ({ value: category.key, label: category.label }))}
+              onValueChange={(value) => setActiveCategory(value as CategoryFilter)}
+              containerStyle={{ marginBottom: 16 }} />
           ) : null}
 
           {screenError ? (

@@ -1,7 +1,8 @@
+import { Text } from "../ui/text";
 import { useCallback, useRef, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import { Alert, ScrollView, TouchableOpacity, View } from "react-native";
-import { Text } from "react-native-paper";
+
 import { SafeAreaView } from "react-native-safe-area-context";
 import DefaultButton from "../button/DefaultButton";
 import {

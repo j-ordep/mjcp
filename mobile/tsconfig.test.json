@@ -13,6 +13,7 @@
   },
   "include": [
     "src/lib/supabase.ts",
+    "src/lib/utils.ts",
     "src/services/**/*.ts",
     "src/utils/eventDate.ts",
     "src/utils/eventCategory.ts",

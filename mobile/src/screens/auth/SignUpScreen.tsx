@@ -1,3 +1,5 @@
+import { Text } from "../../components/ui/text";
+import { Input } from "../../components/ui/input";
 import { Eye, EyeOff } from "lucide-react-native";
 import { useRef, useState } from "react";
 import {
@@ -8,7 +10,7 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
-import { Text, TextInput } from "react-native-paper";
+
 import DefaultButton from "../../components/button/DefaultButton";
 import { signUp } from "../../services/authService";
 
@@ -56,7 +58,7 @@ export default function SignUp({ navigation }) {
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <View className="flex-1 justify-center p-8 bg-white">
         <Text
-          variant="headlineMedium"
+          variant="h3"
           style={{ textAlign: "center", marginTop: 80, marginBottom: 32 }}
         >
           Cadastre-se
@@ -67,88 +69,76 @@ export default function SignUp({ navigation }) {
           contentContainerStyle={{ padding: 4 }}
         >
           <View style={{ marginBottom: 16 }}>
-            <TextInput
+            <Input
               label="Nome Completo"
-              mode="outlined"
-              activeOutlineColor="black"
               value={name}
               onChangeText={setName}
               autoCapitalize="words"
               autoCorrect={true}
               spellCheck={true}
               returnKeyType="next"
-              style={{ backgroundColor: "transparent" }}
+              containerStyle={{ backgroundColor: "transparent" }}
               onSubmitEditing={() => emailRef.current?.focus()}
             />
           </View>
 
           <View style={{ marginBottom: 16 }}>
-            <TextInput
+            <Input
               ref={emailRef}
               label="Email"
-              mode="outlined"
-              activeOutlineColor="black"
               keyboardType="email-address"
               autoCapitalize="none"
               returnKeyType="next"
               value={email}
               onChangeText={setEmail}
-              style={{ backgroundColor: "transparent" }}
+              containerStyle={{ backgroundColor: "transparent" }}
               onSubmitEditing={() => passwordRef.current?.focus()}
             />
           </View>
 
           <View style={{ marginBottom: 16 }}>
-            <TextInput
+            <Input
               ref={passwordRef}
               label="Senha"
-              mode="outlined"
-              activeOutlineColor="black"
               value={password}
               onChangeText={setPassword}
-              style={{ backgroundColor: "transparent" }}
+              containerStyle={{ backgroundColor: "transparent" }}
               onSubmitEditing={() => confirmPasswordRef.current?.focus()}
               textContentType="oneTimeCode" // remove sugestão de strong password (IOS)
               returnKeyType="next"
               secureTextEntry={!passwordVisible}
               right={
-                <TextInput.Icon
-                  icon={() =>
-                    passwordVisible ? <EyeOff size={20} /> : <Eye size={20} />
-                  }
-                  onPress={() => setPasswordVisible(!passwordVisible)}
-                />
+                <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={passwordVisible ? "Ocultar senha" : "Mostrar senha"}
+                onPress={() => setPasswordVisible(!passwordVisible)}
+              >
+                {passwordVisible ? <EyeOff size={20} /> : <Eye size={20} />}
+              </TouchableOpacity>
               }
             />
           </View>
 
           <View style={{ marginBottom: 32 }}>
-            <TextInput
+            <Input
               ref={confirmPasswordRef}
               label="Confirmar senha"
-              mode="outlined"
-              activeOutlineColor="black"
               keyboardType="default"
               value={confirmPassword}
               onChangeText={setConfirmPassword}
-              style={{ backgroundColor: "transparent" }}
+              containerStyle={{ backgroundColor: "transparent" }}
               returnKeyType="done"
               textContentType="oneTimeCode" // remove sugestão de strong password (IOS)
               onSubmitEditing={handleSignUp}
               secureTextEntry={!confirmPasswordVisible}
               right={
-                <TextInput.Icon
-                  icon={() =>
-                    confirmPasswordVisible ? (
-                      <EyeOff size={20} />
-                    ) : (
-                      <Eye size={20} />
-                    )
-                  }
-                  onPress={() =>
-                    setConfirmPasswordVisible(!confirmPasswordVisible)
-                  }
-                />
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel={confirmPasswordVisible ? "Ocultar senha" : "Mostrar senha"}
+                  onPress={() => setConfirmPasswordVisible(!confirmPasswordVisible)}
+                >
+                  {confirmPasswordVisible ? <EyeOff size={20} /> : <Eye size={20} />}
+                </TouchableOpacity>
               }
             />
           </View>

@@ -1,3 +1,5 @@
+import { Text } from "../ui/text";
+import { Textarea } from "../ui/textarea";
 import { X } from "lucide-react-native";
 import {
   Keyboard,
@@ -10,7 +12,7 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
-import { Text, TextInput } from "react-native-paper";
+
 import DefaultButton from "../button/DefaultButton";
 import type { SwapCandidateOption } from "../../services/scheduleService";
 
@@ -202,8 +204,7 @@ export default function RequestSwapModal({
                   )}
                 </View>
 
-                <TextInput
-                  mode="outlined"
+                <Textarea
                   label="Motivo da troca (opcional)"
                   value={reason}
                   onChangeText={onChangeReason}
@@ -213,8 +214,6 @@ export default function RequestSwapModal({
                   onSubmitEditing={Keyboard.dismiss}
                   blurOnSubmit
                   style={{ backgroundColor: "#fff" }}
-                  activeOutlineColor="#111827"
-                  outlineColor="#d1d5db"
                 />
               </ScrollView>
 

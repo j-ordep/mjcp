@@ -10,7 +10,19 @@ module.exports = {
   ],
   presets: [require("nativewind/preset")],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        background: 'hsl(var(--background))', foreground: 'hsl(var(--foreground))',
+        border: 'hsl(var(--border))', input: 'hsl(var(--input))', ring: 'hsl(var(--ring))',
+        primary: { DEFAULT: 'hsl(var(--primary))', foreground: 'hsl(var(--primary-foreground))' },
+        secondary: { DEFAULT: 'hsl(var(--secondary))', foreground: 'hsl(var(--foreground))' },
+        muted: { DEFAULT: 'hsl(var(--muted))', foreground: 'hsl(var(--muted-foreground))' },
+        accent: { DEFAULT: 'hsl(var(--secondary))', foreground: 'hsl(var(--foreground))' },
+        popover: { DEFAULT: 'hsl(var(--background))', foreground: 'hsl(var(--foreground))' },
+        card: { DEFAULT: 'hsl(var(--background))', foreground: 'hsl(var(--foreground))' },
+        destructive: { DEFAULT: 'hsl(var(--destructive))', foreground: '#fff' },
+      },
+    },
   },
-  plugins: [],
+  plugins: [require('tailwindcss-animate')],
 }

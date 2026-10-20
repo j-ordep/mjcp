@@ -1,6 +1,7 @@
+import { Text } from "../ui/text";
 import { ChevronLeft } from "lucide-react-native"
 import { TouchableOpacity, View } from "react-native"
-import { Text } from "react-native-paper";
+
 
 interface HeaderSecondaryProps {
   title: string;

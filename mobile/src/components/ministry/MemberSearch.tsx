@@ -1,7 +1,9 @@
+import { Text } from "../ui/text";
+import { Input } from "../ui/input";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import { TouchableOpacity, View } from "react-native";
-import { Text, TextInput } from "react-native-paper";
+
 import {
   searchRegisteredUsers,
   type MinistryMemberWithCapabilities,
@@ -108,7 +110,7 @@ export default function MemberSearch({
       </TouchableOpacity>
       {showSearch ? (
         <View>
-          <TextInput
+          <Input
             value={search}
             onChangeText={(value) => {
               searchRevision.current++;
@@ -116,7 +118,8 @@ export default function MemberSearch({
               setSearch(value);
             }}
             placeholder="Buscar usuários cadastrados"
-            style={{ backgroundColor: "#f3f4f6", marginBottom: 12 }}
+            containerStyle={{ marginBottom: 12 }}
+            fieldClassName="bg-muted border-border"
           />
           {isSearchingUsers ? (
             <Text>Buscando usuarios...</Text>

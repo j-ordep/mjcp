@@ -1,6 +1,7 @@
+import { Text } from "../ui/text";
 import { Clock } from "lucide-react-native";
 import { TouchableOpacity, View } from "react-native";
-import { Text } from "react-native-paper";
+
 import type { RoomDailyAgendaItem } from "../../services/roomReservationService";
 import { buildRoomAgendaDisplayItems } from "../../utils/roomAgenda";
 import { canCancelStandaloneRoomAgendaItem } from "../../utils/roomAvailability";

@@ -1,5 +1,8 @@
+import { Text } from "../ui/text";
+import { Input } from "../ui/input";
 import { Calendar as CalendarIcon, Clock, X } from "lucide-react-native";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { TriggerRef } from "@rn-primitives/select";
 import {
   Keyboard,
   KeyboardAvoidingView,
@@ -11,7 +14,8 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
-import { Chip, Text, TextInput } from "react-native-paper";
+import { SelectField } from "../ui/select-field";
+import { PortalHost, useModalPortalRoot } from "@rn-primitives/portal";
 import type { EventCategory } from "../../utils/eventCategory";
 import { EVENT_CATEGORY_OPTIONS } from "../../utils/eventCategory";
 import {
@@ -46,6 +50,9 @@ export default function RoomReservationModal({
   onClose,
   onSubmit,
 }: RoomReservationModalProps) {
+  const modalPortal = useModalPortalRoot();
+  const categoryTriggerRef = useRef<TriggerRef>(null);
+  const [categoryOpen, setCategoryOpen] = useState(false);
   const [calendarVisible, setCalendarVisible] = useState(false);
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState<EventCategory>("geral");
@@ -57,6 +64,7 @@ export default function RoomReservationModal({
 
   useEffect(() => {
     if (!visible) {
+      setCategoryOpen(false);
       return;
     }
 
@@ -80,7 +88,10 @@ export default function RoomReservationModal({
 
   return (
     <>
-      <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <Modal visible={visible} transparent animationType="fade" onRequestClose={() => {
+        if (categoryOpen) categoryTriggerRef.current?.close();
+        else onClose();
+      }}>
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           keyboardVerticalOffset={Platform.OS === "ios" ? 12 : 0}
@@ -88,14 +99,16 @@ export default function RoomReservationModal({
         >
           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
             <View
-              style={{
+              ref={modalPortal.ref}
+              onLayout={modalPortal.onLayout}
+              style={[modalPortal.style, {
                 flex: 1,
                 backgroundColor: "rgba(15,23,42,0.45)",
                 justifyContent: "center",
                 alignItems: "center",
                 paddingHorizontal: 16,
                 paddingVertical: 24,
-              }}
+              }]}
             >
               <Pressable
                 onPress={onClose}
@@ -166,46 +179,28 @@ export default function RoomReservationModal({
                     paddingBottom: 16,
                   }}
                 >
-                  <TextInput
+                  <Input
                     label="Titulo da reserva"
-                    mode="outlined"
                     value={title}
                     onChangeText={setTitle}
-                    activeOutlineColor="#111827"
-                    outlineColor="#d1d5db"
-                    style={{ marginBottom: 16, backgroundColor: "#fff" }}
+                    containerStyle={{ marginBottom: 16 }}
+                    style={{ backgroundColor: "#fff" }}
                   />
 
-                  <Text
-                    style={{ color: "#6b7280", fontSize: 13, fontWeight: "700", marginBottom: 8 }}
-                  >
-                    CATEGORIA
-                  </Text>
-                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
-                    {EVENT_CATEGORY_OPTIONS.map((option) => {
-                      const selected = category === option.value;
-
-                      return (
-                        <Chip
-                          key={option.value}
-                          selected={selected}
-                          showSelectedCheck={false}
-                          onPress={() => setCategory(option.value)}
-                          style={{
-                            backgroundColor: selected ? "#111827" : "#f3f4f6",
-                            borderColor: selected ? "#111827" : "#e5e7eb",
-                            borderWidth: 1,
-                          }}
-                          textStyle={{
-                            color: selected ? "#fff" : "#374151",
-                            fontWeight: selected ? "bold" : "normal",
-                          }}
-                        >
-                          {option.label}
-                        </Chip>
-                      );
-                    })}
-                  </View>
+                  <SelectField
+                    label="CATEGORIA"
+                    value={category}
+                    options={EVENT_CATEGORY_OPTIONS.map(({ value, label }) => ({ value, label }))}
+                    onValueChange={(value) => {
+                      const option = EVENT_CATEGORY_OPTIONS.find((item) => item.value === value);
+                      if (option) setCategory(option.value);
+                    }}
+                    portalHost="room-reservation-select"
+                    sideOffset={modalPortal.sideOffset}
+                    triggerRef={categoryTriggerRef}
+                    onOpenChange={setCategoryOpen}
+                    containerStyle={{ marginBottom: 16 }}
+                  />
 
                   <TouchableOpacity
                     style={{ marginBottom: 12 }}
@@ -213,17 +208,12 @@ export default function RoomReservationModal({
                     onPress={() => setCalendarVisible(true)}
                   >
                     <View pointerEvents="none">
-                      <TextInput
+                      <Input
                         label="Data"
-                        mode="outlined"
                         value={displayDate}
                         editable={false}
-                        activeOutlineColor="#111827"
-                        outlineColor="#d1d5db"
                         right={
-                          <TextInput.Icon
-                            icon={() => <CalendarIcon size={20} color="#6b7280" />}
-                          />
+                          <CalendarIcon size={20} color="#6b7280" />
                         }
                       />
                     </View>
@@ -231,9 +221,8 @@ export default function RoomReservationModal({
 
                   <View style={{ flexDirection: "row", gap: 12, marginBottom: 8 }}>
                     <View style={{ flex: 1 }}>
-                      <TextInput
+                      <Input
                         label="Hora inicial"
-                        mode="outlined"
                         value={startTime}
                         onChangeText={(value) => setStartTime(applyRoomReservationTimeMask(value))}
                         onBlur={() =>
@@ -245,20 +234,15 @@ export default function RoomReservationModal({
                           )
                         }
                         keyboardType="number-pad"
-                        activeOutlineColor="#111827"
-                        outlineColor="#d1d5db"
                         right={
-                          <TextInput.Icon
-                            icon={() => <Clock size={20} color="#6b7280" />}
-                          />
+                          <Clock size={20} color="#6b7280" />
                         }
                       />
                     </View>
 
                     <View style={{ flex: 1 }}>
-                      <TextInput
+                      <Input
                         label="Hora final"
-                        mode="outlined"
                         value={endTime}
                         onChangeText={(value) => setEndTime(applyRoomReservationTimeMask(value))}
                         onBlur={() =>
@@ -270,12 +254,8 @@ export default function RoomReservationModal({
                           )
                         }
                         keyboardType="number-pad"
-                        activeOutlineColor="#111827"
-                        outlineColor="#d1d5db"
                         right={
-                          <TextInput.Icon
-                            icon={() => <Clock size={20} color="#6b7280" />}
-                          />
+                          <Clock size={20} color="#6b7280" />
                         }
                       />
                     </View>
@@ -319,6 +299,7 @@ export default function RoomReservationModal({
                   </DefaultButton>
                 </View>
               </View>
+              <PortalHost name="room-reservation-select" />
             </View>
           </TouchableWithoutFeedback>
         </KeyboardAvoidingView>

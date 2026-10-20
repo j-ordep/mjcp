@@ -1,5 +1,6 @@
+import { Text } from "../ui/text";
 import { View } from "react-native";
-import { Text } from "react-native-paper";
+
 
 interface ScheduleSummaryCardProps {
   eventTitle?: string | null;

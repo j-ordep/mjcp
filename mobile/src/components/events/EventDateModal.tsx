@@ -1,5 +1,8 @@
+import { Text } from "../ui/text";
+import { Checkbox } from "../ui/checkbox";
+import { Button } from "../ui/button";
 import { Modal, TouchableOpacity as RNTouchableOpacity, View } from "react-native";
-import { Button, Checkbox, Text } from "react-native-paper";
+
 import { Calendar } from "react-native-calendars";
 import { X } from "lucide-react-native";
 import type { CalendarSelectionMark } from "../../utils/eventCalendarSelection";
@@ -96,7 +99,10 @@ export default function EventDateModal({
                 </Text>
               </View>
               <Checkbox
-                status={isMultipleDateSelectionEnabled ? "checked" : "unchecked"}
+                checked={isMultipleDateSelectionEnabled}
+                onCheckedChange={handleToggleMultipleDates}
+                onPress={(event) => event.stopPropagation()}
+                accessibilityLabel="Permitir múltiplas datas"
               />
             </RNTouchableOpacity>
           ) : null}
@@ -114,13 +120,15 @@ export default function EventDateModal({
           />
 
           <Button
-            mode="contained"
+            variant="default"
             onPress={() => setShowCalendar(false)}
             style={{ marginTop: 10, backgroundColor: "#000" }}
           >
-            {isMultipleDateSelectionEnabled && selectedDateKeys.length > 1
-              ? `Confirmar ${selectedDateKeys.length} datas`
-              : "Confirmar data"}
+            <Text>
+              {isMultipleDateSelectionEnabled && selectedDateKeys.length > 1
+                ? `Confirmar ${selectedDateKeys.length} datas`
+                : "Confirmar data"}
+            </Text>
           </Button>
         </View>
       </RNTouchableOpacity>

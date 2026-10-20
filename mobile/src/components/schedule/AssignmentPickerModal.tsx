@@ -1,3 +1,5 @@
+import { Text } from "../ui/text";
+import { Input } from "../ui/input";
 import { X } from "lucide-react-native";
 import {
   Alert,
@@ -11,7 +13,7 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
-import { Text, TextInput } from "react-native-paper";
+
 import DefaultButton from "../button/DefaultButton";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -379,14 +381,12 @@ export default function AssignmentPickerModal({
                     {loadError}
                   </Text>
                 ) : null}
-                <TextInput
+                <Input
                   placeholder="Buscar membro..."
                   value={memberSearch}
                   onChangeText={onSearchChange}
-                  mode="outlined"
-                  style={{ marginBottom: 16, backgroundColor: "#fff" }}
-                  activeOutlineColor="#111827"
-                  outlineColor="#d1d5db"
+                  containerStyle={{ marginBottom: 16 }}
+                  style={{ backgroundColor: "#fff" }}
                   returnKeyType="search"
                 />
 

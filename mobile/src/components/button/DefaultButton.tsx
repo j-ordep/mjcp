@@ -1,4 +1,6 @@
-import { Text, TouchableOpacity, ActivityIndicator, View } from "react-native";
+import { ActivityIndicator } from "react-native";
+import { Text } from "../ui/text";
+import { Button } from "../ui/button";
 
 interface ButtonProps {
   children: string;
@@ -16,7 +18,7 @@ export default function DefaultButton({
   disabled = false,
 }: ButtonProps) {
 
-  const baseClass = "rounded-2xl border-2 py-3.5 justify-center items-center w-full min-h-[58px]";
+  const baseClass = "h-auto rounded-2xl border-2 py-3.5 justify-center items-center w-full min-h-[58px]";
   const variants = {
     primary: "bg-black border-black",
     outline: "bg-white border-gray-300",
@@ -29,11 +31,11 @@ export default function DefaultButton({
   };
 
   return (
-    <TouchableOpacity 
+    <Button
+      variant={variant === 'primary' ? 'default' : variant}
       className={`${baseClass} ${variants[variant]}`} 
       onPress={isLoading || disabled ? undefined : onPress}
       disabled={isLoading || disabled}
-      activeOpacity={0.7}
       style={{
         opacity: disabled ? 0.55 : 1,
       }}
@@ -41,10 +43,10 @@ export default function DefaultButton({
       {isLoading ? (
         <ActivityIndicator color={variant === 'primary' ? "#fff" : "#be123c"} />
       ) : (
-        <Text className={`text-center font-semibold text-base ${textVariants[variant]}`}>
+        <Text className={`shrink text-center font-semibold text-base ${textVariants[variant]}`}>
           {children}
         </Text>
       )}
-    </TouchableOpacity>
+    </Button>
   );
 }

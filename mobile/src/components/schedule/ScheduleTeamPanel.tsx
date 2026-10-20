@@ -1,8 +1,9 @@
+import { Text } from "../ui/text";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useCallback, useRef, useState } from "react";
 import { Alert, TouchableOpacity, View } from "react-native";
-import { Text } from "react-native-paper";
+
 import AssignmentPickerModal from "./AssignmentPickerModal";
 import MyScheduleParticipationCard from "./MyScheduleParticipationCard";
 import ScheduleAssignmentList from "./ScheduleAssignmentList";

@@ -1,6 +1,7 @@
+import { Text } from "../ui/text";
 import { ChevronRight, Clock, MapPin } from "lucide-react-native";
 import { View } from "react-native";
-import { Card, Text } from "react-native-paper";
+import { Card } from "react-native-paper";
 import { getEventCategoryOption } from "../../utils/eventCategory";
 
 interface EventCardProps {

@@ -1,6 +1,7 @@
+import { Text } from "../ui/text";
 import { ArrowDown, ArrowUp, X } from "lucide-react-native";
 import { TouchableOpacity, View } from "react-native";
-import { Text } from "react-native-paper";
+
 import DefaultButton from "../button/DefaultButton";
 import type { EventSetlistSong } from "../../services/musicService";
 

@@ -1,5 +1,6 @@
+import { Text } from "../ui/text";
 import { View } from "react-native";
-import { IconButton, Text } from "react-native-paper";
+import { IconButton } from "react-native-paper";
 import { ChevronLeft, MoreVertical } from "lucide-react-native";
 
 interface ProfileHeaderProps {

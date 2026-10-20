@@ -1,3 +1,5 @@
+import { Text } from "../../components/ui/text";
+import { Input } from "../../components/ui/input";
 import { Eye, EyeOff } from "lucide-react-native";
 import { useRef, useState } from "react";
 import {
@@ -7,7 +9,7 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
-import { Text, TextInput } from "react-native-paper";
+
 import DefaultButton from "../../components/button/DefaultButton";
 import { signIn } from "../../services/authService";
 
@@ -42,20 +44,18 @@ export default function SignInScreen({ navigation }) {
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <View className="flex-1 justify-center p-8 bg-white">
         <Text
-          variant="headlineMedium"
+          variant="h3"
           style={{ textAlign: "center", marginBottom: 32 }}
         >
           Login
         </Text>
 
         <View style={{ marginBottom: 16 }}>
-          <TextInput
+          <Input
             label="Email"
-            mode="outlined"
-            activeOutlineColor="black"
             value={email}
             onChangeText={setEmail}
-            style={{ backgroundColor: "transparent" }}
+            containerStyle={{ backgroundColor: "transparent" }}
             returnKeyType="next"
             autoCapitalize="none"
             keyboardType="email-address"
@@ -64,24 +64,24 @@ export default function SignInScreen({ navigation }) {
         </View>
 
         <View style={{ marginBottom: 32 }}>
-          <TextInput
+          <Input
             ref={passwordRef}
             label="Senha"
-            mode="outlined"
             value={password}
             onChangeText={setPassword}
             secureTextEntry={!passwordVisible}
             returnKeyType="done"
             onSubmitEditing={handleLogin}
             right={
-              <TextInput.Icon
-                icon={() =>
-                  passwordVisible ? <EyeOff size={20} /> : <Eye size={20} />
-                }
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={passwordVisible ? "Ocultar senha" : "Mostrar senha"}
                 onPress={() => setPasswordVisible(!passwordVisible)}
-              />
+              >
+                {passwordVisible ? <EyeOff size={20} /> : <Eye size={20} />}
+              </TouchableOpacity>
             }
-            style={{ backgroundColor: "transparent" }}
+            containerStyle={{ backgroundColor: "transparent" }}
           />
         </View>
 

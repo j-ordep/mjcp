@@ -1,3 +1,5 @@
+import { Text } from "../../components/ui/text";
+import { Input } from "../../components/ui/input";
 import { useRef, useState } from "react";
 import {
   Alert,
@@ -8,7 +10,8 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
-import { Avatar, Divider, Text, TextInput } from "react-native-paper";
+import { Avatar } from "react-native-paper";
+import { Separator as Divider } from "../../components/ui/separator";
 import { SafeAreaView } from "react-native-safe-area-context";
 import HeaderSecondary from "../../components/Header/HeaderSecondary";
 import DefaultButton from "../../components/button/DefaultButton";
@@ -140,48 +143,42 @@ export default function EditProfileScreen({ navigation }) {
 
             <View style={{ paddingHorizontal: 24 }}>
               <View style={{ marginBottom: 16 }}>
-                <TextInput
+                <Input
                   label="Nome"
-                  mode="outlined"
-                  activeOutlineColor="black"
                   value={name}
                   onChangeText={setName}
                   autoCapitalize="words"
                   autoCorrect
                   spellCheck
                   returnKeyType="next"
-                  style={{ backgroundColor: "transparent" }}
+                  containerStyle={{ backgroundColor: "transparent" }}
                   onSubmitEditing={() => emailRef.current?.focus()}
                 />
               </View>
               <View style={{ marginBottom: 16 }}>
-                <TextInput
+                <Input
                   ref={emailRef}
                   label="Email"
-                  mode="outlined"
-                  activeOutlineColor="black"
                   value={email}
                   onChangeText={setEmail}
                   autoCapitalize="none"
                   keyboardType="email-address"
                   returnKeyType="next"
                   editable={false}
-                  style={{ backgroundColor: "transparent", opacity: 0.6 }}
+                  containerStyle={{ backgroundColor: "transparent", opacity: 0.6 }}
                   onSubmitEditing={() => phoneRef.current?.focus()}
                 />
               </View>
               <View style={{ marginBottom: 16 }}>
-                <TextInput
+                <Input
                   ref={phoneRef}
                   label="Telefone"
-                  mode="outlined"
-                  activeOutlineColor="black"
                   value={phone}
                   onChangeText={(text) => setPhone(applyPhoneMask(text))}
                   keyboardType="number-pad"
                   maxLength={15}
                   returnKeyType="done"
-                  style={{ backgroundColor: "transparent" }}
+                  containerStyle={{ backgroundColor: "transparent" }}
                   onSubmitEditing={handleSave}
                 />
               </View>

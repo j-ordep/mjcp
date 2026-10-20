@@ -11,6 +11,7 @@ function mount(options: { routeId?: string; getMembers?: (id: string) => Promise
   const useAuthStore = Object.assign(() => auth, { getState: () => auth });
   const screen = mountScreen("src/screens/app/ManageMinistryMembersScreen.tsx", {
     useAuthStore: { useAuthStore },
+    "select-field": { SelectField: "SelectField" },
     useMinistryStore: { useMinistryStore: () => ({ fetchUserMinistries: async () => {} }) },
     ministryService: {
       getManageableMinistries: options.scope ?? (async () => ({ data: ministries, error: null })),
@@ -43,7 +44,7 @@ test("switching ministry discards the previous ministry response", async () => {
   const old = deferred<any>();
   const { screen } = mount({ getMembers: (id) => id === "ministry-a" ? old.promise : Promise.resolve({ data: [member(id, "Pessoa B")], error: null }) });
   await screen.flush();
-  screen.findAll("TouchableOpacity").find((node) => textContent(node) === "Equipe B")!.props.onPress();
+  screen.findAll("SelectField")[0].props.onValueChange("ministry-b");
   await screen.flush();
   old.resolve({ data: [member("ministry-a", "Pessoa A")], error: null });
   await screen.flush();
@@ -65,7 +66,7 @@ test("team passes shared scope and reload to the editor and locks ministry chang
   assert.equal(editor.props.member.user_id, "user-ministry-a");
   assert.equal(editor.props.ministryId, "ministry-a");
   editor.props.onBusyChange(true);
-  screen.findAll("TouchableOpacity").find((node) => textContent(node) === "Equipe B")!.props.onPress();
+  screen.findAll("SelectField")[0].props.onValueChange("ministry-b");
   await screen.flush();
   assert.equal(screen.findAll("MemberEditor")[0].props.ministryId, "ministry-a");
   editor.props.onBusyChange(false);
@@ -133,7 +134,7 @@ test("callbacks from an earlier session cannot unlock or close a new member edit
   previous.props.onClose();
   await screen.flush();
   assert.equal(screen.findAll("MemberEditor").length, 1);
-  assert.equal(screen.findAll("TouchableOpacity").find((node) => textContent(node) === "Equipe B")!.props.disabled, true);
+  assert.equal(screen.findAll("SelectField")[0].props.disabled, true);
   current.props.onBusyChange(false);
   current.props.onClose();
   await screen.flush();

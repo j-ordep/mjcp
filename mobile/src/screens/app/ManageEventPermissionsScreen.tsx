@@ -1,3 +1,5 @@
+import { Text } from "../../components/ui/text";
+import { Input } from "../../components/ui/input";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -5,7 +7,8 @@ import {
   ScrollView,
   View,
 } from "react-native";
-import { Avatar, Switch, Text, TextInput } from "react-native-paper";
+import { Avatar } from "react-native-paper";
+import { Switch } from "../../components/ui/switch";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Search, ShieldCheck } from "lucide-react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -249,18 +252,13 @@ export default function ManageEventPermissionsScreen({ navigation }: Props) {
           <Text style={{ fontWeight: "700", fontSize: 17, marginBottom: 10 }}>
             Buscar perfis
           </Text>
-          <TextInput
-            mode="outlined"
+          <Input
             value={search}
             onChangeText={setSearch}
             placeholder="Buscar por nome ou email"
-            style={{ backgroundColor: "#fff" }}
-            activeOutlineColor="#111827"
-            outlineColor="#d1d5db"
+            containerStyle={{ backgroundColor: "#fff" }}
             left={
-              <TextInput.Icon
-                icon={() => <Search size={18} color="#6b7280" />}
-              />
+              <Search size={18} color="#6b7280" />
             }
           />
         </View>
@@ -456,9 +454,8 @@ export default function ManageEventPermissionsScreen({ navigation }: Props) {
                           <ActivityIndicator size="small" color="#000" />
                         ) : (
                           <Switch
-                            value={item.can_manage_events || isBuiltInAdmin}
-                            onValueChange={() => handleTogglePermission(item)}
-                            color="#000"
+                            checked={item.can_manage_events || isBuiltInAdmin}
+                            onCheckedChange={() => handleTogglePermission(item)}
                             disabled={isReadOnly || savingProfileId !== null || isRefreshing}
                           />
                         )}

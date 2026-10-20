@@ -1,5 +1,6 @@
+import { Text } from "../ui/text";
 import { TouchableOpacity, View } from "react-native";
-import { Avatar, IconButton, Text } from "react-native-paper";
+import { Avatar, IconButton } from "react-native-paper";
 import { Bell } from "lucide-react-native";
 import { getProfileInitials } from "../../utils/profileAvatar";
 
@@ -25,7 +26,7 @@ export default function HeaderPrimary(props: HeaderPrimaryProps) {
             {props.subtitle}
           </Text>
         )}
-        <Text variant="headlineSmall" style={{ fontWeight: "800" }}>
+        <Text variant="h4" style={{ fontWeight: "800" }}>
           {props.title}
         </Text>
       </View>

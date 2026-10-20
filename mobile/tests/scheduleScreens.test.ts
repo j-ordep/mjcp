@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { deferred, mountScreen } from "./screenTestHelpers";
+import { deferred, mountScreen, textContent } from "./screenTestHelpers";
 import * as participation from "../src/utils/scheduleParticipation";
 import * as rules from "../src/utils/scheduleRules";
 
@@ -45,6 +45,67 @@ function screenModules(scope: any, services: any) {
     "lucide-react-native": { ShieldAlert: "ShieldAlert" },
   };
 }
+
+test("ministry modal selection combines with search and period without refetching", async () => {
+  const scope = { userMinistries: [ministry], userMinistriesUserId: "user-example", error: null, fetchUserMinistries: async () => {} };
+  const modules = screenModules(scope, {});
+  let reads = 0;
+  const makeCard = (id: string, ministryId: string, start_at: string, title: string) => ({
+    id, ministry: { id: ministryId, name: `Ministério ${ministryId}` }, event: { ...event, start_at, title }, my_assignments: [],
+  });
+  const state = { scheduleCards: [
+    makeCard("future-a", "a", "2099-01-01T12:00:00Z", "Culto exemplo"),
+    makeCard("past-a", "a", "2000-01-01T12:00:00Z", "Culto exemplo"),
+    makeCard("past-b", "b", "2000-01-01T12:00:00Z", "Culto exemplo"),
+    makeCard("past-other", "a", "2000-01-01T12:00:00Z", "Ensaio exemplo"),
+  ], isLoadingSchedules: false, error: null, fetchScheduleCards: async () => { reads++; } };
+  modules.useScheduleStore = { useScheduleStore: Object.assign(() => state, { getState: () => ({ viewMode: "personal" }) }) } as any;
+  const screen = mountScreen("src/screens/app/ScheduleScreen.tsx", modules);
+  await screen.flush();
+  assert.equal(screen.findAll("ScheduleMinistryFilter").length, 1);
+  screen.findAll("ScheduleMinistryFilter")[0].props.onSelect("a");
+  screen.findAll("TextInput")[0].props.onChangeText("culto");
+  screen.findAll("TouchableOpacity").find((node) => textContent(node) === "Anteriores")!.props.onPress();
+  await screen.flush();
+  assert.deepEqual(screen.findAll("FlatList")[0].props.data.map((card: any) => card.id), ["past-a"]);
+  screen.findAll("ScheduleMinistryFilter")[0].props.onSelect(null);
+  await screen.flush();
+  assert.deepEqual(screen.findAll("FlatList")[0].props.data.map((card: any) => card.id), ["past-a", "past-b"]);
+  screen.findAll("ScheduleMinistryFilter")[0].props.onSelect("b");
+  await screen.flush();
+  state.scheduleCards = state.scheduleCards.filter((card) => card.ministry.id === "a");
+  screen.rerender();
+  await screen.flush();
+  assert.equal(screen.findAll("ScheduleMinistryFilter")[0].props.selectedId, null);
+  assert.deepEqual(Array.from(screen.findAll("ScheduleMinistryFilter")[0].props.ministries, (item: any) => item.id), ["a"]);
+  assert.deepEqual(screen.findAll("FlatList")[0].props.data.map((card: any) => card.id), ["past-a"]);
+  assert.equal(reads, 1);
+  screen.cleanup();
+});
+
+test("schedule actions retain creation permission and existing destinations", async () => {
+  const scope: any = { userMinistries: [], userMinistriesUserId: "user-example", error: null, fetchUserMinistries: async () => {} };
+  const modules = screenModules(scope, {});
+  const state = { scheduleCards: [], isLoadingSchedules: false, error: null, fetchScheduleCards: async () => {} };
+  modules.useScheduleStore = { useScheduleStore: Object.assign(() => state, { getState: () => ({ viewMode: "personal" }) }) } as any;
+  const screen = mountScreen("src/screens/app/ScheduleScreen.tsx", modules);
+  const destinations: string[] = [];
+  (screen.navigation as any).navigate = (route: string) => { destinations.push(route); };
+  await screen.flush();
+  assert.equal(screen.findAll("ScheduleActions").length, 1);
+  const actions = screen.findAll("ScheduleActions")[0].props;
+  assert.equal(actions.canCreate, false);
+  actions.onOpenSwaps();
+  actions.onOpenBlockedDates();
+  assert.deepEqual(destinations, ["SwapRequests", "BlockDatesScreen"]);
+  scope.userMinistries = [ministry];
+  screen.rerender();
+  await screen.flush();
+  assert.equal(screen.findAll("ScheduleActions")[0].props.canCreate, true);
+  screen.findAll("ScheduleActions")[0].props.onCreate();
+  assert.equal(destinations[2], "CreateSchedule");
+  screen.cleanup();
+});
 
 test("detail reads assignments without querying management options for another ministry", async () => {
   let roles = 0, members = 0, reads = 0;

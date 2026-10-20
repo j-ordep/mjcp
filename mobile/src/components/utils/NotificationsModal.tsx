@@ -1,3 +1,4 @@
+import { Text } from "../ui/text";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useEffect, useState } from "react";
@@ -7,7 +8,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Divider, Modal, Portal, Text } from "react-native-paper";
+import { Modal, Portal } from "react-native-paper";
+import { Separator as Divider } from "../ui/separator";
 import type { RootStackParamList } from "../../types/navigation";
 import type { AppNotification } from "../../services/notificationService";
 import { useNotificationStore } from "../../stores/useNotificationStore";
@@ -99,7 +101,7 @@ export default function NotificationsModal({
       >
         <View style={{ marginBottom: 10 }}>
           <Text
-            variant="titleMedium"
+            variant="large"
             style={{ textAlign: "center", paddingBottom: 4 }}
           >
             Notificacoes

@@ -1,3 +1,4 @@
+import { Text } from "../../components/ui/text";
 import {
   useFocusEffect,
   useNavigation,
@@ -6,7 +7,7 @@ import {
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useCallback, useRef, useState } from "react";
 import { Alert, ScrollView, TouchableOpacity, View } from "react-native";
-import { Text } from "react-native-paper";
+
 import { SafeAreaView } from "react-native-safe-area-context";
 import HeaderSecondary from "../../components/Header/HeaderSecondary";
 import ScheduleSummaryCard from "../../components/schedule/ScheduleSummaryCard";

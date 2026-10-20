@@ -1,3 +1,7 @@
+import { Separator } from "../ui/separator";
+import { Text } from "../ui/text";
+import { Input } from "../ui/input";
+import { Switch } from "../ui/switch";
 import { useCallback, useRef, useState } from "react";
 import {
   Alert,
@@ -6,7 +10,7 @@ import {
   type LayoutChangeEvent,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { Divider, Switch, Text, TextInput } from "react-native-paper";
+
 import { Search, X } from "lucide-react-native";
 import {
   listProfilesPage,
@@ -196,9 +200,9 @@ export default function EventAudienceSection({
       >
         <Text style={{ fontSize: 16 }}>Evento público?</Text>
         <Switch
-          value={isPublic}
-          onValueChange={onVisibilityChange}
-          color="#000"
+          checked={isPublic}
+          onCheckedChange={onVisibilityChange}
+          accessibilityLabel="Evento público"
         />
       </View>
 
@@ -250,18 +254,13 @@ export default function EventAudienceSection({
             </Text>
           </View>
 
-          <TextInput
-            mode="outlined"
+          <Input
             value={audienceSearch}
             onChangeText={handleSearchChange}
             onFocus={onSearchFocus}
             placeholder="Buscar membro por nome"
-            activeOutlineColor="#000"
-            outlineColor="#d1d5db"
             left={
-              <TextInput.Icon
-                icon={() => <Search size={18} color="#6b7280" />}
-              />
+              <Search size={18} color="#6b7280" />
             }
           />
 
@@ -318,7 +317,7 @@ export default function EventAudienceSection({
             )}
           </View>
 
-          <Divider />
+          <Separator />
 
           <View style={{ gap: 8 }}>
             <Text

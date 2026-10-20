@@ -1,7 +1,8 @@
+import { Text } from "../ui/text";
 import { useCallback, useRef, useState } from "react";
 import { TouchableOpacity as RNTouchableOpacity, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { Text } from "react-native-paper";
+
 import {
   getRoomsForWindow,
   type RoomAvailability,

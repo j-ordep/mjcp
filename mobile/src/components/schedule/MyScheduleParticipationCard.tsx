@@ -1,7 +1,8 @@
+import { Text } from "../ui/text";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, View } from "react-native";
-import { Text } from "react-native-paper";
+
 import DefaultButton from "../button/DefaultButton";
 import RequestSwapModal from "./RequestSwapModal";
 import {

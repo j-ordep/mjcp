@@ -1,8 +1,10 @@
+import { Text } from "../../components/ui/text";
+import { Input } from "../../components/ui/input";
 import { useFocusEffect, useNavigation, usePreventRemove, useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Alert, RefreshControl, ScrollView, TouchableOpacity, View } from "react-native";
-import { Text, TextInput } from "react-native-paper";
+
 import { SafeAreaView } from "react-native-safe-area-context";
 import DefaultButton from "../../components/button/DefaultButton";
 import HeaderSecondary from "../../components/Header/HeaderSecondary";
@@ -210,7 +212,9 @@ export default function EventSetlistScreen() {
               <SetlistEditor songs={draft} isSaving={isSaving} disabled={!canEdit || needsReadback} onMoveSong={moveSong}
                 onRemoveSong={(id) => { if (canChangeDraft()) setDraft((current) => current.filter((item) => item.song_id !== id)); }} onSave={saveSetlist} />
               <DefaultButton variant="outline" disabled={isSaving || needsReadback} onPress={cancelEditing}>Cancelar edição</DefaultButton>
-              <TextInput placeholder="Buscar música ou artista..." value={search} onChangeText={setSearch} style={{ backgroundColor: "#f3f4f6", marginVertical: 16 }} />
+              <Input placeholder="Buscar música ou artista..." accessibilityLabel="Buscar música ou artista"
+                value={search} onChangeText={setSearch} fieldClassName="bg-muted border-border"
+                containerStyle={{ marginVertical: 16 }} returnKeyType="search" />
               {visibleSongs.map((song) => <TouchableOpacity key={song.id} disabled={isSaving || needsReadback || !canEdit || selectedIds.has(song.id)}
                 onPress={() => {
                   if (!canChangeDraft()) return;

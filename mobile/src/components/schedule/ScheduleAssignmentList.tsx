@@ -1,5 +1,6 @@
+import { Text } from "../ui/text";
 import { TouchableOpacity, View } from "react-native";
-import { Text } from "react-native-paper";
+
 import { Trash2 } from "lucide-react-native";
 import DefaultButton from "../button/DefaultButton";
 import type { ScheduleAssignmentDetailed } from "../../types/scheduling";

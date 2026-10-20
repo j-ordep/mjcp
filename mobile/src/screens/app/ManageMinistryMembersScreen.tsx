@@ -1,6 +1,8 @@
+import { Text } from "../../components/ui/text";
+import { SelectField } from "../../components/ui/select-field";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ScrollView, TouchableOpacity, View } from "react-native";
-import { Text } from "react-native-paper";
+
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   useFocusEffect,
@@ -215,45 +217,27 @@ export default function ManageMinistryMembersScreen() {
         <HeaderSecondary title="Equipe" onBack={() => navigation.goBack()} />
       ) : null}
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 32 }}>
-        <Text style={{ fontWeight: "700", marginBottom: 12 }}>Ministério</Text>
         {isLoadingMinistries ? (
-          <Text>Carregando ministerios...</Text>
+          <>
+            <Text style={{ fontWeight: "700", marginBottom: 12 }}>Ministério</Text>
+            <Text>Carregando ministerios...</Text>
+          </>
+        ) : ministries.length > 0 ? (
+          <SelectField
+            label="Ministério"
+            value={selectedMinistryId}
+            options={ministries.map((ministry) => ({ value: ministry.id, label: ministry.name }))}
+            disabled={isSaving}
+            onValueChange={chooseMinistry}
+            containerStyle={{ marginBottom: 18 }}
+          />
         ) : (
-          <View
-            style={{
-              flexDirection: "row",
-              flexWrap: "wrap",
-              gap: 10,
-              marginBottom: 18,
-            }}
-          >
-            {ministries.map((ministry) => (
-              <TouchableOpacity
-                key={ministry.id}
-                disabled={isSaving}
-                onPress={() => chooseMinistry(ministry.id)}
-                style={{
-                  borderRadius: 14,
-                  padding: 12,
-                  backgroundColor:
-                    selectedMinistryId === ministry.id ? "#111827" : "#f3f4f6",
-                }}
-              >
-                <Text
-                  style={{
-                    color:
-                      selectedMinistryId === ministry.id ? "#fff" : "#111827",
-                  }}
-                >
-                  {ministry.name}
-                </Text>
-              </TouchableOpacity>
-            ))}
-            {ministries.length === 0 && !scopeError ? (
-              <Text>Nenhum ministerio gerenciavel encontrado.</Text>
-            ) : null}
+          <View style={{ marginBottom: 18 }}>
+            <Text style={{ fontWeight: "700", marginBottom: 12 }}>Ministério</Text>
+            {!scopeError ? <Text>Nenhum ministerio gerenciavel encontrado.</Text> : null}
           </View>
         )}
+
         {scopeError ? (
           <Text style={{ color: "#991b1b", marginBottom: 12 }}>
             {scopeError}

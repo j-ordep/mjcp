@@ -1,10 +1,15 @@
+import { Text } from "../../components/ui/text";
+import { Input } from "../../components/ui/input";
+import { Search } from "lucide-react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, FlatList, ScrollView, TouchableOpacity, View } from "react-native";
-import { Text, TextInput } from "react-native-paper";
+import { ActivityIndicator, FlatList, TouchableOpacity, View } from "react-native";
+
 import { SafeAreaView } from "react-native-safe-area-context";
 import ScheduleSummaryCard from "../../components/schedule/ScheduleSummaryCard";
+import ScheduleActions from "../../components/schedule/ScheduleActions";
+import ScheduleMinistryFilter from "../../components/schedule/ScheduleMinistryFilter";
 import type { RootStackParamList } from "../../types/navigation";
 import { useAuthStore } from "../../stores/useAuthStore";
 import { useMinistryStore } from "../../stores/useMinistryStore";
@@ -75,24 +80,24 @@ export default function ScheduleScreen() {
   return (
     <SafeAreaView className="flex-1 bg-white" edges={["left", "right"]}>
       <View style={{ paddingHorizontal: 20, gap: 12, paddingBottom: 12 }}>
-        <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
-          {chip("Trocas", false, () => navigation.navigate("SwapRequests"))}
-          {chip("Indisponibilidades", false, () => navigation.navigate("BlockDatesScreen"))}
-          {canManage ? chip("Criar escala", false, () => navigation.navigate("CreateSchedule")) : null}
-        </View>
+        <ScheduleActions
+          canCreate={canManage}
+          onOpenSwaps={() => navigation.navigate("SwapRequests")}
+          onOpenBlockedDates={() => navigation.navigate("BlockDatesScreen")}
+          onCreate={() => navigation.navigate("CreateSchedule")}
+        />
         {canManage ? <View style={{ flexDirection: "row", gap: 8 }}>
           {chip("Minhas", mode === "personal", () => setMode("personal"))}
           {chip("Gerenciadas", mode === "manageable", () => setMode("manageable"))}
         </View> : null}
-        <TextInput label="Buscar escala" value={search} onChangeText={setSearch} style={{ backgroundColor: "#f3f4f6" }} />
-        <View style={{ flexDirection: "row", gap: 8 }}>
+        <Input placeholder="Buscar escalas" accessibilityLabel="Buscar escalas"
+          value={search} onChangeText={setSearch} returnKeyType="search"
+          left={<Search size={18} color="#6b7280" />} fieldClassName="bg-muted border-border" />
+        <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
           {chip("Próximas", timeFilter === "current", () => setTimeFilter("current"))}
           {chip("Anteriores", timeFilter === "past", () => setTimeFilter("past"))}
+          <ScheduleMinistryFilter ministries={ministries} selectedId={ministryId} onSelect={setMinistryId} />
         </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-          {chip("Todos os ministérios", !ministryId, () => setMinistryId(null))}
-          {ministries.map((ministry) => chip(ministry.name, ministryId === ministry.id, () => setMinistryId(ministry.id), ministry.id))}
-        </ScrollView>
       </View>
       {loading && !refreshing ? <ActivityIndicator style={{ margin: 24 }} /> : loadError ? <View style={{ padding: 20 }}>
         <Text>Não foi possível carregar as escalas. {loadError}</Text>

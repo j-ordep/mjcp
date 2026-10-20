@@ -1,5 +1,6 @@
+import { Text } from "../ui/text";
 import { TouchableOpacity, View } from "react-native";
-import { Text } from "react-native-paper";
+
 import DefaultButton from "../button/DefaultButton";
 import type { EventSetlistSong } from "../../services/musicService";
 import type { Event } from "../../types/models";

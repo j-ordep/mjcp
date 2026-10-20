@@ -1,6 +1,8 @@
+import { Separator } from "../ui/separator";
+import { Text } from "../ui/text";
 import { Calendar, Clock, MapPin } from "lucide-react-native";
 import { View } from "react-native";
-import { Divider, Text } from "react-native-paper";
+
 import { getEventCategoryOption } from "../../utils/eventCategory";
 
 interface EventInfoCardProps {
@@ -144,7 +146,7 @@ export default function EventInfoCard({
         </View>
       </View>
 
-      <Divider style={{ marginVertical: 16, backgroundColor: "#e5e7eb" }} />
+      <Separator style={{ marginVertical: 16, backgroundColor: "#e5e7eb" }} />
       <Text style={{ color: "#6b7280", fontSize: 13, marginBottom: 6, fontWeight: "700" }}>
         Descrição
       </Text>

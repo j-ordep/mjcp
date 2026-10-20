@@ -1,3 +1,5 @@
+import { Text } from "../../components/ui/text";
+import { Input } from "../../components/ui/input";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Plus, Search } from "lucide-react-native";
@@ -8,7 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Text, TextInput } from "react-native-paper";
+
 import { SafeAreaView } from "react-native-safe-area-context";
 import EventCard from "../../components/card/EventCard";
 import HeaderSecondary from "../../components/Header/HeaderSecondary";
@@ -202,29 +204,16 @@ export default function EventsScreen() {
       />
 
       <View className="px-5">
-        <View
-          className="flex-row items-center rounded-xl px-3 mb-4"
-          style={{
-            backgroundColor: "#f9fafb",
-            borderWidth: 1,
-            borderColor: "#e5e7eb",
-          }}
-        >
-          <Search size={18} color="#888" />
-          <TextInput
+          <Input
             placeholder="Buscar evento..."
             value={search}
             onChangeText={setSearch}
-            style={{
-              flex: 1,
-              backgroundColor: "transparent",
-              fontSize: 15,
-              height: 44,
-            }}
-            underlineColor="transparent"
-            activeUnderlineColor="transparent"
+            accessibilityLabel="Buscar evento"
+            left={<Search size={18} color="#6b7280" />}
+            fieldClassName="bg-muted border-border"
+            containerStyle={{ marginBottom: 16 }}
+            returnKeyType="search"
           />
-        </View>
 
         <View className="flex-row gap-2 mb-4">
           {filters.map((filter) => (

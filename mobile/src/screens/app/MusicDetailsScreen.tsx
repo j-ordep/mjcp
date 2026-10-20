@@ -1,7 +1,8 @@
+import { Text } from "../../components/ui/text";
 import { useEffect, useState } from "react";
 import { Alert, Linking, ScrollView, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { Chip, Text } from "react-native-paper";
+import { Chip } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import HeaderSecondary from "../../components/Header/HeaderSecondary";
 import DefaultButton from "../../components/button/DefaultButton";

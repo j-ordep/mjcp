@@ -1,7 +1,8 @@
+import { Text } from "../ui/text";
 import { useEffect, useMemo, useState } from "react";
 import { Modal, TouchableOpacity, View } from "react-native";
 import { Calendar } from "react-native-calendars";
-import { Text } from "react-native-paper";
+
 
 type Mode = "single" | "range";
 

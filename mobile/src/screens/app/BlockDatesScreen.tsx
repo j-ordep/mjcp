@@ -1,9 +1,10 @@
+import { Text } from "../../components/ui/text";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Alert, View } from "react-native";
 import { Calendar } from "react-native-calendars";
-import { Divider, Text } from "react-native-paper";
+import { Separator as Divider } from "../../components/ui/separator";
 import { SafeAreaView } from "react-native-safe-area-context";
 import HeaderSecondary from "../../components/Header/HeaderSecondary";
 import DefaultButton from "../../components/button/DefaultButton";

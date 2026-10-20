@@ -1,6 +1,7 @@
 import { CalendarDays } from "lucide-react-native";
 import { TouchableOpacity, View } from "react-native";
-import { Text } from "react-native-paper";
+import { Text } from "../ui/text";
+import { SelectField } from "../ui/select-field";
 import type { UserMinistry } from "../../services/ministryService";
 import type { Event, Ministry } from "../../types/models";
 import DefaultButton from "../button/DefaultButton";
@@ -129,35 +130,25 @@ export default function ScheduleContextSection({
         )}
       </View>
 
-      <Text style={{ fontWeight: "600", marginBottom: 10 }}>Ministerio</Text>
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 18 }}>
-        {isLoadingMinistries ? (
+      {isLoadingMinistries ? (
+        <View style={{ marginBottom: 18 }}>
+          <Text style={{ fontWeight: "600", marginBottom: 10 }}>Ministerio</Text>
           <Text style={{ color: "#888" }}>Carregando ministerios...</Text>
-        ) : ministries.length === 0 ? (
+        </View>
+      ) : ministries.length === 0 ? (
+        <View style={{ marginBottom: 18 }}>
+          <Text style={{ fontWeight: "600", marginBottom: 10 }}>Ministerio</Text>
           <Text style={{ color: "#888" }}>Nenhum ministerio disponivel para criacao.</Text>
-        ) : (
-          ministries.map((ministry) => {
-            const selected = selectedMinistryId === ministry.id;
-            return (
-              <TouchableOpacity
-                key={ministry.id}
-                onPress={() => onSelectMinistry(ministry.id)}
-                activeOpacity={0.85}
-                style={{
-                  paddingHorizontal: 14,
-                  paddingVertical: 10,
-                  borderRadius: 999,
-                  backgroundColor: selected ? "#111827" : "#f3f4f6",
-                }}
-              >
-                <Text style={{ color: selected ? "#fff" : "#111827", fontWeight: "600" }}>
-                  {ministry.name}
-                </Text>
-              </TouchableOpacity>
-            );
-          })
-        )}
-      </View>
+        </View>
+      ) : (
+        <SelectField
+          label="Ministerio"
+          value={selectedMinistryId}
+          options={ministries.map((ministry) => ({ value: ministry.id, label: ministry.name }))}
+          onValueChange={onSelectMinistry}
+          containerStyle={{ marginBottom: 18 }}
+        />
+      )}
 
       {selectedEvent || selectedMinistry ? (
         <ScheduleSummaryCard

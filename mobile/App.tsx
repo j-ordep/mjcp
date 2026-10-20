@@ -1,4 +1,6 @@
-import { Text, View } from "react-native";
+import { View } from "react-native";
+import { Text } from "./src/components/ui/text";
+import { PortalHost } from "@rn-primitives/portal";
 import { PaperProvider } from "react-native-paper";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import "./global.css";
@@ -26,6 +28,7 @@ export default function App() {
             </Text>
           </View>
         )}
+        <PortalHost />
       </PaperProvider>
     </SafeAreaProvider>
   );
