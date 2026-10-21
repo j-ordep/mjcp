@@ -1,3 +1,4 @@
+import { colors } from "../../theme/colors";
 import { Text } from "../ui/text";
 import { TouchableOpacity, View } from "react-native";
 
@@ -22,7 +23,7 @@ export default function NextEventSetlistCard({
   return (
     <View
       style={{
-        backgroundColor: "#000",
+        backgroundColor: colors.primary,
         borderRadius: 20,
         padding: 18,
         marginBottom: 20,
@@ -36,11 +37,11 @@ export default function NextEventSetlistCard({
           marginBottom: 8,
         }}
       >
-        <Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>
+        <Text style={{ color: colors.primaryForeground, fontWeight: "700", fontSize: 15 }}>
           Próximo repertório
         </Text>
         {event ? (
-          <Text style={{ color: "#9ca3af", fontSize: 12 }}>
+          <Text style={{ color: colors.inverseMuted, fontSize: 12 }}>
             {songs.length} música(s)
           </Text>
         ) : null}
@@ -50,7 +51,7 @@ export default function NextEventSetlistCard({
         <>
           <Text
             style={{
-              color: "#fff",
+              color: colors.primaryForeground,
               fontWeight: "800",
               fontSize: 18,
               marginBottom: 4,
@@ -58,7 +59,7 @@ export default function NextEventSetlistCard({
           >
             {event.title}
           </Text>
-          <Text style={{ color: "#d1d5db", marginBottom: 12 }}>
+          <Text style={{ color: colors.inverseMuted, marginBottom: 12 }}>
             {formatDateTime(event.start_at)}
           </Text>
 
@@ -73,7 +74,7 @@ export default function NextEventSetlistCard({
                   alignItems: "center",
                   paddingVertical: 8,
                   borderTopWidth: 1,
-                  borderTopColor: "#1f2937",
+                  borderTopColor: colors.primaryBorder,
                 }}
               >
                 <View
@@ -81,23 +82,23 @@ export default function NextEventSetlistCard({
                     width: 28,
                     height: 28,
                     borderRadius: 14,
-                    backgroundColor: "#111827",
+                    backgroundColor: colors.primaryPressed,
                     alignItems: "center",
                     justifyContent: "center",
                     marginRight: 10,
                   }}
                 >
                   <Text
-                    style={{ color: "#fff", fontSize: 12, fontWeight: "700" }}
+                    style={{ color: colors.primaryForeground, fontSize: 12, fontWeight: "700" }}
                   >
                     {item.position}
                   </Text>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: "#fff", fontWeight: "600" }}>
+                  <Text style={{ color: colors.primaryForeground, fontWeight: "600" }}>
                     {item.song.title}
                   </Text>
-                  <Text style={{ color: "#9ca3af", fontSize: 12 }}>
+                  <Text style={{ color: colors.inverseMuted, fontSize: 12 }}>
                     {item.song.artist || "Sem artista"} · Tom{" "}
                     {item.song_key || item.song.key || "-"}
                   </Text>
@@ -105,7 +106,7 @@ export default function NextEventSetlistCard({
               </TouchableOpacity>
             ))
           ) : (
-            <Text style={{ color: "#d1d5db", lineHeight: 20 }}>
+            <Text style={{ color: colors.inverseMuted, lineHeight: 20 }}>
               Nenhuma música definida para o próximo evento ainda.
             </Text>
           )}
@@ -115,7 +116,7 @@ export default function NextEventSetlistCard({
           </View>
         </>
       ) : (
-        <Text style={{ color: "#d1d5db", lineHeight: 20 }}>
+        <Text style={{ color: colors.inverseMuted, lineHeight: 20 }}>
           Ainda não há evento futuro para montar setlist.
         </Text>
       )}

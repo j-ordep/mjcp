@@ -1,5 +1,6 @@
+import { colors } from "../../theme/colors";
 import { Text } from "../ui/text";
-import { View } from "react-native";
+import { Card } from "../ui/card";
 
 
 interface ScheduleSummaryCardProps {
@@ -20,33 +21,24 @@ export default function ScheduleSummaryCard({
   roleLabel,
 }: ScheduleSummaryCardProps) {
   return (
-    <View
-      style={{
-        backgroundColor: "#f9fafb",
-        borderRadius: 18,
-        padding: 14,
-        marginBottom: 18,
-        borderWidth: 1,
-        borderColor: "#eef2f7",
-      }}
-    >
+    <Card className="mb-[18px] rounded-[18px] p-3.5">
       <Text style={{ fontWeight: "700", marginBottom: 10 }}>Resumo rapido</Text>
       {eventTitle ? (
-        <Text style={{ color: "#374151", marginBottom: 4 }}>Evento: {eventTitle}</Text>
+        <Text style={{ color: colors.mutedForeground, marginBottom: 4 }}>Evento: {eventTitle}</Text>
       ) : null}
       {eventDate ? (
-        <Text style={{ color: "#6b7280", marginBottom: 4 }}>Data: {eventDate}</Text>
+        <Text style={{ color: colors.mutedForeground, marginBottom: 4 }}>Data: {eventDate}</Text>
       ) : null}
       {eventLocation ? (
-        <Text style={{ color: "#6b7280", marginBottom: 4 }}>Local: {eventLocation}</Text>
+        <Text style={{ color: colors.mutedForeground, marginBottom: 4 }}>Local: {eventLocation}</Text>
       ) : null}
       {ministryName ? (
-        <Text style={{ color: "#374151" }}>
+        <Text style={{ color: colors.mutedForeground }}>
           Ministerio: {ministryName}
         </Text>
       ) : null}
-      {roleLabel ? <Text style={{ color: "#374151", marginTop: 6 }}>Função: {roleLabel}</Text> : null}
-      {participationLabel ? <Text style={{ color: "#374151", marginTop: 6 }}>Participação: {participationLabel}</Text> : null}
-    </View>
+      {roleLabel ? <Text style={{ color: colors.mutedForeground, marginTop: 6 }}>Função: {roleLabel}</Text> : null}
+      {participationLabel ? <Text style={{ color: colors.mutedForeground, marginTop: 6 }}>Participação: {participationLabel}</Text> : null}
+    </Card>
   );
 }

@@ -1,3 +1,4 @@
+import { colors } from "../../theme/colors";
 import { Text } from "../ui/text";
 import { Check, SlidersHorizontal, X } from "lucide-react-native";
 import { useState } from "react";
@@ -31,12 +32,12 @@ export default function ScheduleMinistryFilter({
         style={{
           width: 48, height: 48, alignItems: "center", justifyContent: "center",
           borderRadius: 12, borderWidth: 1,
-          borderColor: selected ? "#285b43" : "#e5eae4", backgroundColor: "#fff",
+          borderColor: selected ? colors.primary : colors.border, backgroundColor: colors.surface,
         }}
       >
-        <SlidersHorizontal size={19} color="#52675a" />
+        <SlidersHorizontal size={19} color={colors.mutedForeground} />
         {selected ? <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
-          style={{ position: "absolute", right: 8, top: 8, width: 6, height: 6, borderRadius: 3, backgroundColor: "#285b43" }} /> : null}
+          style={{ position: "absolute", right: 8, top: 8, width: 6, height: 6, borderRadius: 3, backgroundColor: colors.primary }} /> : null}
       </TouchableOpacity>
       <Modal
         visible={isOpen}
@@ -44,7 +45,7 @@ export default function ScheduleMinistryFilter({
         animationType="slide"
         onRequestClose={() => setIsOpen(false)}
       >
-        <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(15,23,42,0.45)" }}>
+        <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: colors.overlay }}>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Fechar filtros"
@@ -55,19 +56,19 @@ export default function ScheduleMinistryFilter({
             edges={["bottom"]}
             accessibilityViewIsModal
             style={{
-              maxHeight: "70%", backgroundColor: "#fff",
+              maxHeight: "70%", backgroundColor: colors.surface,
               borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingTop: 16,
             }}
           >
             <View style={{ paddingHorizontal: 20, paddingBottom: 12, flexDirection: "row", alignItems: "center", gap: 12 }}>
-              <Text style={{ flex: 1, fontSize: 20, fontWeight: "700", color: "#111827" }}>Filtrar ministério</Text>
+              <Text style={{ flex: 1, fontSize: 20, fontWeight: "700", color: colors.foreground }}>Filtrar ministério</Text>
               <TouchableOpacity
                 accessibilityRole="button"
                 accessibilityLabel="Fechar filtros"
                 onPress={() => setIsOpen(false)}
-                style={{ width: 44, height: 44, alignItems: "center", justifyContent: "center", borderRadius: 22, backgroundColor: "#f3f4f6" }}
+                style={{ width: 44, height: 44, alignItems: "center", justifyContent: "center", borderRadius: 22, backgroundColor: colors.muted }}
               >
-                <X size={20} color="#111827" />
+                <X size={20} color={colors.foreground} />
               </TouchableOpacity>
             </View>
             <ScrollView style={{ flexGrow: 0 }} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 16, gap: 8 }}>
@@ -82,12 +83,12 @@ export default function ScheduleMinistryFilter({
                     onPress={() => { onSelect(ministry.id); setIsOpen(false); }}
                     style={{
                       minHeight: 52, padding: 14, borderRadius: 12,
-                      backgroundColor: isSelected ? "#f3f4f6" : "#fff",
+                      backgroundColor: isSelected ? colors.muted : colors.surface,
                       flexDirection: "row", alignItems: "center", gap: 12,
                     }}
                   >
-                    <Text style={{ flex: 1, fontSize: 16, color: "#111827", fontWeight: isSelected ? "600" : "400" }}>{ministry.name}</Text>
-                    {isSelected ? <Check size={20} color="#111827" /> : null}
+                    <Text style={{ flex: 1, fontSize: 16, color: colors.foreground, fontWeight: isSelected ? "600" : "400" }}>{ministry.name}</Text>
+                    {isSelected ? <Check size={20} color={colors.foreground} /> : null}
                   </TouchableOpacity>
                 );
               })}

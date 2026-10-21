@@ -1,3 +1,4 @@
+import { colors } from "../../theme/colors";
 import { Text } from "../ui/text";
 import { ArrowLeftRight, CalendarOff } from "lucide-react-native";
 import { TouchableOpacity, View } from "react-native";
@@ -21,7 +22,7 @@ export default function ScheduleActions({
           accessibilityLabel="Trocas"
           style={secondaryActionStyle}
         >
-          <ArrowLeftRight size={18} color="#52675a" />
+          <ArrowLeftRight size={18} color={colors.mutedForeground} />
           <Text style={secondaryLabelStyle}>Trocas</Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -30,7 +31,7 @@ export default function ScheduleActions({
           accessibilityLabel="Indisponibilidades"
           style={secondaryActionStyle}
         >
-          <CalendarOff size={18} color="#52675a" />
+          <CalendarOff size={18} color={colors.mutedForeground} />
           <Text style={secondaryLabelStyle}>Indisponibilidades</Text>
         </TouchableOpacity>
     </View>
@@ -45,8 +46,8 @@ const secondaryActionStyle: ViewStyle = {
   flexDirection: "row",
   borderRadius: 12,
   borderWidth: 1,
-  borderColor: "#e7ece5",
-  backgroundColor: "#f5f7f4",
+  borderColor: colors.border,
+  backgroundColor: colors.muted,
   alignItems: "center",
   justifyContent: "center",
 };
@@ -56,5 +57,5 @@ const secondaryLabelStyle: TextStyle = {
   flexShrink: 1,
   fontWeight: "600",
   textAlign: "center",
-  color: "#294531",
+  color: colors.foreground,
 };

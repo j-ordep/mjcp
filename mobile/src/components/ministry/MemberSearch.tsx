@@ -1,3 +1,4 @@
+import { colors } from "../../theme/colors";
 import { Text } from "../ui/text";
 import { Input } from "../ui/input";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -124,7 +125,7 @@ export default function MemberSearch({
           {isSearchingUsers ? (
             <Text>Buscando usuarios...</Text>
           ) : searchError ? (
-            <Text style={{ color: "#991b1b" }}>{searchError}</Text>
+            <Text style={{ color: colors.destructive }}>{searchError}</Text>
           ) : searchResults.length === 0 ? (
             <Text>
               {search.trim()

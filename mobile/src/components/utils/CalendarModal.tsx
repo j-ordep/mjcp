@@ -1,3 +1,4 @@
+import { colors } from "../../theme/colors";
 import { Text } from "../ui/text";
 import { useEffect, useMemo, useState } from "react";
 import { Modal, TouchableOpacity, View } from "react-native";
@@ -48,8 +49,8 @@ export default function CalendarModal({
       return {
         [selectedDate]: {
           selected: true,
-          selectedColor: "#111111",
-          selectedTextColor: "#ffffff",
+          selectedColor: colors.primary,
+          selectedTextColor: colors.primaryForeground,
         },
       };
     }
@@ -68,8 +69,8 @@ export default function CalendarModal({
         marks[key] = {
           startingDay: isStart,
           endingDay: isEnd,
-          color: "#111111",
-          textColor: "#ffffff",
+          color: colors.primary,
+          textColor: colors.primaryForeground,
         };
         cursor.setDate(cursor.getDate() + 1);
       }
@@ -129,8 +130,8 @@ export default function CalendarModal({
       animationType="fade"
       onRequestClose={onClose}
     >
-      <View className="flex-1 justify-center bg-black/70 px-5">
-        <View className="bg-white rounded-3xl p-5">
+      <View className="flex-1 justify-center px-5" style={{ backgroundColor: colors.overlay }}>
+        <View className="bg-card rounded-2xl border border-border p-5">
           <View className="flex-row items-center mb-3">
             <Text style={{ fontWeight: "bold", fontSize: 16, flex: 1 }}>
               Selecionar data
@@ -144,10 +145,13 @@ export default function CalendarModal({
             markedDates={markedDates}
             onDayPress={onDayPress}
             theme={{
-              todayTextColor: "#111111",
-              textSectionTitleColor: "#9ca3af",
-              monthTextColor: "#111111",
-              arrowColor: "#111111",
+              calendarBackground: colors.surface,
+              dayTextColor: colors.foreground,
+              selectedDayTextColor: colors.primaryForeground,
+              todayTextColor: colors.primary,
+              textSectionTitleColor: colors.mutedForeground,
+              monthTextColor: colors.foreground,
+              arrowColor: colors.primary,
             }}
           />
 
@@ -156,7 +160,7 @@ export default function CalendarModal({
               {/* Outline */}
               <TouchableOpacity
                 onPress={onClose}
-                className="rounded-2xl border-2 py-3.5 justify-center items-center w-full bg-white border-gray-300"
+                className="min-h-12 rounded-xl border py-3.5 justify-center items-center w-full bg-card border-input"
               >
                 <Text style={{ fontWeight: "600", fontSize: 16 }}>
                   Cancelar
@@ -167,17 +171,17 @@ export default function CalendarModal({
               <TouchableOpacity
                 onPress={canConfirm ? handleConfirm : undefined}
                 disabled={!canConfirm}
-                className={`rounded-2xl border-2 py-3.5 justify-center items-center w-full ${
+                className={`min-h-12 rounded-xl border py-3.5 justify-center items-center w-full ${
                   canConfirm
-                    ? "bg-black border-black"
-                    : "bg-gray-200 border-gray-300"
+                    ? "bg-primary border-primary"
+                    : "bg-disabled border-input"
                 }`}
               >
                 <Text
                   style={{
                     fontWeight: "600",
                     fontSize: 16,
-                    color: canConfirm ? "#ffffff" : "#9ca3af",
+                    color: canConfirm ? colors.primaryForeground : colors.mutedForeground,
                   }}
                 >
                   Confirmar

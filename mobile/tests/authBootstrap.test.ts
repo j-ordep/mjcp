@@ -39,6 +39,8 @@ function mountNavigator(options: {
     "@react-navigation/native": { NavigationContainer: () => null },
     "@react-navigation/native-stack": { createNativeStackNavigator: () => ({}) },
     "react-native": { View: () => null, ActivityIndicator: () => null },
+    // Visual provider configuration must not load native Paper in this Node harness.
+    theme: { navigationTheme: {} },
     useAuthStore: { useAuthStore: authStore },
     useEventStore: { useEventStore: { getState: () => ({ clearEvents: () => resets.events++ }) } },
     useMinistryStore: { useMinistryStore: { getState: () => ({ clearMinistries: () => resets.ministries++ }) } },

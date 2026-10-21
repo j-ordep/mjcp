@@ -1,3 +1,5 @@
+import { colors } from "../../theme/colors";
+import { Badge } from "../../components/ui/badge";
 import { SelectField } from "../../components/ui/select-field";
 import { Text } from "../../components/ui/text";
 import { Input } from "../../components/ui/input";
@@ -32,50 +34,9 @@ const CATEGORY_LABELS: Record<SongCategory, string> = {
 function SongMeta({ song }: { song: Song }) {
   return (
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 6 }}>
-      {song.category ? (
-        <View
-          style={{
-            borderRadius: 999,
-            borderWidth: 1,
-            borderColor: "#e5e7eb",
-            paddingHorizontal: 10,
-            paddingVertical: 4,
-            backgroundColor: "#f9fafb",
-          }}
-        >
-          <Text style={{ fontSize: 12, color: "#4b5563" }}>
-            {CATEGORY_LABELS[song.category]}
-          </Text>
-        </View>
-      ) : null}
-      {song.key ? (
-        <View
-          style={{
-            borderRadius: 999,
-            borderWidth: 1,
-            borderColor: "#e5e7eb",
-            paddingHorizontal: 10,
-            paddingVertical: 4,
-            backgroundColor: "#f9fafb",
-          }}
-        >
-          <Text style={{ fontSize: 12, color: "#4b5563" }}>Tom {song.key}</Text>
-        </View>
-      ) : null}
-      {typeof song.bpm === "number" ? (
-        <View
-          style={{
-            borderRadius: 999,
-            borderWidth: 1,
-            borderColor: "#e5e7eb",
-            paddingHorizontal: 10,
-            paddingVertical: 4,
-            backgroundColor: "#f9fafb",
-          }}
-        >
-          <Text style={{ fontSize: 12, color: "#4b5563" }}>{song.bpm} BPM</Text>
-        </View>
-      ) : null}
+      {song.category ? <Badge>{CATEGORY_LABELS[song.category]}</Badge> : null}
+      {song.key ? <Badge variant="outline">Tom {song.key}</Badge> : null}
+      {typeof song.bpm === "number" ? <Badge variant="outline">{song.bpm} BPM</Badge> : null}
     </View>
   );
 }
@@ -149,10 +110,10 @@ export default function MusicScreen() {
   const openSongDetails = (songId: string) => navigation.navigate("MusicDetails", { songId });
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={["left", "right"]}>
+    <SafeAreaView className="flex-1 bg-background" edges={["left", "right"]}>
       {isLoading ? (
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-          <ActivityIndicator size="large" color="#000" />
+          <ActivityIndicator size="large" color={colors.foreground} />
         </View>
       ) : (
         <ScrollView
@@ -170,7 +131,7 @@ export default function MusicScreen() {
               value={search}
               onChangeText={setSearch}
               accessibilityLabel="Buscar música ou artista"
-              left={<Search size={18} color="#6b7280" />}
+              left={<Search size={18} color={colors.mutedForeground} />}
               fieldClassName="bg-muted border-border"
               containerStyle={{ marginBottom: 16 }}
               returnKeyType="search"
@@ -188,13 +149,13 @@ export default function MusicScreen() {
               style={{
                 borderRadius: 16,
                 borderWidth: 1,
-                borderColor: "#fecaca",
-                backgroundColor: "#fef2f2",
+                borderColor: colors.destructiveBorder,
+                backgroundColor: colors.destructiveMuted,
                 padding: 16,
                 marginBottom: 16,
               }}
             >
-              <Text style={{ color: "#991b1b", lineHeight: 20 }}>{screenError}</Text>
+              <Text style={{ color: colors.destructive, lineHeight: 20 }}>{screenError}</Text>
             </View>
           ) : null}
 
@@ -211,7 +172,7 @@ export default function MusicScreen() {
 
           {filteredSongs.length === 0 ? (
             <View style={{ alignItems: "center", justifyContent: "center", paddingVertical: 32 }}>
-              <Text style={{ color: "#6b7280", fontSize: 15 }}>
+              <Text style={{ color: colors.mutedForeground, fontSize: 15 }}>
                 Nenhuma música encontrada.
               </Text>
             </View>
@@ -224,8 +185,8 @@ export default function MusicScreen() {
                   activeOpacity={0.8}
                   style={{
                     borderWidth: 1,
-                    borderColor: "#f3f4f6",
-                    backgroundColor: "#fff",
+                    borderColor: colors.border,
+                    backgroundColor: colors.surface,
                     borderRadius: 18,
                     padding: 14,
                     marginBottom: 12,
@@ -242,17 +203,17 @@ export default function MusicScreen() {
                         width: 44,
                         height: 44,
                         borderRadius: 12,
-                        backgroundColor: "#f3f4f6",
+                        backgroundColor: colors.muted,
                         alignItems: "center",
                         justifyContent: "center",
                         marginRight: 12,
                       }}
                     >
-                      <Music size={20} color="#666" />
+                      <Music size={20} color={colors.mutedForeground} />
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={{ fontWeight: "700", fontSize: 15 }}>{song.title}</Text>
-                      <Text style={{ color: "#6b7280", fontSize: 13 }}>
+                      <Text style={{ color: colors.mutedForeground, fontSize: 13 }}>
                         {song.artist || "Sem artista"}
                       </Text>
                     </View>

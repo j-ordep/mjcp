@@ -3,6 +3,7 @@ import { TouchableOpacity, View } from "react-native";
 import { Avatar, IconButton } from "react-native-paper";
 import { Bell } from "lucide-react-native";
 import { getProfileInitials } from "../../utils/profileAvatar";
+import { colors } from "../../theme/colors";
 
 interface HeaderPrimaryProps {
   title: string;
@@ -20,9 +21,9 @@ export default function HeaderPrimary(props: HeaderPrimaryProps) {
 
   return (
     <View className="flex-row items-center justify-between mb-3">
-      <View>
+      <View style={{ flex: 1, paddingRight: 12 }}>
         {props.subtitle && (
-          <Text style={{ color: "#888", fontSize: 13, marginBottom: 2 }}>
+          <Text style={{ color: colors.mutedForeground, fontSize: 13, marginBottom: 2 }}>
             {props.subtitle}
           </Text>
         )}
@@ -34,7 +35,8 @@ export default function HeaderPrimary(props: HeaderPrimaryProps) {
       <View className="flex-row items-center gap-2">
         <View style={{ position: "relative" }}>
           <IconButton
-            icon={() => <Bell size={23} color="#222" />}
+            icon={() => <Bell size={23} color={colors.foreground} />}
+            accessibilityLabel="Abrir notificações"
             size={24}
             onPress={props.onNotificationPress}
           />
@@ -47,31 +49,31 @@ export default function HeaderPrimary(props: HeaderPrimaryProps) {
                 minWidth: 18,
                 height: 18,
                 borderRadius: 9,
-                backgroundColor: "#1d4ed8",
+                backgroundColor: colors.primary,
                 paddingHorizontal: 4,
                 alignItems: "center",
                 justifyContent: "center",
               }}
             >
-              <Text style={{ color: "#fff", fontSize: 10, fontWeight: "700" }}>
+              <Text style={{ color: colors.primaryForeground, fontSize: 10, fontWeight: "700" }}>
                 {unreadBadgeLabel}
               </Text>
             </View>
           ) : null}
         </View>
-        <TouchableOpacity onPress={props.onAvatarPress}>
+        <TouchableOpacity onPress={props.onAvatarPress} accessibilityRole="button" accessibilityLabel="Abrir perfil" style={{ minWidth: 44, minHeight: 44, alignItems: "center", justifyContent: "center" }}>
           {props.avatarUri ? (
             <Avatar.Image
               size={32}
               source={{ uri: props.avatarUri }}
-              style={{ backgroundColor: "#e5e7eb" }}
+              style={{ backgroundColor: colors.secondary }}
             />
           ) : (
             <Avatar.Text
               size={32}
               label={getProfileInitials(props.avatarLabel)}
-              color="#111111"
-              style={{ backgroundColor: "#e5e7eb" }}
+              color={colors.secondaryForeground}
+              style={{ backgroundColor: colors.secondary }}
             />
           )}
         </TouchableOpacity>

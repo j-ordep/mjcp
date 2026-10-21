@@ -4,6 +4,7 @@ import { TextInput, View, type StyleProp, type ViewStyle } from "react-native";
 import { cn } from "../../lib/utils";
 import { Text } from "./text";
 import { Label } from "./label";
+import { colors } from "../../theme/colors";
 export type InputProps = React.ComponentProps<typeof TextInput> &
   React.RefAttributes<TextInput> & {
     label?: string;
@@ -36,7 +37,7 @@ function Input({
       {label ? <Label nativeID={`${fieldId}-label`}>{label}</Label> : null}
       <View
         className={cn(
-          "flex-row items-center overflow-hidden rounded-xl border border-input bg-background",
+          "flex-row items-center overflow-hidden rounded-xl border border-input bg-card",
           fieldClassName,
           error
             ? "border-destructive"
@@ -54,9 +55,9 @@ function Input({
           aria-invalid={Boolean(error)}
           underlineColorAndroid={props.underlineColorAndroid ?? "transparent"}
           textAlignVertical={props.textAlignVertical ?? (props.multiline ? "top" : "center")}
-          placeholderTextColor={props.placeholderTextColor ?? "#737373"}
+          placeholderTextColor={props.placeholderTextColor ?? colors.mutedForeground}
           className={cn(
-            "min-w-0 flex-1 px-3 text-[1rem] text-foreground",
+            "font-sans min-w-0 flex-1 px-3 text-[1rem] text-foreground",
             props.multiline ? "min-h-12 py-3" : "h-12 py-0",
             className,
           )}

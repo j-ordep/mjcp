@@ -1,3 +1,4 @@
+import { colors } from "../../theme/colors";
 import { Separator } from "../ui/separator";
 import { Text } from "../ui/text";
 import { Edit3, LogOut, X } from "lucide-react-native";
@@ -27,7 +28,7 @@ export default function BottomSheetMenu({
         }}
         className="flex-row items-center py-4"
       >
-        <Edit3 size={20} color="#222" style={{ marginRight: 16 }} />
+        <Edit3 size={20} color={colors.foreground} style={{ marginRight: 16 }} />
         <Text style={{ fontSize: 16 }}>Editar Perfil</Text>
       </TouchableOpacity>
 
@@ -40,15 +41,15 @@ export default function BottomSheetMenu({
         }}
         className="flex-row items-center py-3"
       >
-        <LogOut size={20} color="#d32f2f" style={{ marginRight: 16 }} />
-        <Text style={{ fontSize: 16, color: "#d32f2f" }}>Sair</Text>
+        <LogOut size={20} color={colors.destructive} style={{ marginRight: 16 }} />
+        <Text style={{ fontSize: 16, color: colors.destructive }}>Sair</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
         onPress={onClose}
-        className="flex-row items-center justify-center bg-gray-100 rounded-xl mt-5 py-4"
+        className="flex-row items-center justify-center bg-muted rounded-xl mt-5 py-4"
       >
-        <X size={20} color="#222" style={{ marginRight: 8 }} />
+        <X size={20} color={colors.foreground} style={{ marginRight: 8 }} />
         <Text style={{ fontSize: 16 }}>Cancelar</Text>
       </TouchableOpacity>
     </ModalBottomSheet>

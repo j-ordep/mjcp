@@ -1,6 +1,7 @@
 import { Text } from "../ui/text";
 import { ChevronLeft } from "lucide-react-native"
 import { TouchableOpacity, View } from "react-native"
+import { colors } from "../../theme/colors";
 
 
 interface HeaderSecondaryProps {
@@ -12,9 +13,9 @@ interface HeaderSecondaryProps {
 
 export default function HeaderSecondary(props: HeaderSecondaryProps) {
   return (
-    <View className="flex-row items-center px-5 pt-5 pb-3">
-      <TouchableOpacity onPress={props.onBack}>
-        <ChevronLeft size={24} color="#000" />
+    <View className="flex-row items-center gap-2 bg-card px-5 pt-3 pb-3">
+      <TouchableOpacity onPress={props.onBack} accessibilityRole="button" accessibilityLabel="Voltar" style={{ width: 44, height: 44, alignItems: "center", justifyContent: "center" }}>
+        <ChevronLeft size={24} color={colors.foreground} />
       </TouchableOpacity>
       
       <Text style={{
@@ -30,10 +31,10 @@ export default function HeaderSecondary(props: HeaderSecondaryProps) {
         <TouchableOpacity 
           onPress={props.onRightPress}
           style={{
-            width: 40,
-            height: 40,
-            borderRadius: 20,
-            backgroundColor: '#f3f4f6',
+            width: 44,
+            height: 44,
+            borderRadius: 12,
+            backgroundColor: colors.secondary,
             alignItems: 'center',
             justifyContent: 'center'
           }}
@@ -41,7 +42,7 @@ export default function HeaderSecondary(props: HeaderSecondaryProps) {
           {props.rightIcon}
         </TouchableOpacity>
       ) : (
-        <View style={{ width: 40 }} /> // Placeholder for balance
+        <View style={{ width: 44 }} />
       )}
     </View>
   );

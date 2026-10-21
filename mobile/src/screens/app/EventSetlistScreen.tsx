@@ -1,3 +1,4 @@
+import { colors } from "../../theme/colors";
 import { Text } from "../../components/ui/text";
 import { Input } from "../../components/ui/input";
 import { useFocusEffect, useNavigation, usePreventRemove, useRoute, type RouteProp } from "@react-navigation/native";
@@ -182,7 +183,7 @@ export default function EventSetlistScreen() {
   const selectedIds = new Set(draft.map((item) => item.song_id));
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={["top", "left", "right"]}>
+    <SafeAreaView className="flex-1 bg-background" edges={["top", "left", "right"]}>
       <HeaderSecondary title="Repertório" onBack={() => navigation.goBack()} />
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }} refreshControl={
         <RefreshControl refreshing={isRefreshing} onRefresh={() => !saving.current && void loadScreen(true)} />
@@ -192,18 +193,18 @@ export default function EventSetlistScreen() {
             {event ? <View style={{ marginBottom: 18 }}>
               <Text style={{ fontWeight: "700", fontSize: 20 }}>{event.title}</Text>
               <Text>{formatDateTime(event.start_at)}</Text>
-              <Text style={{ color: "#6b7280", marginTop: 8 }}>Este repertório é compartilhado por todas as escalas deste evento.</Text>
-              {!canEdit ? <Text style={{ color: "#6b7280", marginTop: 8 }}>Consulta do repertório. A edição exige gestão de eventos e é bloqueada no horário de início.</Text> : null}
+              <Text style={{ color: colors.mutedForeground, marginTop: 8 }}>Este repertório é compartilhado por todas as escalas deste evento.</Text>
+              {!canEdit ? <Text style={{ color: colors.mutedForeground, marginTop: 8 }}>Consulta do repertório. A edição exige gestão de eventos e é bloqueada no horário de início.</Text> : null}
             </View> : null}
             {error ? <View style={{ marginBottom: 16 }}>
-              <Text style={{ color: "#991b1b" }}>{error}</Text>
+              <Text style={{ color: colors.destructive }}>{error}</Text>
               <TouchableOpacity onPress={() => !saving.current && void loadScreen(true)} style={{ paddingVertical: 12 }}><Text>Tentar novamente</Text></TouchableOpacity>
             </View> : null}
             {event && hasSetlist && !isEditing ? <>
               {persisted.length === 0 ? <Text style={{ marginBottom: 16 }}>Nenhuma música definida.</Text> : persisted.map((item) => (
                 <TouchableOpacity key={item.id} onPress={() => navigation.navigate("MusicDetails", { songId: item.song_id })} style={{ paddingVertical: 12 }}>
                   <Text style={{ fontWeight: "700" }}>{item.position}. {item.song.title}</Text>
-                  <Text style={{ color: "#6b7280" }}>Tom {item.song_key ?? item.song.key ?? "-"}</Text>
+                  <Text style={{ color: colors.mutedForeground }}>Tom {item.song_key ?? item.song.key ?? "-"}</Text>
                 </TouchableOpacity>
               ))}
               {canEdit ? <DefaultButton onPress={beginEditing}>Editar repertório</DefaultButton> : null}

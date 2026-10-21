@@ -1,3 +1,4 @@
+import { colors } from "../../theme/colors";
 import { Text } from "../ui/text";
 import { Textarea } from "../ui/textarea";
 import { X } from "lucide-react-native";
@@ -59,7 +60,7 @@ export default function RequestSwapModal({
           <View
             style={{
               flex: 1,
-              backgroundColor: "rgba(15,23,42,0.45)",
+              backgroundColor: colors.overlay,
               justifyContent: "center",
               alignItems: "center",
               paddingHorizontal: 16,
@@ -82,10 +83,10 @@ export default function RequestSwapModal({
                 width: "100%",
                 maxWidth: 440,
                 maxHeight: "86%",
-                backgroundColor: "#fff",
+                backgroundColor: colors.surface,
                 borderRadius: 24,
                 borderWidth: 1,
-                borderColor: "#e5e7eb",
+                borderColor: colors.border,
                 overflow: "hidden",
               }}
             >
@@ -95,7 +96,7 @@ export default function RequestSwapModal({
                   paddingTop: 16,
                   paddingBottom: 12,
                   borderBottomWidth: 1,
-                  borderBottomColor: "#eef2f7",
+                  borderBottomColor: colors.border,
                   flexDirection: "row",
                   justifyContent: "space-between",
                   alignItems: "flex-start",
@@ -105,7 +106,7 @@ export default function RequestSwapModal({
                   <Text style={{ fontWeight: "700", fontSize: 20, marginBottom: 4 }}>
                     Solicitar troca
                   </Text>
-                  <Text style={{ color: "#6b7280" }}>
+                  <Text style={{ color: colors.mutedForeground }}>
                     {title ?? "Escolha a funcao e registre o motivo da troca."}
                   </Text>
                 </View>
@@ -116,12 +117,12 @@ export default function RequestSwapModal({
                     width: 40,
                     height: 40,
                     borderRadius: 20,
-                    backgroundColor: "#f3f4f6",
+                    backgroundColor: colors.muted,
                     alignItems: "center",
                     justifyContent: "center",
                   }}
                 >
-                  <X size={18} color="#111827" />
+                  <X size={18} color={colors.foreground} />
                 </TouchableOpacity>
               </View>
 
@@ -149,10 +150,10 @@ export default function RequestSwapModal({
                           paddingHorizontal: 14,
                           paddingVertical: 10,
                           borderRadius: 999,
-                          backgroundColor: selected ? "#111827" : "#f3f4f6",
+                          backgroundColor: selected ? colors.primary : colors.muted,
                         }}
                       >
-                        <Text style={{ color: selected ? "#fff" : "#111827", fontWeight: "600" }}>
+                        <Text style={{ color: selected ? colors.primaryForeground : colors.foreground, fontWeight: "600" }}>
                           {assignment.role_name}
                         </Text>
                       </TouchableOpacity>
@@ -162,23 +163,23 @@ export default function RequestSwapModal({
 
                 <View
                   style={{
-                    backgroundColor: "#f8fafc",
+                    backgroundColor: colors.muted,
                     borderRadius: 18,
                     padding: 14,
                     borderWidth: 1,
-                    borderColor: "#e5e7eb",
+                    borderColor: colors.border,
                     marginBottom: 16,
                   }}
                 >
                   <Text style={{ fontWeight: "700", marginBottom: 6 }}>
                     Pessoas elegiveis para receber a solicitacao
                   </Text>
-                  <Text style={{ color: "#6b7280", marginBottom: candidates.length > 0 ? 10 : 0 }}>
+                  <Text style={{ color: colors.mutedForeground, marginBottom: candidates.length > 0 ? 10 : 0 }}>
                     Mesmo ministerio e mesma funcao/capability.
                   </Text>
 
                   {candidates.length === 0 ? (
-                    <Text style={{ color: "#6b7280" }}>
+                    <Text style={{ color: colors.mutedForeground }}>
                       Nenhuma pessoa elegivel encontrada no momento.
                     </Text>
                   ) : (
@@ -190,12 +191,12 @@ export default function RequestSwapModal({
                             paddingHorizontal: 12,
                             paddingVertical: 8,
                             borderRadius: 999,
-                            backgroundColor: "#fff",
+                            backgroundColor: colors.surface,
                             borderWidth: 1,
-                            borderColor: "#e5e7eb",
+                            borderColor: colors.border,
                           }}
                         >
-                          <Text style={{ color: "#111827", fontWeight: "600" }}>
+                          <Text style={{ color: colors.foreground, fontWeight: "600" }}>
                             {candidate.full_name}
                           </Text>
                         </View>
@@ -213,7 +214,7 @@ export default function RequestSwapModal({
                   returnKeyType="done"
                   onSubmitEditing={Keyboard.dismiss}
                   blurOnSubmit
-                  style={{ backgroundColor: "#fff" }}
+                  style={{ backgroundColor: colors.surface }}
                 />
               </ScrollView>
 
@@ -223,8 +224,8 @@ export default function RequestSwapModal({
                   paddingTop: 12,
                   paddingBottom: 16,
                   borderTopWidth: 1,
-                  borderTopColor: "#eef2f7",
-                  backgroundColor: "#fff",
+                  borderTopColor: colors.border,
+                  backgroundColor: colors.surface,
                 }}
               >
                 <DefaultButton

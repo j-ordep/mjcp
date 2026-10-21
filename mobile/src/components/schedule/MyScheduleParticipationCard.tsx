@@ -1,3 +1,4 @@
+import { colors } from "../../theme/colors";
 import { Text } from "../ui/text";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -285,21 +286,21 @@ export default function MyScheduleParticipationCard({
     <>
       <View
         style={{
-          backgroundColor: "#f8fafc",
+          backgroundColor: colors.muted,
           borderRadius: 18,
           padding: 14,
           borderWidth: 1,
-          borderColor: "#e5e7eb",
+          borderColor: colors.border,
           marginBottom: 14,
         }}
       >
         <Text style={{ fontWeight: "700", fontSize: 15, marginBottom: 4 }}>
           Minha participacao
         </Text>
-        <Text style={{ color: "#374151", marginBottom: 4 }}>
+        <Text style={{ color: colors.mutedForeground, marginBottom: 4 }}>
           Funcao: {myRoleLabel}
         </Text>
-        <Text style={{ color: "#6b7280", marginBottom: 12 }}>
+        <Text style={{ color: colors.mutedForeground, marginBottom: 12 }}>
           Status: {participationStatusLabel}
         </Text>
 
@@ -326,7 +327,7 @@ export default function MyScheduleParticipationCard({
         </View>
 
         {ownParticipationHint ? (
-          <Text style={{ color: "#6b7280", fontSize: 13, marginTop: 10 }}>
+          <Text style={{ color: colors.mutedForeground, fontSize: 13, marginTop: 10 }}>
             {ownParticipationHint}
           </Text>
         ) : null}

@@ -1,3 +1,4 @@
+import { colors } from "../../theme/colors";
 import { Text } from "../../components/ui/text";
 import {
   useFocusEffect,
@@ -273,12 +274,12 @@ export default function EditScheduleScreen() {
   if (isLoading || !details) {
     return (
       <SafeAreaView
-        className="flex-1 bg-white"
+        className="flex-1 bg-background"
         edges={["top", "left", "right"]}
       >
         <HeaderSecondary title="Escala" onBack={() => navigation.goBack()} />
         <View className="flex-1 items-center justify-center px-6">
-          <Text style={{ color: "#6b7280" }}>
+          <Text style={{ color: colors.mutedForeground }}>
             {isLoading
               ? "Carregando..."
               : (loadError ?? "Escala não encontrada.")}
@@ -294,25 +295,25 @@ export default function EditScheduleScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={["top", "left", "right"]}>
+    <SafeAreaView className="flex-1 bg-background" edges={["top", "left", "right"]}>
       <HeaderSecondary title="Escala" onBack={() => navigation.goBack()} />
 
       <ScrollView
         contentContainerStyle={{
           padding: 20,
           paddingBottom: 32,
-          backgroundColor: "#f8fafc",
+          backgroundColor: colors.background,
         }}
         showsVerticalScrollIndicator={false}
       >
         <View
           style={{
-            backgroundColor: "#fff",
-            borderRadius: 24,
+            backgroundColor: colors.surface,
+            borderRadius: 20,
             padding: 18,
             borderWidth: 1,
-            borderColor: "#eef2f7",
-            shadowColor: "#0f172a",
+            borderColor: colors.border,
+            shadowColor: colors.shadow,
             shadowOffset: { width: 0, height: 3 },
             shadowOpacity: 0.05,
             shadowRadius: 10,
@@ -336,7 +337,7 @@ export default function EditScheduleScreen() {
             }
             style={{
               padding: 14,
-              backgroundColor: "#f3f4f6",
+              backgroundColor: colors.muted,
               borderRadius: 12,
             }}
           >
@@ -344,7 +345,7 @@ export default function EditScheduleScreen() {
           </TouchableOpacity>
           {canManageEvents(profile) && !isManageReadOnly ? (
             <View style={{ marginTop: 12 }}>
-              <Text style={{ color: "#6b7280", marginBottom: 8 }}>
+              <Text style={{ color: colors.mutedForeground, marginBottom: 8 }}>
                 A data e o local pertencem ao evento e são compartilhados por
                 todas as escalas dele.
               </Text>
@@ -364,7 +365,7 @@ export default function EditScheduleScreen() {
                 }}
                 style={{
                   padding: 14,
-                  backgroundColor: "#f3f4f6",
+                  backgroundColor: colors.muted,
                   borderRadius: 12,
                 }}
               >
@@ -382,15 +383,15 @@ export default function EditScheduleScreen() {
                 borderRadius: 18,
                 padding: 14,
                 borderWidth: 1,
-                borderColor: "#fecdd3",
-                backgroundColor: "#fff1f2",
+                borderColor: colors.destructiveBorder,
+                backgroundColor: colors.destructiveMuted,
                 opacity:
                   !canManageScheduleActions || isDeletingSchedule ? 0.6 : 1,
               }}
             >
               <Text
                 style={{
-                  color: "#be123c",
+                  color: colors.destructive,
                   fontWeight: "700",
                   textAlign: "center",
                 }}

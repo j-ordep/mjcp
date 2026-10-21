@@ -1,6 +1,7 @@
 import { ActivityIndicator } from "react-native";
 import { Text } from "../ui/text";
 import { Button } from "../ui/button";
+import { colors } from "../../theme/colors";
 
 interface ButtonProps {
   children: string;
@@ -18,16 +19,16 @@ export default function DefaultButton({
   disabled = false,
 }: ButtonProps) {
 
-  const baseClass = "h-auto rounded-2xl border-2 py-3.5 justify-center items-center w-full min-h-[58px]";
+  const baseClass = "h-auto rounded-xl border py-3 justify-center items-center w-full min-h-12";
   const variants = {
-    primary: "bg-black border-black",
-    outline: "bg-white border-gray-300",
-    destructive: "bg-rose-50 border-rose-200",
+    primary: "bg-primary border-primary active:bg-primary-pressed",
+    outline: "bg-card border-input active:bg-secondary",
+    destructive: "bg-destructive-muted border-destructive-border",
   };
   const textVariants = {
-    primary: "text-white",
-    outline: "text-black",
-    destructive: "text-rose-700",
+    primary: "text-primary-foreground",
+    outline: "text-secondary-foreground",
+    destructive: "text-destructive",
   };
 
   return (
@@ -41,7 +42,7 @@ export default function DefaultButton({
       }}
     >
       {isLoading ? (
-        <ActivityIndicator color={variant === 'primary' ? "#fff" : "#be123c"} />
+        <ActivityIndicator color={variant === 'primary' ? colors.primaryForeground : variant === 'destructive' ? colors.destructive : colors.primary} />
       ) : (
         <Text className={`shrink text-center font-semibold text-base ${textVariants[variant]}`}>
           {children}

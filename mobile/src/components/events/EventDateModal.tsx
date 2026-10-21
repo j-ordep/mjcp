@@ -1,3 +1,4 @@
+import { colors } from "../../theme/colors";
 import { Text } from "../ui/text";
 import { Checkbox } from "../ui/checkbox";
 import { Button } from "../ui/button";
@@ -32,7 +33,7 @@ export default function EventDateModal({
       <RNTouchableOpacity
         style={{
           flex: 1,
-          backgroundColor: "rgba(0,0,0,0.5)",
+          backgroundColor: colors.overlay,
           justifyContent: "center",
           alignItems: "center",
         }}
@@ -42,7 +43,7 @@ export default function EventDateModal({
         <View
           style={{
             width: "90%",
-            backgroundColor: "#fff",
+            backgroundColor: colors.surface,
             borderRadius: 16,
             overflow: "hidden",
             padding: 10,
@@ -64,7 +65,7 @@ export default function EventDateModal({
                     ? "Selecione as Datas"
                     : "Selecione a Data"}
               </Text>
-              <Text style={{ fontSize: 12, color: "#666" }}>
+              <Text style={{ fontSize: 12, color: colors.mutedForeground }}>
                 {isEdit
                   ? "Toque para escolher um novo dia"
                   : isMultipleDateSelectionEnabled
@@ -74,7 +75,7 @@ export default function EventDateModal({
             </View>
 
             <RNTouchableOpacity onPress={() => setShowCalendar(false)}>
-              <X size={24} color="#000" />
+              <X size={24} color={colors.foreground} />
             </RNTouchableOpacity>
           </View>
 
@@ -91,10 +92,10 @@ export default function EventDateModal({
               }}
             >
               <View style={{ flex: 1, paddingRight: 12 }}>
-                <Text style={{ fontWeight: "700", color: "#111827" }}>
+                <Text style={{ fontWeight: "700", color: colors.foreground }}>
                   Permitir múltiplas datas
                 </Text>
-                <Text style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>
+                <Text style={{ fontSize: 12, color: colors.mutedForeground, marginTop: 2 }}>
                   Desativado por padrão para manter a criação mais simples.
                 </Text>
               </View>
@@ -111,18 +112,22 @@ export default function EventDateModal({
             onDayPress={onDayPress}
             markedDates={selectedDays}
             theme={{
-              selectedDayBackgroundColor: "#000",
-              todayTextColor: "#000",
-              arrowColor: "#000",
-              monthTextColor: "#000",
-              indicatorColor: "#000",
+              calendarBackground: colors.surface,
+              dayTextColor: colors.foreground,
+              selectedDayTextColor: colors.primaryForeground,
+              textSectionTitleColor: colors.mutedForeground,
+              selectedDayBackgroundColor: colors.primary,
+              todayTextColor: colors.primary,
+              arrowColor: colors.primary,
+              monthTextColor: colors.foreground,
+              indicatorColor: colors.primary,
             }}
           />
 
           <Button
             variant="default"
             onPress={() => setShowCalendar(false)}
-            style={{ marginTop: 10, backgroundColor: "#000" }}
+            style={{ marginTop: 10, backgroundColor: colors.primary }}
           >
             <Text>
               {isMultipleDateSelectionEnabled && selectedDateKeys.length > 1

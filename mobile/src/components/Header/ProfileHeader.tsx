@@ -2,6 +2,7 @@ import { Text } from "../ui/text";
 import { View } from "react-native";
 import { IconButton } from "react-native-paper";
 import { ChevronLeft, MoreVertical } from "lucide-react-native";
+import { colors } from "../../theme/colors";
 
 interface ProfileHeaderProps {
   onBack: () => void;
@@ -10,12 +11,14 @@ interface ProfileHeaderProps {
 
 export default function ProfileHeader(props: ProfileHeaderProps) {
   return (
-    <View className="flex-row items-center justify-between px-1.5 pt-1.5">
+    <View className="flex-row items-center justify-between bg-card px-1.5 pt-1.5">
       <IconButton
-        icon={() => <ChevronLeft size={24} />} 
+        icon={() => <ChevronLeft size={24} color={colors.foreground} />}
+        accessibilityLabel="Voltar"
         onPress={props.onBack} />
       <Text style={{ fontWeight: "bold", fontSize: 18 }}>Perfil</Text>
-      <IconButton icon={() => <MoreVertical size={24} />}
+      <IconButton icon={() => <MoreVertical size={24} color={colors.foreground} />}
+        accessibilityLabel="Abrir opções do perfil"
         onPress={props.onMenu} />
     </View>
   );

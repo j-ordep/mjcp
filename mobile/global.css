@@ -2,18 +2,37 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Match the semantic native palette in src/theme/colors.ts. */
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 9%;
-    --border: 0 0% 88%;
-    --input: 0 0% 80%;
-    --ring: 0 0% 9%;
-    --primary: 0 0% 9%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 0 0% 96%;
-    --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 45%;
-    --destructive: 0 72% 42%;
+    --background: 90.00 22.22% 96.47%;
+    --foreground: 139.20 26.88% 18.24%;
+    --card: 0.00 0.00% 100.00%;
+    --card-foreground: 139.20 26.88% 18.24%;
+    --popover: 0.00 0.00% 100.00%;
+    --popover-foreground: 139.20 26.88% 18.24%;
+    --border: 102.00 16.67% 88.24%;
+    --input: 110.77 12.87% 80.20%;
+    --ring: 149.14 32.71% 20.98%;
+    --primary: 149.14 32.71% 20.98%;
+    --primary-foreground: 0.00 0.00% 100.00%;
+    --primary-pressed: 151.58 44.19% 16.86%;
+    --secondary: 128.57 20.00% 93.14%;
+    --secondary-foreground: 151.76 38.93% 25.69%;
+    --muted: 90.00 21.43% 94.51%;
+    --muted-foreground: 138.95 10.38% 35.88%;
+    --accent: 128.57 20.00% 93.14%;
+    --accent-foreground: 151.76 38.93% 25.69%;
+    --destructive: 0.00 73.71% 41.76%;
+    --destructive-foreground: 0.00 0.00% 100.00%;
+    --destructive-muted: 0.00 85.71% 97.25%;
+    --destructive-border: 0.00 96.30% 89.41%;
+    --success: 142.78 64.23% 24.12%;
+    --success-muted: 140.62 84.21% 92.55%;
+    --warning: 22.73 82.50% 31.37%;
+    --warning-muted: 48.00 96.49% 88.82%;
+    --inverse-muted: 127.50 14.55% 78.43%;
+    --primary-border: 138.00 18.29% 32.16%;
+    --disabled: 96.00 18.52% 89.41%;
   }
 }

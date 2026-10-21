@@ -1,3 +1,4 @@
+import { colors } from "../../theme/colors";
 import { Text } from "../ui/text";
 import { useCallback, useRef, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
@@ -254,14 +255,14 @@ export default function MemberEditor({
       style={{
         position: "absolute",
         inset: 0,
-        backgroundColor: "rgba(17,24,39,0.45)",
+        backgroundColor: colors.overlay,
         justifyContent: "flex-end",
       }}
     >
       <SafeAreaView
         edges={["bottom"]}
         style={{
-          backgroundColor: "#fff",
+          backgroundColor: colors.surface,
           borderTopLeftRadius: 28,
           borderTopRightRadius: 28,
           padding: 20,
@@ -275,7 +276,7 @@ export default function MemberEditor({
               : selectedMember?.full_name}
           </Text>
           {editorError || scopeError ? (
-            <Text style={{ color: "#991b1b", marginBottom: 12 }}>
+            <Text style={{ color: colors.destructive, marginBottom: 12 }}>
               {editorError ?? scopeError}
             </Text>
           ) : null}
@@ -314,15 +315,15 @@ export default function MemberEditor({
                   padding: 12,
                   borderRadius: 14,
                   backgroundColor: selectedRoleIds.includes(role.id)
-                    ? "#111827"
-                    : "#f3f4f6",
+                    ? colors.primary
+                    : colors.muted,
                 }}
               >
                 <Text
                   style={{
                     color: selectedRoleIds.includes(role.id)
-                      ? "#fff"
-                      : "#111827",
+                      ? colors.primaryForeground
+                      : colors.foreground,
                   }}
                 >
                   {role.name}

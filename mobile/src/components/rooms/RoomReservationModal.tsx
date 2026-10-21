@@ -1,3 +1,4 @@
+import { colors } from "../../theme/colors";
 import { Text } from "../ui/text";
 import { Input } from "../ui/input";
 import { Calendar as CalendarIcon, Clock, X } from "lucide-react-native";
@@ -103,7 +104,7 @@ export default function RoomReservationModal({
               onLayout={modalPortal.onLayout}
               style={[modalPortal.style, {
                 flex: 1,
-                backgroundColor: "rgba(15,23,42,0.45)",
+                backgroundColor: colors.overlay,
                 justifyContent: "center",
                 alignItems: "center",
                 paddingHorizontal: 16,
@@ -126,10 +127,10 @@ export default function RoomReservationModal({
                   width: "100%",
                   maxWidth: 440,
                   maxHeight: "88%",
-                  backgroundColor: "#fff",
+                  backgroundColor: colors.surface,
                   borderRadius: 24,
                   borderWidth: 1,
-                  borderColor: "#e5e7eb",
+                  borderColor: colors.border,
                   overflow: "hidden",
                 }}
               >
@@ -139,7 +140,7 @@ export default function RoomReservationModal({
                     paddingTop: 16,
                     paddingBottom: 12,
                     borderBottomWidth: 1,
-                    borderBottomColor: "#eef2f7",
+                    borderBottomColor: colors.border,
                     flexDirection: "row",
                     justifyContent: "space-between",
                     alignItems: "flex-start",
@@ -149,7 +150,7 @@ export default function RoomReservationModal({
                     <Text style={{ fontWeight: "700", fontSize: 20, marginBottom: 4 }}>
                       Reservar sala
                     </Text>
-                    <Text style={{ color: "#6b7280" }}>
+                    <Text style={{ color: colors.mutedForeground }}>
                       {roomName ? `Nova reserva em ${roomName}.` : "Preencha os dados da reserva."}
                     </Text>
                   </View>
@@ -160,12 +161,12 @@ export default function RoomReservationModal({
                       width: 40,
                       height: 40,
                       borderRadius: 20,
-                      backgroundColor: "#f3f4f6",
+                      backgroundColor: colors.muted,
                       alignItems: "center",
                       justifyContent: "center",
                     }}
                   >
-                    <X size={18} color="#111827" />
+                    <X size={18} color={colors.foreground} />
                   </TouchableOpacity>
                 </View>
 
@@ -184,7 +185,7 @@ export default function RoomReservationModal({
                     value={title}
                     onChangeText={setTitle}
                     containerStyle={{ marginBottom: 16 }}
-                    style={{ backgroundColor: "#fff" }}
+                    style={{ backgroundColor: colors.surface }}
                   />
 
                   <SelectField
@@ -213,7 +214,7 @@ export default function RoomReservationModal({
                         value={displayDate}
                         editable={false}
                         right={
-                          <CalendarIcon size={20} color="#6b7280" />
+                          <CalendarIcon size={20} color={colors.mutedForeground} />
                         }
                       />
                     </View>
@@ -235,7 +236,7 @@ export default function RoomReservationModal({
                         }
                         keyboardType="number-pad"
                         right={
-                          <Clock size={20} color="#6b7280" />
+                          <Clock size={20} color={colors.mutedForeground} />
                         }
                       />
                     </View>
@@ -255,14 +256,14 @@ export default function RoomReservationModal({
                         }
                         keyboardType="number-pad"
                         right={
-                          <Clock size={20} color="#6b7280" />
+                          <Clock size={20} color={colors.mutedForeground} />
                         }
                       />
                     </View>
                   </View>
 
                   {reservationWindow == null ? (
-                    <Text style={{ color: "#b91c1c", fontSize: 13, lineHeight: 18 }}>
+                    <Text style={{ color: colors.destructive, fontSize: 13, lineHeight: 18 }}>
                       Informe um intervalo valido para salvar a reserva.
                     </Text>
                   ) : null}
@@ -274,8 +275,8 @@ export default function RoomReservationModal({
                     paddingTop: 12,
                     paddingBottom: 16,
                     borderTopWidth: 1,
-                    borderTopColor: "#eef2f7",
-                    backgroundColor: "#fff",
+                    borderTopColor: colors.border,
+                    backgroundColor: colors.surface,
                   }}
                 >
                   <DefaultButton

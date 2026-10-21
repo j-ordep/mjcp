@@ -16,6 +16,7 @@ import type { MainTabParamList, RootStackParamList } from "../types/navigation";
 import { getProfileAvatarUri } from "../utils/profileAvatar";
 import HeaderPrimary from "./Header/HeaderPrimary";
 import NotificationsModal from "./utils/NotificationsModal";
+import { colors } from "../theme/colors";
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 const titles: Record<keyof MainTabParamList, string> = {
@@ -38,7 +39,7 @@ export default function TabNavigator() {
     <>
       <Tab.Navigator initialRouteName="Schedules" screenOptions={({ route }) => ({
         header: () => (
-          <SafeAreaView edges={["top", "left", "right"]} style={{ backgroundColor: "white" }}>
+          <SafeAreaView edges={["top", "left", "right"]} style={{ backgroundColor: colors.surface }}>
             <View style={{ paddingHorizontal: 20, paddingTop: 10 }}>
               <HeaderPrimary title={titles[route.name]} avatarUri={getProfileAvatarUri(profile?.avatar_url) ?? undefined}
                 avatarLabel={profile?.full_name ?? undefined} notificationUnreadCount={unreadCount}
@@ -47,8 +48,8 @@ export default function TabNavigator() {
             </View>
           </SafeAreaView>
         ),
-        tabBarActiveTintColor: "#000000", tabBarInactiveTintColor: "#9ca3af",
-        tabBarStyle: { borderTopWidth: 0, height: 45 + (insets.bottom > 0 ? insets.bottom : 24) },
+        tabBarActiveTintColor: colors.primary, tabBarInactiveTintColor: colors.mutedForeground,
+        tabBarStyle: { backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border, height: 45 + (insets.bottom > 0 ? insets.bottom : 24) },
         tabBarLabelStyle: { fontSize: 12 },
       })}>
         <Tab.Screen name="Schedules" component={ScheduleScreen} options={{ tabBarLabel: "Escalas", tabBarIcon: ({ color, size }) => <CalendarDays color={color} size={size} /> }} />

@@ -1,3 +1,4 @@
+import { colors } from "../../theme/colors";
 import { Text } from "../../components/ui/text";
 import { SelectField } from "../../components/ui/select-field";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -210,7 +211,7 @@ export default function ManageMinistryMembersScreen() {
   const isStackScreen = route.name === "ManageMinistryMembers";
   return (
     <SafeAreaView
-      className="flex-1 bg-white"
+      className="flex-1 bg-background"
       edges={isStackScreen ? ["top", "left", "right"] : ["left", "right"]}
     >
       {isStackScreen ? (
@@ -239,7 +240,7 @@ export default function ManageMinistryMembersScreen() {
         )}
 
         {scopeError ? (
-          <Text style={{ color: "#991b1b", marginBottom: 12 }}>
+          <Text style={{ color: colors.destructive, marginBottom: 12 }}>
             {scopeError}
           </Text>
         ) : null}
@@ -258,7 +259,7 @@ export default function ManageMinistryMembersScreen() {
               Integrantes de {selectedMinistry.name}
             </Text>
             {memberError ? (
-              <Text style={{ color: "#991b1b" }}>{memberError}</Text>
+              <Text style={{ color: colors.destructive }}>{memberError}</Text>
             ) : isLoadingMembers ? (
               <Text>Carregando membros...</Text>
             ) : members.length === 0 ? (
@@ -271,7 +272,8 @@ export default function ManageMinistryMembersScreen() {
                   onPress={() => openEditor(member)}
                   style={{
                     borderWidth: 1,
-                    borderColor: "#e5e7eb",
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
                     borderRadius: 18,
                     padding: 16,
                     marginBottom: 12,
@@ -281,7 +283,7 @@ export default function ManageMinistryMembersScreen() {
                     {getProfileInitials(member.full_name)} · {member.full_name}
                     {member.is_leader ? " · Líder" : ""}
                   </Text>
-                  <Text style={{ color: "#6b7280", marginTop: 6 }}>
+                  <Text style={{ color: colors.mutedForeground, marginTop: 6 }}>
                     {member.capability_roles
                       .map((role) => role.name)
                       .join(", ") || "Sem funções configuradas."}

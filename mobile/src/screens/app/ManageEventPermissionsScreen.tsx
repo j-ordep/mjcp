@@ -1,3 +1,4 @@
+import { colors } from "../../theme/colors";
 import { Text } from "../../components/ui/text";
 import { Input } from "../../components/ui/input";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -181,13 +182,13 @@ export default function ManageEventPermissionsScreen({ navigation }: Props) {
 
   if (!profile) {
     return (
-      <SafeAreaView className="flex-1 bg-white" edges={["top", "left", "right"]}>
+      <SafeAreaView className="flex-1 bg-background" edges={["top", "left", "right"]}>
         <HeaderSecondary
           title="Permissoes de eventos"
           onBack={() => navigation.goBack()}
         />
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-          <ActivityIndicator size="small" color="#000" />
+          <ActivityIndicator size="small" color={colors.foreground} />
         </View>
       </SafeAreaView>
     );
@@ -198,7 +199,7 @@ export default function ManageEventPermissionsScreen({ navigation }: Props) {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={["top", "left", "right"]}>
+    <SafeAreaView className="flex-1 bg-background" edges={["top", "left", "right"]}>
       <HeaderSecondary
         title="Permissoes de eventos"
         onBack={() => navigation.goBack()}
@@ -217,7 +218,7 @@ export default function ManageEventPermissionsScreen({ navigation }: Props) {
       >
         <View
           style={{
-            backgroundColor: "#111827",
+            backgroundColor: colors.primary,
             borderRadius: 24,
             padding: 20,
             marginBottom: 18,
@@ -225,7 +226,7 @@ export default function ManageEventPermissionsScreen({ navigation }: Props) {
         >
           <Text
             style={{
-              color: "#fff",
+              color: colors.primaryForeground,
               fontWeight: "700",
               fontSize: 21,
               marginBottom: 6,
@@ -233,7 +234,7 @@ export default function ManageEventPermissionsScreen({ navigation }: Props) {
           >
             Gestao global de eventos
           </Text>
-          <Text style={{ color: "rgba(255,255,255,0.72)", lineHeight: 20 }}>
+          <Text style={{ color: colors.inverseMuted, lineHeight: 20 }}>
             Conceda ou remova acesso para criar, editar e excluir eventos,
             incluindo audiencia privada e reserva opcional de sala.
           </Text>
@@ -241,11 +242,11 @@ export default function ManageEventPermissionsScreen({ navigation }: Props) {
 
         <View
           style={{
-            backgroundColor: "#fff",
+            backgroundColor: colors.surface,
             borderRadius: 24,
             padding: 18,
             borderWidth: 1,
-            borderColor: "#eef2f7",
+            borderColor: colors.border,
             marginBottom: 18,
           }}
         >
@@ -256,20 +257,20 @@ export default function ManageEventPermissionsScreen({ navigation }: Props) {
             value={search}
             onChangeText={setSearch}
             placeholder="Buscar por nome ou email"
-            containerStyle={{ backgroundColor: "#fff" }}
+            containerStyle={{ backgroundColor: colors.surface }}
             left={
-              <Search size={18} color="#6b7280" />
+              <Search size={18} color={colors.mutedForeground} />
             }
           />
         </View>
 
         <View
           style={{
-            backgroundColor: "#fff",
+            backgroundColor: colors.surface,
             borderRadius: 24,
             padding: 18,
             borderWidth: 1,
-            borderColor: "#eef2f7",
+            borderColor: colors.border,
           }}
         >
           <View
@@ -283,7 +284,7 @@ export default function ManageEventPermissionsScreen({ navigation }: Props) {
             <Text style={{ fontWeight: "700", fontSize: 17 }}>
               Perfis cadastrados
             </Text>
-            <Text style={{ color: "#6b7280" }}>
+            <Text style={{ color: colors.mutedForeground }}>
               {profiles.length} visiveis
             </Text>
           </View>
@@ -293,13 +294,13 @@ export default function ManageEventPermissionsScreen({ navigation }: Props) {
               style={{
                 borderRadius: 18,
                 borderWidth: 1,
-                borderColor: "#fecaca",
-                backgroundColor: "#fef2f2",
+                borderColor: colors.destructiveBorder,
+                backgroundColor: colors.destructiveMuted,
                 padding: 16,
                 marginBottom: 14,
               }}
             >
-              <Text style={{ color: "#991b1b", lineHeight: 20, marginBottom: 12 }}>
+              <Text style={{ color: colors.destructive, lineHeight: 20, marginBottom: 12 }}>
                 {screenError}
               </Text>
               <DefaultButton
@@ -314,12 +315,12 @@ export default function ManageEventPermissionsScreen({ navigation }: Props) {
 
           {isLoading ? (
             <View style={{ paddingVertical: 24 }}>
-              <ActivityIndicator size="small" color="#000" />
+              <ActivityIndicator size="small" color={colors.foreground} />
             </View>
           ) : profiles.length === 0 ? (
             <View
               style={{
-                backgroundColor: "#f9fafb",
+                backgroundColor: colors.muted,
                 borderRadius: 18,
                 padding: 16,
               }}
@@ -327,7 +328,7 @@ export default function ManageEventPermissionsScreen({ navigation }: Props) {
               <Text style={{ fontWeight: "600", marginBottom: 4 }}>
                 Nenhum perfil encontrado
               </Text>
-              <Text style={{ color: "#6b7280" }}>
+              <Text style={{ color: colors.mutedForeground }}>
                 Ajuste a busca para localizar outro usuario.
               </Text>
             </View>
@@ -344,7 +345,7 @@ export default function ManageEventPermissionsScreen({ navigation }: Props) {
                     key={item.id}
                     style={{
                       borderWidth: 1,
-                      borderColor: "#eef2f7",
+                      borderColor: colors.border,
                       borderRadius: 18,
                       padding: 14,
                       marginBottom: 10,
@@ -366,8 +367,8 @@ export default function ManageEventPermissionsScreen({ navigation }: Props) {
                         <Avatar.Text
                           size={42}
                           label={getInitials(item.full_name)}
-                          style={{ marginRight: 12, backgroundColor: "#111827" }}
-                          color="#fff"
+                          style={{ marginRight: 12, backgroundColor: colors.primary }}
+                          color={colors.primaryForeground}
                         />
                       )}
 
@@ -375,7 +376,7 @@ export default function ManageEventPermissionsScreen({ navigation }: Props) {
                         <Text style={{ fontWeight: "700", marginBottom: 2 }}>
                           {item.full_name}
                         </Text>
-                        <Text style={{ color: "#6b7280", fontSize: 13 }}>
+                        <Text style={{ color: colors.mutedForeground, fontSize: 13 }}>
                           {item.email || "Sem email cadastrado"}
                         </Text>
                         <View
@@ -388,7 +389,7 @@ export default function ManageEventPermissionsScreen({ navigation }: Props) {
                         >
                           <View
                             style={{
-                              backgroundColor: "#f3f4f6",
+                              backgroundColor: colors.muted,
                               borderRadius: 999,
                               paddingHorizontal: 10,
                               paddingVertical: 6,
@@ -396,7 +397,7 @@ export default function ManageEventPermissionsScreen({ navigation }: Props) {
                           >
                             <Text
                               style={{
-                                color: "#111827",
+                                color: colors.foreground,
                                 fontWeight: "600",
                                 fontSize: 12,
                               }}
@@ -408,7 +409,7 @@ export default function ManageEventPermissionsScreen({ navigation }: Props) {
                           {item.can_manage_events ? (
                             <View
                               style={{
-                                backgroundColor: "#ecfdf5",
+                                backgroundColor: colors.successMuted,
                                 borderRadius: 999,
                                 paddingHorizontal: 10,
                                 paddingVertical: 6,
@@ -416,7 +417,7 @@ export default function ManageEventPermissionsScreen({ navigation }: Props) {
                             >
                               <Text
                                 style={{
-                                  color: "#166534",
+                                  color: colors.success,
                                   fontWeight: "700",
                                   fontSize: 12,
                                 }}
@@ -429,7 +430,7 @@ export default function ManageEventPermissionsScreen({ navigation }: Props) {
                           {isCurrentUser ? (
                             <View
                               style={{
-                                backgroundColor: "#eff6ff",
+                                backgroundColor: colors.secondary,
                                 borderRadius: 999,
                                 paddingHorizontal: 10,
                                 paddingVertical: 6,
@@ -437,7 +438,7 @@ export default function ManageEventPermissionsScreen({ navigation }: Props) {
                             >
                               <Text
                                 style={{
-                                  color: "#1d4ed8",
+                                  color: colors.primary,
                                   fontWeight: "700",
                                   fontSize: 12,
                                 }}
@@ -451,7 +452,7 @@ export default function ManageEventPermissionsScreen({ navigation }: Props) {
 
                       <View style={{ alignItems: "center" }}>
                         {isSaving ? (
-                          <ActivityIndicator size="small" color="#000" />
+                          <ActivityIndicator size="small" color={colors.foreground} />
                         ) : (
                           <Switch
                             checked={item.can_manage_events || isBuiltInAdmin}
@@ -467,9 +468,9 @@ export default function ManageEventPermissionsScreen({ navigation }: Props) {
                         marginTop: 12,
                         borderRadius: 14,
                         padding: 12,
-                        backgroundColor: isReadOnly ? "#f9fafb" : "#fafafa",
+                        backgroundColor: isReadOnly ? colors.muted : colors.muted,
                         borderWidth: 1,
-                        borderColor: "#f3f4f6",
+                        borderColor: colors.border,
                       }}
                     >
                       <View
@@ -479,12 +480,12 @@ export default function ManageEventPermissionsScreen({ navigation }: Props) {
                           marginBottom: 6,
                         }}
                       >
-                        <ShieldCheck size={16} color="#111827" />
+                        <ShieldCheck size={16} color={colors.foreground} />
                         <Text
                           style={{
                             marginLeft: 8,
                             fontWeight: "700",
-                            color: "#111827",
+                            color: colors.foreground,
                           }}
                         >
                           {isBuiltInAdmin
@@ -494,7 +495,7 @@ export default function ManageEventPermissionsScreen({ navigation }: Props) {
                               : "Sem permissao global de eventos"}
                         </Text>
                       </View>
-                      <Text style={{ color: "#6b7280", lineHeight: 18 }}>
+                      <Text style={{ color: colors.mutedForeground, lineHeight: 18 }}>
                         {isCurrentUser
                           ? "Seu acesso global ja vem do papel de administrador."
                           : isBuiltInAdmin

@@ -63,20 +63,20 @@ test("schedule list card has a single accessible navigation action and forwards 
 test("schedule list card distinguishes the featured forest card and preserves the actual status label", () => {
   const regular = mount({ featured: false, participationLabel: "Sem participacao" });
   const featured = mount({ featured: true, participationLabel: "Sem participacao" });
-  assert.match(regular.findAll("TouchableOpacity")[0].props.className, /bg-white/);
-  assert.match(featured.findAll("TouchableOpacity")[0].props.className, /bg-\[#244735\]/);
+  assert.match(regular.findAll("TouchableOpacity")[0].props.className, /bg-card/);
+  assert.match(featured.findAll("TouchableOpacity")[0].props.className, /bg-primary/);
   assert.match(content(featured), /Sem participacao/);
   assert.doesNotMatch(content(featured), /Confirmado|Disponível|Próxima escala/);
 });
 
 test("participation tones distinguish pending, confirmed and declined without upgrading mixed or absent participation", () => {
   for (const [participationLabel, background] of [
-    ["Pendente", "bg-amber-100"],
-    ["Confirmado", "bg-emerald-100"],
-    ["Recusado", "bg-red-100"],
-    ["Sem participacao", "bg-slate-100"],
-    ["Parcialmente confirmado", "bg-slate-100"],
-    ["Trocado", "bg-slate-100"],
+    ["Pendente", "bg-warning-muted"],
+    ["Confirmado", "bg-success-muted"],
+    ["Recusado", "bg-destructive-muted"],
+    ["Sem participacao", "bg-secondary"],
+    ["Parcialmente confirmado", "bg-secondary"],
+    ["Trocado", "bg-secondary"],
   ]) {
     for (const featured of [false, true]) {
       const screen = mount({ participationLabel, featured });

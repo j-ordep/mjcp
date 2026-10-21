@@ -1,3 +1,4 @@
+import { colors } from "../../theme/colors";
 import { Text } from "../../components/ui/text";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -85,8 +86,8 @@ export default function BlockDatesScreen() {
       Object.keys(selectedDates).reduce<Record<string, any>>((acc, key) => {
         acc[key] = {
           selected: true,
-          selectedColor: savedDates[key] ? "#111111" : "#374151",
-          selectedTextColor: "#ffffff",
+          selectedColor: savedDates[key] ? colors.primary : colors.secondaryForeground,
+          selectedTextColor: colors.primaryForeground,
         };
         return acc;
       }, {}),
@@ -141,13 +142,13 @@ export default function BlockDatesScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
-      <View className="flex-1 bg-white">
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+      <View className="flex-1 bg-background">
         <HeaderSecondary title="Bloquear Datas" onBack={handleBack} />
 
         <View className="px-5 mt-10">
           <Text
-            style={{ color: "#6b7280", marginBottom: 10, textAlign: "center" }}
+            style={{ color: colors.mutedForeground, marginBottom: 10, textAlign: "center" }}
           >
             Selecione os dias em que voce estara indisponivel
           </Text>
@@ -155,13 +156,13 @@ export default function BlockDatesScreen() {
           <Divider style={{ marginBottom: 20 }} />
 
           <View
-            className="rounded-3xl border border-gray-200 p-4"
+            className="rounded-2xl border border-border bg-card p-4"
             pointerEvents={isSaving ? "none" : "auto"}
           >
             {isLoading ? (
               <View className="items-center py-10">
-                <ActivityIndicator color="#111111" />
-                <Text style={{ color: "#6b7280", marginTop: 12 }}>
+                <ActivityIndicator color={colors.foreground} />
+                <Text style={{ color: colors.mutedForeground, marginTop: 12 }}>
                   Carregando datas bloqueadas...
                 </Text>
               </View>
@@ -171,25 +172,27 @@ export default function BlockDatesScreen() {
                   markedDates={markedDates}
                   onDayPress={onDayPress}
                   theme={{
-                    todayTextColor: "#111111",
-                    textSectionTitleColor: "#9ca3af",
-                    monthTextColor: "#111111",
-                    arrowColor: "#111111",
+                    calendarBackground: colors.surface,
+                    dayTextColor: colors.foreground,
+                    todayTextColor: colors.primary,
+                    textSectionTitleColor: colors.mutedForeground,
+                    monthTextColor: colors.foreground,
+                    arrowColor: colors.primary,
                   }}
                 />
 
                 <View className="mt-4 gap-2">
-                  <Text style={{ color: "#6b7280" }}>
+                  <Text style={{ color: colors.mutedForeground }}>
                     {selectedCount > 0
                       ? `${selectedCount} data(s) bloqueada(s)`
                       : "Nenhuma data bloqueada"}
                   </Text>
-                  <Text style={{ color: "#6b7280" }}>
+                  <Text style={{ color: colors.mutedForeground }}>
                     {hasChanges
                       ? `Alteracoes pendentes: ${addedCount} nova(s), ${removedCount} removida(s)`
                       : `${savedCount} data(s) salva(s) no seu calendario`}
                   </Text>
-                  <Text style={{ color: "#9ca3af", fontSize: 12 }}>
+                  <Text style={{ color: colors.mutedForeground, fontSize: 12 }}>
                     Datas bloqueadas continuam sendo aviso soft na escala; o lider ainda pode escalar mesmo assim.
                   </Text>
                 </View>
@@ -198,7 +201,7 @@ export default function BlockDatesScreen() {
           </View>
         </View>
 
-        <View className="px-5 pb-6 pt-4 bg-white">
+        <View className="px-5 pb-6 pt-4 bg-card">
           <View className="flex-row gap-4">
             <View className="flex-1">
               <DefaultButton

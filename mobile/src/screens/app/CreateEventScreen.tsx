@@ -1,3 +1,4 @@
+import { colors } from "../../theme/colors";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
@@ -535,7 +536,7 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={["top", "left", "right"]}>
+    <SafeAreaView className="flex-1 bg-background" edges={["top", "left", "right"]}>
       <HeaderSecondary
         title={isEdit ? "Editar Evento" : "Novo Evento"}
         onBack={() => navigation.goBack()}
@@ -563,7 +564,7 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
             <Text
               style={{
                 fontSize: 13,
-                color: "#6b7280",
+                color: colors.mutedForeground,
                 marginBottom: 16,
               }}
             >
@@ -580,11 +581,11 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
                   gap: 6,
                 }}
               >
-                <Sparkles size={16} color="#666" />
+                <Sparkles size={16} color={colors.mutedForeground} />
                 <Text
                   style={{
                     fontSize: 13,
-                    color: "#666",
+                    color: colors.mutedForeground,
                     fontWeight: "bold",
                   }}
                 >
@@ -601,7 +602,7 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
                   <Chip
                     key={preset.id}
                     onPress={() => applyPreset(preset)}
-                    style={{ backgroundColor: "#f3f4f6" }}
+                    style={{ backgroundColor: colors.muted }}
                     textStyle={{ fontSize: 13 }}
                   >
                     {preset.label}
@@ -641,7 +642,7 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
                 value={getEventDateLabel(selectedDays)}
                 editable={false}
                 right={
-                  <CalendarIcon size={20} color="#666" />
+                  <CalendarIcon size={20} color={colors.mutedForeground} />
                 }
               />
             </View>
@@ -656,7 +657,7 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
             placeholder="Ex: 19:00"
             keyboardType="number-pad"
             right={
-              <Clock size={20} color="#666" />
+              <Clock size={20} color={colors.mutedForeground} />
             }
           />
 
@@ -675,7 +676,7 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
             <Text
               style={{
                 fontSize: 13,
-                color: "#666",
+                color: colors.mutedForeground,
                 fontWeight: "bold",
                 marginBottom: 8,
               }}

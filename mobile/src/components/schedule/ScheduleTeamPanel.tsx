@@ -1,3 +1,4 @@
+import { colors } from "../../theme/colors";
 import { Text } from "../ui/text";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -133,12 +134,12 @@ export default function ScheduleTeamPanel({
     <>
       <View
         style={{
-          backgroundColor: "#fff",
+          backgroundColor: colors.surface,
           borderRadius: 24,
           padding: 18,
           borderWidth: 1,
-          borderColor: "#eef2f7",
-          shadowColor: "#0f172a",
+          borderColor: colors.border,
+          shadowColor: colors.shadow,
           shadowOffset: { width: 0, height: 3 },
           shadowOpacity: 0.05,
           shadowRadius: 10,
@@ -149,20 +150,20 @@ export default function ScheduleTeamPanel({
         {canManageSchedule && isManageReadOnly ? (
           <View
             style={{
-              backgroundColor: "#fff7ed",
+              backgroundColor: colors.warningMuted,
               borderRadius: 18,
               padding: 14,
               borderWidth: 1,
-              borderColor: "#fdba74",
+              borderColor: colors.warning,
               marginBottom: 14,
             }}
           >
             <Text
-              style={{ fontWeight: "700", color: "#9a3412", marginBottom: 4 }}
+              style={{ fontWeight: "700", color: colors.warning, marginBottom: 4 }}
             >
               Escala somente leitura
             </Text>
-            <Text style={{ color: "#9a3412" }}>
+            <Text style={{ color: colors.warning }}>
               No horario do evento e depois dele, a equipe fica bloqueada para
               alteracoes.
             </Text>
@@ -181,7 +182,7 @@ export default function ScheduleTeamPanel({
           <View
             style={{
               height: 1,
-              backgroundColor: "#e5e7eb",
+              backgroundColor: colors.border,
               marginBottom: 16,
             }}
           />
@@ -201,7 +202,7 @@ export default function ScheduleTeamPanel({
               disabled={!canManageScheduleActions}
               activeOpacity={0.85}
               style={{
-                backgroundColor: "#111827",
+                backgroundColor: colors.primary,
                 borderRadius: 20,
                 padding: 16,
                 marginBottom: 12,
@@ -210,7 +211,7 @@ export default function ScheduleTeamPanel({
             >
               <Text
                 style={{
-                  color: "#fff",
+                  color: colors.primaryForeground,
                   fontWeight: "700",
                   fontSize: 16,
                   marginBottom: 4,
@@ -229,18 +230,18 @@ export default function ScheduleTeamPanel({
               }
               activeOpacity={0.85}
               style={{
-                backgroundColor: "#f1f5f9",
+                backgroundColor: colors.secondary,
                 borderRadius: 18,
                 padding: 14,
                 marginBottom: 8,
                 borderWidth: 1,
-                borderColor: "#dbe3ec",
+                borderColor: colors.border,
               }}
             >
               <Text style={{ fontWeight: "700", marginBottom: 4 }}>
                 Gerenciar membros do ministério
               </Text>
-              <Text style={{ color: "#6b7280" }}>
+              <Text style={{ color: colors.mutedForeground }}>
                 Atualize capacidades e participação do ministério antes de
                 montar a equipe.
               </Text>
@@ -252,30 +253,30 @@ export default function ScheduleTeamPanel({
           <View
             style={{
               flex: 1,
-              backgroundColor: "#fff7ed",
+              backgroundColor: colors.warningMuted,
               borderRadius: 16,
               padding: 14,
             }}
           >
-            <Text style={{ color: "#9a3412", fontSize: 12, marginBottom: 4 }}>
+            <Text style={{ color: colors.warning, fontSize: 12, marginBottom: 4 }}>
               Pendentes
             </Text>
-            <Text style={{ fontSize: 20, fontWeight: "700", color: "#9a3412" }}>
+            <Text style={{ fontSize: 20, fontWeight: "700", color: colors.warning }}>
               {pendingCount}
             </Text>
           </View>
           <View
             style={{
               flex: 1,
-              backgroundColor: "#ecfdf5",
+              backgroundColor: colors.successMuted,
               borderRadius: 16,
               padding: 14,
             }}
           >
-            <Text style={{ color: "#166534", fontSize: 12, marginBottom: 4 }}>
+            <Text style={{ color: colors.success, fontSize: 12, marginBottom: 4 }}>
               Confirmados
             </Text>
-            <Text style={{ fontSize: 20, fontWeight: "700", color: "#166534" }}>
+            <Text style={{ fontSize: 20, fontWeight: "700", color: colors.success }}>
               {confirmedCount}
             </Text>
           </View>

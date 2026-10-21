@@ -55,6 +55,27 @@ Essa conferência não valida teclado, fonte ampliada ou comportamento nativo An
 - [ ] Conferir no celular o destaque das ações, nomes longos, lista extensa, fonte ampliada,
   teclado e fechamento do modal pelo X, toque fora e voltar do Android.
 
+## Identidade verde em todo o mobile
+
+Direção aprovada: aplicar a identidade da opção B às telas existentes, com referência
+shadcn/Reusables, usando NativeWind e Paper atuais. Verde floresta nas ações e destaques,
+fundo claro, superfícies brancas, bordas suaves e cores semânticas próprias para avisos/erros.
+
+Implementado: tokens semânticos compartilhados entre NativeWind, estilos nativos, Paper e
+navegação; botões, campos, cabeçalhos e seletores coerentes. `Card` e `Badge` consolidam
+superfícies e metadados repetidos. Todas as 18 telas, calendários e modais usam a paleta;
+cartões de destaque mantêm texto claro. Alinhamento, refs, estados e ações foram preservados.
+
+Verificado em 2026-10-21: TypeScript, 360 testes Node e exportações Android/web passaram.
+Pares de texto da paleta atendem contraste AA (4,5:1). Prévia web exportada com consultas
+substituídas por dados fictícios: abas, calendário e seletor de categorias conferidos;
+Equipe sem transbordamento horizontal em 320 pixels. Essa prévia não valida o ambiente remoto.
+
+- [ ] Conferir em Android/iOS a identidade, fonte ampliada, toque, teclado, calendário e
+  seletores em modais. Exportações e testes Node não comprovam layout/interação nativos.
+
+Escopo exclusivamente visual: nenhuma mudança em services, stores, contratos, banco ou backend.
+
 ## Validação do ciclo de simplificação
 
 Implementado no mobile com o Supabase existente: isolamento de sessão e descarte de respostas

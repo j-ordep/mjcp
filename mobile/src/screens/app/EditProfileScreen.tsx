@@ -1,3 +1,4 @@
+import { colors } from "../../theme/colors";
 import { Text } from "../../components/ui/text";
 import { Input } from "../../components/ui/input";
 import { useRef, useState } from "react";
@@ -84,7 +85,7 @@ export default function EditProfileScreen({ navigation }) {
 
   return (
     <SafeAreaView
-      style={{ flex: 1, backgroundColor: "#fff" }}
+      style={{ flex: 1, backgroundColor: colors.background }}
       edges={["top", "left", "right"]}
     >
       <HeaderSecondary
@@ -125,15 +126,15 @@ export default function EditProfileScreen({ navigation }) {
                 <Avatar.Text
                   size={110}
                   label={getProfileInitials(name)}
-                  color="#111111"
-                  style={{ backgroundColor: "#f3f4f6" }}
+                  color={colors.foreground}
+                  style={{ backgroundColor: colors.muted }}
                 />
               )}
               <Text
                 style={{
                   textAlign: "center",
                   fontSize: 16,
-                  color: "#6b7280",
+                  color: colors.mutedForeground,
                   marginTop: 10,
                 }}
               >
@@ -194,7 +195,7 @@ export default function EditProfileScreen({ navigation }) {
             >
               {isLoading ? (
                 <View className="items-center py-3">
-                  <Text style={{ color: "#888" }}>Salvando...</Text>
+                  <Text style={{ color: colors.mutedForeground }}>Salvando...</Text>
                 </View>
               ) : (
                 <DefaultButton variant="primary" onPress={handleSave}>

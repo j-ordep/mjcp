@@ -1,3 +1,4 @@
+import { colors } from "../../theme/colors";
 import { Text } from "../../components/ui/text";
 import { Input } from "../../components/ui/input";
 import { Eye, EyeOff } from "lucide-react-native";
@@ -56,7 +57,7 @@ export default function SignUp({ navigation }) {
   }
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      <View className="flex-1 justify-center p-8 bg-white">
+      <View className="flex-1 justify-center p-8 bg-background">
         <Text
           variant="h3"
           style={{ textAlign: "center", marginTop: 80, marginBottom: 32 }}
@@ -113,7 +114,7 @@ export default function SignUp({ navigation }) {
                 accessibilityLabel={passwordVisible ? "Ocultar senha" : "Mostrar senha"}
                 onPress={() => setPasswordVisible(!passwordVisible)}
               >
-                {passwordVisible ? <EyeOff size={20} /> : <Eye size={20} />}
+                {passwordVisible ? <EyeOff size={20} color={colors.mutedForeground} /> : <Eye size={20} color={colors.mutedForeground} />}
               </TouchableOpacity>
               }
             />
@@ -137,7 +138,7 @@ export default function SignUp({ navigation }) {
                   accessibilityLabel={confirmPasswordVisible ? "Ocultar senha" : "Mostrar senha"}
                   onPress={() => setConfirmPasswordVisible(!confirmPasswordVisible)}
                 >
-                  {confirmPasswordVisible ? <EyeOff size={20} /> : <Eye size={20} />}
+                  {confirmPasswordVisible ? <EyeOff size={20} color={colors.mutedForeground} /> : <Eye size={20} color={colors.mutedForeground} />}
                 </TouchableOpacity>
               }
             />
@@ -145,7 +146,7 @@ export default function SignUp({ navigation }) {
 
           {isLoading ? (
             <View className="items-center py-3">
-              <Text style={{ color: "#888" }}>Cadastrando...</Text>
+              <Text style={{ color: colors.mutedForeground }}>Cadastrando...</Text>
             </View>
           ) : (
             <DefaultButton onPress={handleSignUp} variant="primary">
@@ -159,7 +160,7 @@ export default function SignUp({ navigation }) {
           >
             <Text
               style={{
-                color: "#2563eb",
+                color: colors.primary,
                 textAlign: "center",
                 textDecorationLine: "underline",
               }}

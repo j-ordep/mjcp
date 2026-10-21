@@ -8,7 +8,7 @@ import { Platform, Text as RNText, type Role } from "react-native";
 const textVariants = cva(
   cn(
     // Keep line height natural when a screen supplies its own fontSize.
-    "text-foreground text-[1rem]",
+    "font-sans text-foreground text-[1rem]",
     Platform.select({
       web: "select-text",
     }),
