@@ -58,18 +58,14 @@ test("closing the ministry filter by back, backdrop or close button preserves se
   screen.cleanup();
 });
 
-test("schedule actions expose creation only when allowed and call each action once", async () => {
+test("compact schedule shortcuts preserve both destinations without duplicating creation", async () => {
   const calls: string[] = [];
-  const props = { canCreate: false, onOpenSwaps: () => calls.push("swaps"),
-    onOpenBlockedDates: () => calls.push("blocked"), onCreate: () => calls.push("create") };
+  const props = { onOpenSwaps: () => calls.push("swaps"),
+    onOpenBlockedDates: () => calls.push("blocked") };
   const screen = mountScreen("src/components/schedule/ScheduleActions.tsx", icons, {}, props);
   await screen.flush();
   assert.deepEqual(screen.findAll("TouchableOpacity").map((node) => node.props.accessibilityLabel), ["Trocas", "Indisponibilidades"]);
   screen.findAll("TouchableOpacity").forEach((node) => node.props.onPress());
-  props.canCreate = true;
-  screen.rerender();
-  await screen.flush();
-  screen.findAll("TouchableOpacity").find((node) => node.props.accessibilityLabel === "Criar escala")!.props.onPress();
-  assert.deepEqual(calls, ["swaps", "blocked", "create"]);
+  assert.deepEqual(calls, ["swaps", "blocked"]);
   screen.cleanup();
 });

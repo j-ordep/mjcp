@@ -1,32 +1,27 @@
 import { Text } from "../ui/text";
-import { ArrowLeftRight, CalendarOff, Plus } from "lucide-react-native";
+import { ArrowLeftRight, CalendarOff } from "lucide-react-native";
 import { TouchableOpacity, View } from "react-native";
 import type { TextStyle, ViewStyle } from "react-native";
 
 
 interface ScheduleActionsProps {
-  canCreate: boolean;
   onOpenSwaps: () => void;
   onOpenBlockedDates: () => void;
-  onCreate: () => void;
 }
 
 export default function ScheduleActions({
-  canCreate,
   onOpenSwaps,
   onOpenBlockedDates,
-  onCreate,
 }: ScheduleActionsProps) {
   return (
-    <View style={{ gap: 10 }}>
-      <View style={{ flexDirection: "row", gap: 10 }}>
+    <View style={{ flexDirection: "row", gap: 8 }}>
         <TouchableOpacity
           onPress={onOpenSwaps}
           accessibilityRole="button"
           accessibilityLabel="Trocas"
           style={secondaryActionStyle}
         >
-          <ArrowLeftRight size={22} color="#111827" />
+          <ArrowLeftRight size={18} color="#52675a" />
           <Text style={secondaryLabelStyle}>Trocas</Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -35,45 +30,31 @@ export default function ScheduleActions({
           accessibilityLabel="Indisponibilidades"
           style={secondaryActionStyle}
         >
-          <CalendarOff size={22} color="#111827" />
+          <CalendarOff size={18} color="#52675a" />
           <Text style={secondaryLabelStyle}>Indisponibilidades</Text>
         </TouchableOpacity>
-      </View>
-      {canCreate ? (
-        <TouchableOpacity
-          onPress={onCreate}
-          accessibilityRole="button"
-          accessibilityLabel="Criar escala"
-          style={{
-            minHeight: 48, padding: 12, gap: 8, borderRadius: 16,
-            backgroundColor: "#111827", flexDirection: "row",
-            alignItems: "center", justifyContent: "center",
-          }}
-        >
-          <Plus size={20} color="#fff" />
-          <Text style={{ fontSize: 16, fontWeight: "600", color: "#fff" }}>Criar escala</Text>
-        </TouchableOpacity>
-      ) : null}
     </View>
   );
 }
 
 const secondaryActionStyle: ViewStyle = {
   flex: 1,
-  minHeight: 74,
+  minHeight: 44,
   padding: 10,
-  gap: 6,
-  borderRadius: 16,
+  gap: 8,
+  flexDirection: "row",
+  borderRadius: 12,
   borderWidth: 1,
-  borderColor: "#d1d5db",
-  backgroundColor: "#f9fafb",
+  borderColor: "#e7ece5",
+  backgroundColor: "#f5f7f4",
   alignItems: "center",
   justifyContent: "center",
 };
 
 const secondaryLabelStyle: TextStyle = {
-  fontSize: 13,
+  fontSize: 12,
+  flexShrink: 1,
   fontWeight: "600",
   textAlign: "center",
-  color: "#111827",
+  color: "#294531",
 };

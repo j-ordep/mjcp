@@ -1,6 +1,6 @@
 # Próximos passos
 
-Revisado em 2026-10-20. Este é o único backlog.
+Revisado em 2026-10-21. Este é o único backlog.
 Produto e regras em [CONTEXT](CONTEXT.md); execução e banco atual no [README](../README.md).
 
 ## Padronização com React Native Reusables
@@ -36,13 +36,22 @@ pendente; o PR de interface fica em rascunho. Escalas independentes de eventos c
 
 ## Refinamento da tela de Escalas
 
-Implementado: ações maiores com ícones, Criar escala preenchido e restrito ao escopo confirmado;
-filtro de ministério em modal inferior. Selecionar aplica e fecha; fechar sem selecionar preserva
-o filtro. Busca, Minhas/Gerenciadas e Próximas/Anteriores continuam usando os dados carregados.
-Componentes `ScheduleActions` e `ScheduleMinistryFilter`, sem novas dependências ou camadas.
+Direção B aprovada em 2026-10-21: próxima escala em destaque e cartões espaçados, atalhos compactos,
+busca ao lado do filtro de ministério e criação no rodapé para gestores. Dados continuam reais;
+o protótipo visual não altera o vínculo com eventos nem as ações disponíveis no detalhe.
 
-Verificado em 2026-10-12: TypeScript e 343 testes Node passaram, com saída alternativa em `.expo`.
-Cobertos seleção/limpeza, fechamento do modal, permissões, destinos e alteração das opções.
+Implementado: `ScheduleListCard` apresenta data/horário locais com ano, ministério, evento,
+função e situação. Só a primeira próxima escala dos resultados filtrados recebe destaque;
+histórico usa cartões neutros. `ScheduleSummaryCard` permanece nos formulários/detalhes.
+`ScheduleActions` concentra os dois atalhos; o filtro mantém seu modal e a criação fica no
+rodapé, com o escopo existente. Filtros, ordenação, refresh, erros e descarte de respostas
+antigas foram preservados.
+
+Verificado em 2026-10-21: TypeScript, 359 testes Node e exportações Android/web passaram.
+Conferência web dos componentes reais com dados fictícios em larguras de 320 e 390 pixels:
+sem transbordamento horizontal; seleção de ministério atualiza a lista e fecha o modal.
+Essa conferência não valida teclado, fonte ampliada ou comportamento nativo Android/iOS.
+
 - [ ] Conferir no celular o destaque das ações, nomes longos, lista extensa, fonte ampliada,
   teclado e fechamento do modal pelo X, toque fora e voltar do Android.
 

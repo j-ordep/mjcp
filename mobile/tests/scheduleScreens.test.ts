@@ -94,16 +94,55 @@ test("schedule actions retain creation permission and existing destinations", as
   await screen.flush();
   assert.equal(screen.findAll("ScheduleActions").length, 1);
   const actions = screen.findAll("ScheduleActions")[0].props;
-  assert.equal(actions.canCreate, false);
+  assert.equal(screen.findAll("Button").length, 0);
   actions.onOpenSwaps();
   actions.onOpenBlockedDates();
   assert.deepEqual(destinations, ["SwapRequests", "BlockDatesScreen"]);
   scope.userMinistries = [ministry];
   screen.rerender();
   await screen.flush();
-  assert.equal(screen.findAll("ScheduleActions")[0].props.canCreate, true);
-  screen.findAll("ScheduleActions")[0].props.onCreate();
+  assert.equal(screen.findAll("Button").length, 1);
+  assert.equal(screen.findAll("Button")[0].props.accessibilityLabel, "Criar escala");
+  screen.findAll("Button")[0].props.onPress();
   assert.equal(destinations[2], "CreateSchedule");
+  screen.cleanup();
+});
+
+test("cards highlight only the next filtered schedule and keep history and detail navigation", async () => {
+  const scope = { userMinistries: [], userMinistriesUserId: "user-example", error: null, fetchUserMinistries: async () => {} };
+  const modules = screenModules(scope, {});
+  const makeCard = (id: string, start_at: string, name: string) => ({ id,
+    ministry: { id, name }, event: { ...event, start_at }, my_assignments: [],
+  });
+  const state = { scheduleCards: [makeCard("later", "2099-01-02T12:00:00Z", "Louvor"),
+    makeCard("first", "2099-01-01T12:00:00Z", "Recepção"),
+    makeCard("past", "2000-01-01T12:00:00Z", "Louvor")],
+    isLoadingSchedules: false, error: null, fetchScheduleCards: async () => {},
+  };
+  modules.useScheduleStore = { useScheduleStore: Object.assign(() => state, { getState: () => ({ viewMode: "personal" }) }) } as any;
+  const screen = mountScreen("src/screens/app/ScheduleScreen.tsx", modules);
+  const destinations: any[] = [];
+  screen.navigation.navigate = (...args: any[]) => { destinations.push(args); };
+  await screen.flush();
+  const renderedCard = (index: number) => {
+    const list = screen.findAll("FlatList")[0];
+    const row = list.props.renderItem({ item: list.props.data[index], index });
+    return [row, ...(Array.isArray(row.props.children) ? row.props.children : [row.props.children])]
+      .find((node) => node?.type === "ScheduleListCard");
+  };
+  assert.equal(textContent(screen.findAll("FlatList")[0].props.ListHeaderComponent), "Próxima escala");
+  assert.equal(renderedCard(0)?.props.featured, true);
+  assert.equal(renderedCard(1)?.props.featured, false);
+  renderedCard(0).props.onPress();
+  assert.deepEqual(JSON.parse(JSON.stringify(destinations[0])), ["EditSchedule", { scheduleId: "first" }]);
+  screen.findAll("TextInput")[0].props.onChangeText("Louvor");
+  await screen.flush();
+  assert.equal(renderedCard(0)?.props.ministryName, "Louvor");
+  assert.equal(renderedCard(0)?.props.featured, true);
+  screen.findAll("TouchableOpacity").find((node) => textContent(node) === "Anteriores")!.props.onPress();
+  await screen.flush();
+  assert.equal(textContent(screen.findAll("FlatList")[0].props.ListHeaderComponent), "Histórico");
+  assert.equal(renderedCard(0)?.props.featured, false);
   screen.cleanup();
 });
 

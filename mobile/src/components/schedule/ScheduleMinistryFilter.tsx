@@ -29,13 +29,14 @@ export default function ScheduleMinistryFilter({
         accessibilityState={{ expanded: isOpen }}
         onPress={() => { Keyboard.dismiss(); setIsOpen(true); }}
         style={{
-          flexShrink: 1, maxWidth: "100%", flexDirection: "row", alignItems: "center",
-          gap: 6, padding: 10, borderRadius: 12, borderWidth: 1,
-          borderColor: selected ? "#111827" : "#d1d5db", backgroundColor: "#fff",
+          width: 48, height: 48, alignItems: "center", justifyContent: "center",
+          borderRadius: 12, borderWidth: 1,
+          borderColor: selected ? "#285b43" : "#e5eae4", backgroundColor: "#fff",
         }}
       >
-        <SlidersHorizontal size={17} color="#111827" />
-        <Text numberOfLines={1} style={{ flexShrink: 1, color: "#111827", fontWeight: selected ? "600" : "400" }}>{label}</Text>
+        <SlidersHorizontal size={19} color="#52675a" />
+        {selected ? <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
+          style={{ position: "absolute", right: 8, top: 8, width: 6, height: 6, borderRadius: 3, backgroundColor: "#285b43" }} /> : null}
       </TouchableOpacity>
       <Modal
         visible={isOpen}
