@@ -1,3 +1,5 @@
+import { colors } from "../../theme/colors";
+import { Text } from "../ui/text";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useEffect, useState } from "react";
@@ -7,7 +9,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Divider, Modal, Portal, Text } from "react-native-paper";
+import { Modal, Portal } from "react-native-paper";
+import { Separator as Divider } from "../ui/separator";
 import type { RootStackParamList } from "../../types/navigation";
 import type { AppNotification } from "../../services/notificationService";
 import { useNotificationStore } from "../../stores/useNotificationStore";
@@ -91,7 +94,7 @@ export default function NotificationsModal({
         onDismiss={onDismiss}
         contentContainerStyle={{
           margin: 32,
-          backgroundColor: "#fff",
+          backgroundColor: colors.surface,
           borderRadius: 30,
           padding: 24,
           maxHeight: 500,
@@ -99,7 +102,7 @@ export default function NotificationsModal({
       >
         <View style={{ marginBottom: 10 }}>
           <Text
-            variant="titleMedium"
+            variant="large"
             style={{ textAlign: "center", paddingBottom: 4 }}
           >
             Notificacoes
@@ -108,7 +111,7 @@ export default function NotificationsModal({
             disabled={isMarkingAllAsRead || allRead}
             onPress={() => void handleMarkAllAsRead()}
           >
-            <Text style={{ textAlign: "center", color: "#2563eb", fontSize: 13 }}>
+            <Text style={{ textAlign: "center", color: colors.primary, fontSize: 13 }}>
               {isMarkingAllAsRead ? "Marcando..." : "Marcar todas como lidas"}
             </Text>
           </TouchableOpacity>
@@ -116,11 +119,11 @@ export default function NotificationsModal({
 
         {isLoading ? (
           <View style={{ paddingVertical: 32, alignItems: "center" }}>
-            <ActivityIndicator size="small" color="#000" />
+            <ActivityIndicator size="small" color={colors.foreground} />
           </View>
         ) : errorMessage ? (
           <View style={{ paddingVertical: 16 }}>
-            <Text style={{ textAlign: "center", color: "#b91c1c", marginBottom: 12 }}>
+            <Text style={{ textAlign: "center", color: colors.destructive, marginBottom: 12 }}>
               {errorMessage}
             </Text>
             <DefaultButton variant="outline" onPress={() => void loadNotifications()}>
@@ -139,29 +142,29 @@ export default function NotificationsModal({
               >
                 <View
                   style={{
-                    backgroundColor: notification.read ? "#f3f4f6" : "#eff6ff",
+                    backgroundColor: notification.read ? colors.muted : colors.secondary,
                     borderRadius: 12,
                     padding: 16,
                     marginBottom: 12,
-                    shadowColor: "#000",
+                    shadowColor: colors.shadow,
                     shadowOpacity: 0.04,
                     shadowRadius: 2,
                     elevation: 1,
                     borderWidth: notification.read ? 0 : 1,
-                    borderColor: notification.read ? "transparent" : "#bfdbfe",
+                    borderColor: notification.read ? "transparent" : colors.input,
                   }}
                 >
                   <Text style={{ fontWeight: "bold", marginBottom: 4 }}>
                     {notification.title}
                   </Text>
-                  <Text style={{ color: "#2563eb", marginBottom: 2 }}>
+                  <Text style={{ color: colors.primary, marginBottom: 2 }}>
                     {formatDateTime(notification.created_at)}
                   </Text>
                   {notification.body ? (
-                    <Text style={{ color: "#444" }}>{notification.body}</Text>
+                    <Text style={{ color: colors.mutedForeground }}>{notification.body}</Text>
                   ) : null}
                   {!notification.read ? (
-                    <Text style={{ color: "#1d4ed8", fontSize: 12, marginTop: 8 }}>
+                    <Text style={{ color: colors.primary, fontSize: 12, marginTop: 8 }}>
                       Toque para abrir
                     </Text>
                   ) : null}

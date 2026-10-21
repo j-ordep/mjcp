@@ -22,6 +22,8 @@ import { useAuthStore } from "../stores/useAuthStore";
 import type { RootStackParamList } from "../types/navigation";
 import { useAuthBootstrap } from "../hooks/useAuthBootstrap";
 import { useNotificationSubscription } from "../hooks/useNotificationSubscription";
+import { colors } from "../theme/colors";
+import { navigationTheme } from "../theme/theme";
 
 export type { RootStackParamList, EventDetailsScreenProps, CreateEventScreenProps } from "../types/navigation";
 
@@ -39,16 +41,16 @@ export default function AppNavigator() {
           flex: 1,
           justifyContent: "center",
           alignItems: "center",
-          backgroundColor: "#fff",
+          backgroundColor: colors.background,
         }}
       >
-        <ActivityIndicator size="large" color="#000" />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
   return (
-    <NavigationContainer key={sessionRevision}>
+    <NavigationContainer key={sessionRevision} theme={navigationTheme}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!session ? (
           <>

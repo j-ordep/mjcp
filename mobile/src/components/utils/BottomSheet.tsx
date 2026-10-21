@@ -1,3 +1,4 @@
+import { colors } from "../../theme/colors";
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Dimensions, PanResponder, Pressable, View } from 'react-native';
 
@@ -73,7 +74,7 @@ export default function BottomSheet({ isOpen, onClose, height, children, backdro
         style={{
           position: 'absolute',
           inset: 0,
-          backgroundColor: 'black',
+          backgroundColor: colors.shadow,
           opacity: backdrop,
         }}
       >
@@ -89,21 +90,21 @@ export default function BottomSheet({ isOpen, onClose, height, children, backdro
           bottom: 0,
           height: sheetH,
           transform: [{ translateY }],
-          backgroundColor: '#fff',
+          backgroundColor: colors.surface,
           borderTopLeftRadius: 24,
           borderTopRightRadius: 24,
           paddingHorizontal: 20,
           paddingTop: 12,
           paddingBottom: 24,
           elevation: 8,
-          shadowColor: '#000',
+          shadowColor: colors.shadow,
           shadowOpacity: 0.1,
           shadowRadius: 12,
           shadowOffset: { width: 0, height: -4 },
         }}
       >
         <View style={{ alignItems: 'center', marginBottom: 30 }}>
-          <View style={{ width: 40, height: 4, backgroundColor: '#e5e7eb', borderRadius: 2 }} />
+          <View style={{ width: 40, height: 4, backgroundColor: colors.border, borderRadius: 2 }} />
         </View>
         {children}
       </Animated.View>

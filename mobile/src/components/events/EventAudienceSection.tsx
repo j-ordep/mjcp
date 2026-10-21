@@ -1,3 +1,8 @@
+import { colors } from "../../theme/colors";
+import { Separator } from "../ui/separator";
+import { Text } from "../ui/text";
+import { Input } from "../ui/input";
+import { Switch } from "../ui/switch";
 import { useCallback, useRef, useState } from "react";
 import {
   Alert,
@@ -6,7 +11,7 @@ import {
   type LayoutChangeEvent,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { Divider, Switch, Text, TextInput } from "react-native-paper";
+
 import { Search, X } from "lucide-react-native";
 import {
   listProfilesPage,
@@ -196,16 +201,16 @@ export default function EventAudienceSection({
       >
         <Text style={{ fontSize: 16 }}>Evento público?</Text>
         <Switch
-          value={isPublic}
-          onValueChange={onVisibilityChange}
-          color="#000"
+          checked={isPublic}
+          onCheckedChange={onVisibilityChange}
+          accessibilityLabel="Evento público"
         />
       </View>
 
       <Text
         style={{
           fontSize: 13,
-          color: "#6b7280",
+          color: colors.mutedForeground,
           lineHeight: 18,
           marginBottom: 20,
         }}
@@ -222,8 +227,9 @@ export default function EventAudienceSection({
           onLayout={onSectionLayout}
           style={{
             marginBottom: 24,
+            backgroundColor: colors.surface,
             borderWidth: 1,
-            borderColor: "#e5e7eb",
+            borderColor: colors.border,
             borderRadius: 20,
             padding: 16,
             gap: 14,
@@ -234,7 +240,7 @@ export default function EventAudienceSection({
               style={{
                 fontSize: 16,
                 fontWeight: "700",
-                color: "#111827",
+                color: colors.foreground,
               }}
             >
               Membros que podem ver este evento
@@ -242,7 +248,7 @@ export default function EventAudienceSection({
             <Text
               style={{
                 fontSize: 13,
-                color: "#6b7280",
+                color: colors.mutedForeground,
                 lineHeight: 18,
               }}
             >
@@ -250,18 +256,13 @@ export default function EventAudienceSection({
             </Text>
           </View>
 
-          <TextInput
-            mode="outlined"
+          <Input
             value={audienceSearch}
             onChangeText={handleSearchChange}
             onFocus={onSearchFocus}
             placeholder="Buscar membro por nome"
-            activeOutlineColor="#000"
-            outlineColor="#d1d5db"
             left={
-              <TextInput.Icon
-                icon={() => <Search size={18} color="#6b7280" />}
-              />
+              <Search size={18} color={colors.mutedForeground} />
             }
           />
 
@@ -270,14 +271,14 @@ export default function EventAudienceSection({
               style={{
                 fontSize: 13,
                 fontWeight: "700",
-                color: "#374151",
+                color: colors.mutedForeground,
               }}
             >
               Selecionados ({selectedAudience.length})
             </Text>
 
             {selectedAudience.length === 0 ? (
-              <Text style={{ fontSize: 13, color: "#6b7280" }}>
+              <Text style={{ fontSize: 13, color: colors.mutedForeground }}>
                 Nenhum membro selecionado. Se salvar assim, apenas
                 administradores visualizam este evento.
               </Text>
@@ -287,7 +288,7 @@ export default function EventAudienceSection({
                   key={profile.id}
                   style={{
                     borderWidth: 1,
-                    borderColor: "#e5e7eb",
+                    borderColor: colors.border,
                     borderRadius: 16,
                     paddingHorizontal: 14,
                     paddingVertical: 12,
@@ -298,11 +299,11 @@ export default function EventAudienceSection({
                   }}
                 >
                   <View style={{ flex: 1 }}>
-                    <Text style={{ fontWeight: "600", color: "#111827" }}>
+                    <Text style={{ fontWeight: "600", color: colors.foreground }}>
                       {profile.full_name}
                     </Text>
                     {!!profile.email ? (
-                      <Text style={{ fontSize: 12, color: "#6b7280" }}>
+                      <Text style={{ fontSize: 12, color: colors.mutedForeground }}>
                         {profile.email}
                       </Text>
                     ) : null}
@@ -311,21 +312,21 @@ export default function EventAudienceSection({
                   <RNTouchableOpacity
                     onPress={() => removeAudienceMember(profile.id)}
                   >
-                    <X size={18} color="#6b7280" />
+                    <X size={18} color={colors.mutedForeground} />
                   </RNTouchableOpacity>
                 </View>
               ))
             )}
           </View>
 
-          <Divider />
+          <Separator />
 
           <View style={{ gap: 8 }}>
             <Text
               style={{
                 fontSize: 13,
                 fontWeight: "700",
-                color: "#374151",
+                color: colors.mutedForeground,
               }}
             >
               Membros disponíveis
@@ -333,7 +334,7 @@ export default function EventAudienceSection({
 
             {audienceError ? (
               <View style={{ gap: 8 }}>
-                <Text style={{ fontSize: 13, color: "#b91c1c" }}>
+                <Text style={{ fontSize: 13, color: colors.destructive }}>
                   {audienceError}
                 </Text>
                 <RNTouchableOpacity
@@ -350,7 +351,7 @@ export default function EventAudienceSection({
                     style={{
                       fontSize: 13,
                       fontWeight: "700",
-                      color: "#111827",
+                      color: colors.foreground,
                     }}
                   >
                     Tentar novamente
@@ -360,12 +361,12 @@ export default function EventAudienceSection({
             ) : null}
 
             {isLoadingAudience && availableAudienceResults.length === 0 ? (
-              <Text style={{ fontSize: 13, color: "#6b7280" }}>
+              <Text style={{ fontSize: 13, color: colors.mutedForeground }}>
                 Carregando membros...
               </Text>
             ) : availableAudienceResults.length === 0 ? (
               audienceError ? null : (
-                <Text style={{ fontSize: 13, color: "#6b7280" }}>
+                <Text style={{ fontSize: 13, color: colors.mutedForeground }}>
                   {audienceSearch.trim()
                     ? "Nenhum membro encontrado para este termo."
                     : "Nenhum membro disponível para adicionar."}
@@ -380,7 +381,7 @@ export default function EventAudienceSection({
                     activeOpacity={0.8}
                     style={{
                       borderWidth: 1,
-                      borderColor: "#e5e7eb",
+                      borderColor: colors.border,
                       borderRadius: 16,
                       paddingHorizontal: 14,
                       paddingVertical: 12,
@@ -391,11 +392,11 @@ export default function EventAudienceSection({
                     }}
                   >
                     <View style={{ flex: 1 }}>
-                      <Text style={{ fontWeight: "600", color: "#111827" }}>
+                      <Text style={{ fontWeight: "600", color: colors.foreground }}>
                         {profile.full_name}
                       </Text>
                       {!!profile.email ? (
-                        <Text style={{ fontSize: 12, color: "#6b7280" }}>
+                        <Text style={{ fontSize: 12, color: colors.mutedForeground }}>
                           {profile.email}
                         </Text>
                       ) : null}
@@ -405,7 +406,7 @@ export default function EventAudienceSection({
                       style={{
                         fontSize: 12,
                         fontWeight: "700",
-                        color: "#111827",
+                        color: colors.foreground,
                       }}
                     >
                       Adicionar
@@ -419,7 +420,7 @@ export default function EventAudienceSection({
                     activeOpacity={0.8}
                     style={{
                       borderWidth: 1,
-                      borderColor: "#d1d5db",
+                      borderColor: colors.border,
                       borderRadius: 14,
                       paddingHorizontal: 14,
                       paddingVertical: 12,
@@ -432,7 +433,7 @@ export default function EventAudienceSection({
                       style={{
                         fontSize: 13,
                         fontWeight: "700",
-                        color: "#111827",
+                        color: colors.foreground,
                       }}
                     >
                       {isLoadingAudience

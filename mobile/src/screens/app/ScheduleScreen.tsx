@@ -1,15 +1,21 @@
+import { colors } from "../../theme/colors";
+import { Text } from "../../components/ui/text";
+import { Input } from "../../components/ui/input";
+import { Plus, Search } from "lucide-react-native";
+import { Button } from "../../components/ui/button";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, FlatList, ScrollView, TouchableOpacity, View } from "react-native";
-import { Text, TextInput } from "react-native-paper";
+import { ActivityIndicator, FlatList, TouchableOpacity, View } from "react-native";
+
 import { SafeAreaView } from "react-native-safe-area-context";
-import ScheduleSummaryCard from "../../components/schedule/ScheduleSummaryCard";
+import ScheduleListCard from "../../components/schedule/ScheduleListCard";
+import ScheduleActions from "../../components/schedule/ScheduleActions";
+import ScheduleMinistryFilter from "../../components/schedule/ScheduleMinistryFilter";
 import type { RootStackParamList } from "../../types/navigation";
 import { useAuthStore } from "../../stores/useAuthStore";
 import { useMinistryStore } from "../../stores/useMinistryStore";
 import { useScheduleStore, type ScheduleViewMode } from "../../stores/useScheduleStore";
-import { formatDateTime } from "../../utils/formatDate";
 import { getOwnRoleLabel, getParticipationStatusLabel } from "../../utils/scheduleParticipation";
 import { compareScheduleDatesByFilter, matchesScheduleTimeFilter } from "../../utils/scheduleRules";
 
@@ -65,45 +71,82 @@ export default function ScheduleScreen() {
     matchesScheduleTimeFilter(card.event.start_at, timeFilter) && (!ministryId || card.ministry.id === ministryId) &&
     (!search.trim() || `${card.event.title} ${card.ministry.name}`.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()))
   ).sort((a, b) => compareScheduleDatesByFilter(a.event.start_at, b.event.start_at, timeFilter)), [scheduleCards, ministryId, search, timeFilter]);
-  const chip = (label: string, selected: boolean, onPress: () => void, key = label) => (
-    <TouchableOpacity key={key} onPress={onPress} style={{ padding: 10, borderRadius: 12, backgroundColor: selected ? "#111827" : "#f3f4f6" }}>
-      <Text style={{ color: selected ? "white" : "#111827" }}>{label}</Text>
-    </TouchableOpacity>
-  );
   const loading = loadingScope || isLoadingSchedules;
   const loadError = scopeError || error;
+  const selectedMinistry = ministries.find((ministry) => ministry.id === ministryId);
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={["left", "right"]}>
-      <View style={{ paddingHorizontal: 20, gap: 12, paddingBottom: 12 }}>
-        <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
-          {chip("Trocas", false, () => navigation.navigate("SwapRequests"))}
-          {chip("Indisponibilidades", false, () => navigation.navigate("BlockDatesScreen"))}
-          {canManage ? chip("Criar escala", false, () => navigation.navigate("CreateSchedule")) : null}
+    <SafeAreaView className="flex-1 bg-background" edges={["left", "right"]}>
+      <View className="gap-4 bg-card px-5 pb-3">
+        {canManage ? (
+          <View className="flex-row gap-6 border-b border-border">
+            {([
+              { value: "personal", label: "Minhas" },
+              { value: "manageable", label: "Gerenciadas" },
+            ] as const).map((option) => (
+              <TouchableOpacity key={option.value} onPress={() => setMode(option.value)}
+                accessibilityRole="tab" accessibilityState={{ selected: mode === option.value }}
+                className={mode === option.value ? "min-h-11 justify-center border-b-2 border-primary pb-2" : "min-h-11 justify-center border-b-2 border-transparent pb-2"}>
+                <Text className={mode === option.value ? "text-sm font-semibold text-foreground" : "text-sm font-medium text-muted-foreground"}>{option.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        ) : null}
+        <ScheduleActions
+          onOpenSwaps={() => navigation.navigate("SwapRequests")}
+          onOpenBlockedDates={() => navigation.navigate("BlockDatesScreen")}
+        />
+        <View className="flex-row items-center gap-2">
+          <Input placeholder="Buscar escalas" accessibilityLabel="Buscar escalas"
+            value={search} onChangeText={setSearch} returnKeyType="search"
+            containerStyle={{ flex: 1 }} left={<Search size={18} color={colors.mutedForeground} />}
+            fieldClassName="border-border bg-muted" />
+          <ScheduleMinistryFilter ministries={ministries} selectedId={ministryId} onSelect={setMinistryId} />
         </View>
-        {canManage ? <View style={{ flexDirection: "row", gap: 8 }}>
-          {chip("Minhas", mode === "personal", () => setMode("personal"))}
-          {chip("Gerenciadas", mode === "manageable", () => setMode("manageable"))}
-        </View> : null}
-        <TextInput label="Buscar escala" value={search} onChangeText={setSearch} style={{ backgroundColor: "#f3f4f6" }} />
-        <View style={{ flexDirection: "row", gap: 8 }}>
-          {chip("Próximas", timeFilter === "current", () => setTimeFilter("current"))}
-          {chip("Anteriores", timeFilter === "past", () => setTimeFilter("past"))}
+        <View className="flex-row items-center justify-between gap-2">
+          <View className="flex-row gap-1">
+            {([
+              { value: "current", label: "Próximas" },
+              { value: "past", label: "Anteriores" },
+            ] as const).map((option) => (
+              <TouchableOpacity key={option.value} onPress={() => setTimeFilter(option.value)}
+                accessibilityRole="button" accessibilityState={{ selected: timeFilter === option.value }}
+                className={timeFilter === option.value ? "min-h-11 justify-center rounded-lg bg-secondary px-3" : "min-h-11 justify-center rounded-lg px-3"}>
+                <Text className={timeFilter === option.value ? "text-xs font-semibold text-foreground" : "text-xs font-medium text-muted-foreground"}>{option.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <Text numberOfLines={1} className="min-w-0 shrink text-right text-xs text-muted-foreground">
+            {selectedMinistry?.name ?? "Todos os ministérios"}
+          </Text>
         </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-          {chip("Todos os ministérios", !ministryId, () => setMinistryId(null))}
-          {ministries.map((ministry) => chip(ministry.name, ministryId === ministry.id, () => setMinistryId(ministry.id), ministry.id))}
-        </ScrollView>
       </View>
-      {loading && !refreshing ? <ActivityIndicator style={{ margin: 24 }} /> : loadError ? <View style={{ padding: 20 }}>
-        <Text>Não foi possível carregar as escalas. {loadError}</Text>
-        {chip("Tentar novamente", false, () => void load())}
+      {loading && !refreshing ? <View className="flex-1 items-center justify-center bg-background">
+        <ActivityIndicator color={colors.foreground} />
+      </View> : loadError ? <View className="flex-1 bg-background p-5">
+        <Text className="text-sm text-muted-foreground">Não foi possível carregar as escalas. {loadError}</Text>
+        <TouchableOpacity accessibilityRole="button" onPress={() => void load()} className="min-h-11 justify-center self-start py-3">
+          <Text className="font-semibold text-foreground">Tentar novamente</Text>
+        </TouchableOpacity>
       </View> : <FlatList data={filtered} keyExtractor={(item) => item.id} refreshing={refreshing} onRefresh={() => void load(true)}
-        contentContainerStyle={{ padding: 20, paddingBottom: 32 }}
-        ListEmptyComponent={<Text>{search.trim() || ministryId ? "Nenhuma escala encontrada para os filtros atuais." : mode === "personal" ? "Você não possui escalas neste período." : "Nenhuma escala dos ministérios gerenciados neste período."}</Text>}
-        renderItem={({ item }) => <TouchableOpacity onPress={() => navigation.navigate("EditSchedule", { scheduleId: item.id })} accessibilityRole="button" accessibilityLabel={`Abrir escala ${item.event.title}, ${item.ministry.name}`}>
-          <ScheduleSummaryCard eventTitle={item.event.title} eventDate={formatDateTime(item.event.start_at)} eventLocation={item.event.location}
-            ministryName={item.ministry.name} participationLabel={getParticipationStatusLabel(item.my_assignments)} roleLabel={getOwnRoleLabel(item.my_assignments)} />
-        </TouchableOpacity>} />}
+        className="flex-1 bg-background" keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
+        contentContainerStyle={{ padding: 20, paddingTop: 16, paddingBottom: 24 }}
+        ListHeaderComponent={filtered.length ? <Text className="mb-3 text-sm font-semibold text-muted-foreground">{timeFilter === "current" ? "Próxima escala" : "Histórico"}</Text> : null}
+        ListEmptyComponent={<Text className="py-6 text-center text-sm text-muted-foreground">{search.trim() || ministryId ? "Nenhuma escala encontrada para os filtros atuais." : mode === "personal" ? "Você não possui escalas neste período." : "Nenhuma escala dos ministérios gerenciados neste período."}</Text>}
+        renderItem={({ item, index }) => <View>
+          {index === 1 && timeFilter === "current" ? <Text className="mb-3 mt-1 text-sm font-semibold text-muted-foreground">Na sequência</Text> : null}
+          <ScheduleListCard eventTitle={item.event.title} startAt={item.event.start_at}
+            eventLocation={item.event.location} ministryName={item.ministry.name}
+            participationLabel={getParticipationStatusLabel(item.my_assignments)}
+            roleLabel={getOwnRoleLabel(item.my_assignments)} featured={index === 0 && timeFilter === "current"}
+            onPress={() => navigation.navigate("EditSchedule", { scheduleId: item.id })} />
+        </View>} />}
+      {canManage ? <View className="bg-card px-5 pb-3 pt-3">
+        <Button accessibilityLabel="Criar escala" onPress={() => navigation.navigate("CreateSchedule")}
+          className="h-auto min-h-12 rounded-xl bg-primary active:bg-primary-pressed">
+          <Plus size={18} color={colors.primaryForeground} />
+          <Text className="shrink text-sm font-semibold text-primary-foreground">Criar escala</Text>
+        </Button>
+      </View> : null}
     </SafeAreaView>
   );
 }

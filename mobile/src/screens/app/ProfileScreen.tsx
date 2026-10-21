@@ -1,3 +1,5 @@
+import { colors } from "../../theme/colors";
+import { Text } from "../../components/ui/text";
 import { useEffect, useState } from "react";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../../types/navigation";
@@ -10,7 +12,8 @@ import {
   View,
 } from "react-native";
 import { ShieldCheck } from "lucide-react-native";
-import { Avatar, Divider, Text } from "react-native-paper";
+import { Avatar } from "react-native-paper";
+import { Separator as Divider } from "../../components/ui/separator";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ProfileHeader from "../../components/Header/ProfileHeader";
 import BottomSheetMenu from "../../components/utils/BottomSheetMenu";
@@ -45,7 +48,7 @@ export default function ProfileScreen({ navigation }: NativeStackScreenProps<Roo
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={["top", "left", "right"]}>
+    <SafeAreaView className="flex-1 bg-background" edges={["top", "left", "right"]}>
       <ProfileHeader onBack={handleBack} onMenu={() => setShowMenu(true)} />
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -64,14 +67,14 @@ export default function ProfileScreen({ navigation }: NativeStackScreenProps<Roo
             <Avatar.Text
               size={110}
               label={getProfileInitials(profile?.full_name)}
-              color="#111111"
-              style={{ marginBottom: 12, backgroundColor: "#f3f4f6" }}
+              color={colors.foreground}
+              style={{ marginBottom: 12, backgroundColor: colors.muted }}
             />
           )}
           <Text style={{ fontSize: 22, fontWeight: "bold", marginTop: 8 }}>
             {profile?.full_name || "Carregando..."}
           </Text>
-          <Text style={{ marginTop: 2, color: "#666" }}>
+          <Text style={{ marginTop: 2, color: colors.mutedForeground }}>
             {profile?.role === "admin"
               ? "Administrador"
               : profile?.role === "leader"
@@ -82,14 +85,14 @@ export default function ProfileScreen({ navigation }: NativeStackScreenProps<Roo
 
         <View className="mt-8 px-6">
           <View className="py-3">
-            <Text style={{ color: "#888", marginBottom: 2 }}>Email</Text>
+            <Text style={{ color: colors.mutedForeground, marginBottom: 2 }}>Email</Text>
             <Text style={{ fontSize: 15, marginBottom: 0 }}>
               {profile?.email || "Nenhum email"}
             </Text>
             <Divider style={{ marginTop: 10, marginBottom: 0 }} />
           </View>
           <View className="py-3">
-            <Text style={{ color: "#888", marginBottom: 2 }}>Telefone</Text>
+            <Text style={{ color: colors.mutedForeground, marginBottom: 2 }}>Telefone</Text>
             <Text style={{ fontSize: 15, marginBottom: 0 }}>
               {formatProfilePhone(profile?.phone)}
             </Text>
@@ -99,9 +102,9 @@ export default function ProfileScreen({ navigation }: NativeStackScreenProps<Roo
 
         {canManageEvents(profile) ? (
           <View className="mt-8 px-6">
-            <TouchableOpacity onPress={() => navigation.navigate("EventsScreen")} style={{ borderRadius: 18, padding: 18, backgroundColor: "#f3f4f6" }}>
+            <TouchableOpacity onPress={() => navigation.navigate("EventsScreen")} style={{ borderRadius: 18, padding: 18, backgroundColor: colors.muted }}>
               <Text style={{ fontWeight: "700", fontSize: 16 }}>Eventos de apoio</Text>
-              <Text style={{ color: "#6b7280", marginTop: 6 }}>Gerencie os eventos usados nas escalas.</Text>
+              <Text style={{ color: colors.mutedForeground, marginTop: 6 }}>Gerencie os eventos usados nas escalas.</Text>
             </TouchableOpacity>
           </View>
         ) : null}
@@ -117,8 +120,8 @@ export default function ProfileScreen({ navigation }: NativeStackScreenProps<Roo
                 borderRadius: 24,
                 padding: 18,
                 borderWidth: 1,
-                borderColor: "#eef2f7",
-                backgroundColor: "#fff",
+                borderColor: colors.border,
+                backgroundColor: colors.surface,
               }}
             >
               <View
@@ -126,18 +129,18 @@ export default function ProfileScreen({ navigation }: NativeStackScreenProps<Roo
                   width: 46,
                   height: 46,
                   borderRadius: 23,
-                  backgroundColor: "#111827",
+                  backgroundColor: colors.primary,
                   alignItems: "center",
                   justifyContent: "center",
                   marginBottom: 14,
                 }}
               >
-                <ShieldCheck size={20} color="#fff" />
+                <ShieldCheck size={20} color={colors.primaryForeground} />
               </View>
               <Text style={{ fontWeight: "700", fontSize: 16, marginBottom: 4 }}>
                 Permissoes globais de eventos
               </Text>
-              <Text style={{ color: "#6b7280", lineHeight: 20 }}>
+              <Text style={{ color: colors.mutedForeground, lineHeight: 20 }}>
                 Gerencie quem pode criar, editar e excluir eventos em todo o app.
               </Text>
             </TouchableOpacity>
@@ -149,9 +152,9 @@ export default function ProfileScreen({ navigation }: NativeStackScreenProps<Roo
             Meus Ministérios
           </Text>
           {isLoadingMinistries ? (
-            <ActivityIndicator size="small" color="#000" />
+            <ActivityIndicator size="small" color={colors.foreground} />
           ) : userMinistries.length === 0 ? (
-            <Text style={{ color: "#888" }}>
+            <Text style={{ color: colors.mutedForeground }}>
               Você ainda não faz parte de nenhum ministério.
             </Text>
           ) : (
@@ -164,19 +167,19 @@ export default function ProfileScreen({ navigation }: NativeStackScreenProps<Roo
                   justifyContent: "space-between",
                   paddingVertical: 10,
                   borderBottomWidth: 1,
-                  borderBottomColor: "#f3f4f6",
+                  borderBottomColor: colors.border,
                 }}
               >
                 <View>
                   <Text style={{ fontWeight: "bold" }}>{ministry.name}</Text>
-                  <Text style={{ fontSize: 12, color: "#888" }}>
+                  <Text style={{ fontSize: 12, color: colors.mutedForeground }}>
                     Desde {new Date(ministry.joined_at).toLocaleDateString("pt-BR")}
                   </Text>
                 </View>
                 {ministry.is_leader ? (
                   <View
                     style={{
-                      backgroundColor: "#000",
+                      backgroundColor: colors.primary,
                       borderRadius: 4,
                       paddingHorizontal: 6,
                       paddingVertical: 2,
@@ -184,7 +187,7 @@ export default function ProfileScreen({ navigation }: NativeStackScreenProps<Roo
                   >
                     <Text
                       style={{
-                        color: "#fff",
+                        color: colors.primaryForeground,
                         fontSize: 10,
                         fontWeight: "bold",
                       }}
@@ -207,18 +210,18 @@ export default function ProfileScreen({ navigation }: NativeStackScreenProps<Roo
               borderRadius: 24,
               padding: 18,
               borderWidth: 1,
-              borderColor: "#eef2f7",
-              backgroundColor: "#fff",
+              borderColor: colors.border,
+              backgroundColor: colors.surface,
             }}
           >
             <Text style={{ fontWeight: "700", fontSize: 16, marginBottom: 6 }}>
               Dados reais do seu perfil
             </Text>
-            <Text style={{ color: "#6b7280", lineHeight: 20, marginBottom: 12 }}>
+            <Text style={{ color: colors.mutedForeground, lineHeight: 20, marginBottom: 12 }}>
               Esta tela mostra apenas informações reais do app. Histórico detalhado
               de atividades ainda não entrou na POC.
             </Text>
-            <Text style={{ color: "#111827", fontSize: 14 }}>
+            <Text style={{ color: colors.foreground, fontSize: 14 }}>
               Ministérios vinculados: {userMinistries.length}
             </Text>
           </View>

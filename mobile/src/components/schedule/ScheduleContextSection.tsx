@@ -1,6 +1,8 @@
+import { colors } from "../../theme/colors";
 import { CalendarDays } from "lucide-react-native";
 import { TouchableOpacity, View } from "react-native";
-import { Text } from "react-native-paper";
+import { Text } from "../ui/text";
+import { SelectField } from "../ui/select-field";
 import type { UserMinistry } from "../../services/ministryService";
 import type { Event, Ministry } from "../../types/models";
 import DefaultButton from "../button/DefaultButton";
@@ -44,12 +46,12 @@ export default function ScheduleContextSection({
   return (
     <View
       style={{
-        backgroundColor: "#fff",
+        backgroundColor: colors.surface,
         borderRadius: 24,
         padding: 18,
         marginBottom: 18,
         borderWidth: 1,
-        borderColor: "#eef2f7",
+        borderColor: colors.border,
       }}
     >
       <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 14 }}>
@@ -58,17 +60,17 @@ export default function ScheduleContextSection({
             width: 28,
             height: 28,
             borderRadius: 14,
-            backgroundColor: "#111827",
+            backgroundColor: colors.primary,
             alignItems: "center",
             justifyContent: "center",
             marginRight: 10,
           }}
         >
-          <Text style={{ color: "#fff", fontWeight: "700", fontSize: 13 }}>1</Text>
+          <Text style={{ color: colors.primaryForeground, fontWeight: "700", fontSize: 13 }}>1</Text>
         </View>
         <View style={{ flex: 1 }}>
           <Text style={{ fontWeight: "700", fontSize: 17 }}>Contexto da escala</Text>
-          <Text style={{ color: "#6b7280" }}>
+          <Text style={{ color: colors.mutedForeground }}>
             Escolha o evento e o ministerio antes de escalar pessoas.
           </Text>
         </View>
@@ -77,7 +79,7 @@ export default function ScheduleContextSection({
       <Text style={{ fontWeight: "600", marginBottom: 10 }}>Evento</Text>
       <View style={{ marginBottom: 18 }}>
         {events.length === 0 ? (
-          <Text style={{ color: "#888" }}>Nenhum evento futuro encontrado.</Text>
+          <Text style={{ color: colors.mutedForeground }}>Nenhum evento futuro encontrado.</Text>
         ) : (
           events.map((event) => {
             const selected = selectedEventId === event.id;
@@ -88,11 +90,11 @@ export default function ScheduleContextSection({
                 activeOpacity={0.85}
                 style={{
                   borderWidth: 1.5,
-                  borderColor: selected ? "#111827" : "#e5e7eb",
+                  borderColor: selected ? colors.primary : colors.border,
                   borderRadius: 18,
                   padding: 14,
                   marginBottom: 10,
-                  backgroundColor: selected ? "#f9fafb" : "#fff",
+                  backgroundColor: selected ? colors.muted : colors.surface,
                 }}
               >
                 <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 12 }}>
@@ -101,8 +103,8 @@ export default function ScheduleContextSection({
                       {event.title}
                     </Text>
                     <View style={{ flexDirection: "row", alignItems: "center" }}>
-                      <CalendarDays size={14} color="#6b7280" />
-                      <Text style={{ color: "#6b7280", fontSize: 13, marginLeft: 6 }}>
+                      <CalendarDays size={14} color={colors.mutedForeground} />
+                      <Text style={{ color: colors.mutedForeground, fontSize: 13, marginLeft: 6 }}>
                         {formatDateTime(event.start_at)}
                       </Text>
                     </View>
@@ -111,13 +113,13 @@ export default function ScheduleContextSection({
                     <View
                       style={{
                         alignSelf: "flex-start",
-                        backgroundColor: "#111827",
+                        backgroundColor: colors.primary,
                         paddingHorizontal: 10,
                         paddingVertical: 5,
                         borderRadius: 999,
                       }}
                     >
-                      <Text style={{ color: "#fff", fontSize: 12, fontWeight: "600" }}>
+                      <Text style={{ color: colors.primaryForeground, fontSize: 12, fontWeight: "600" }}>
                         Selecionado
                       </Text>
                     </View>
@@ -129,35 +131,25 @@ export default function ScheduleContextSection({
         )}
       </View>
 
-      <Text style={{ fontWeight: "600", marginBottom: 10 }}>Ministerio</Text>
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 18 }}>
-        {isLoadingMinistries ? (
-          <Text style={{ color: "#888" }}>Carregando ministerios...</Text>
-        ) : ministries.length === 0 ? (
-          <Text style={{ color: "#888" }}>Nenhum ministerio disponivel para criacao.</Text>
-        ) : (
-          ministries.map((ministry) => {
-            const selected = selectedMinistryId === ministry.id;
-            return (
-              <TouchableOpacity
-                key={ministry.id}
-                onPress={() => onSelectMinistry(ministry.id)}
-                activeOpacity={0.85}
-                style={{
-                  paddingHorizontal: 14,
-                  paddingVertical: 10,
-                  borderRadius: 999,
-                  backgroundColor: selected ? "#111827" : "#f3f4f6",
-                }}
-              >
-                <Text style={{ color: selected ? "#fff" : "#111827", fontWeight: "600" }}>
-                  {ministry.name}
-                </Text>
-              </TouchableOpacity>
-            );
-          })
-        )}
-      </View>
+      {isLoadingMinistries ? (
+        <View style={{ marginBottom: 18 }}>
+          <Text style={{ fontWeight: "600", marginBottom: 10 }}>Ministerio</Text>
+          <Text style={{ color: colors.mutedForeground }}>Carregando ministerios...</Text>
+        </View>
+      ) : ministries.length === 0 ? (
+        <View style={{ marginBottom: 18 }}>
+          <Text style={{ fontWeight: "600", marginBottom: 10 }}>Ministerio</Text>
+          <Text style={{ color: colors.mutedForeground }}>Nenhum ministerio disponivel para criacao.</Text>
+        </View>
+      ) : (
+        <SelectField
+          label="Ministerio"
+          value={selectedMinistryId}
+          options={ministries.map((ministry) => ({ value: ministry.id, label: ministry.name }))}
+          onValueChange={onSelectMinistry}
+          containerStyle={{ marginBottom: 18 }}
+        />
+      )}
 
       {selectedEvent || selectedMinistry ? (
         <ScheduleSummaryCard

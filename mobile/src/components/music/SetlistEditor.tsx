@@ -1,6 +1,8 @@
+import { colors } from "../../theme/colors";
+import { Text } from "../ui/text";
 import { ArrowDown, ArrowUp, X } from "lucide-react-native";
 import { TouchableOpacity, View } from "react-native";
-import { Text } from "react-native-paper";
+
 import DefaultButton from "../button/DefaultButton";
 import type { EventSetlistSong } from "../../services/musicService";
 
@@ -31,16 +33,16 @@ export default function SetlistEditor({
       style={{
         borderRadius: 20,
         borderWidth: 1,
-        borderColor: "#e5e7eb",
+        borderColor: colors.border,
         padding: 16,
         marginBottom: 20,
-        backgroundColor: "#fff",
+        backgroundColor: colors.surface,
       }}
     >
       <Text style={{ fontWeight: "700", fontSize: 16, marginBottom: 6 }}>
         Editar setlist
       </Text>
-      <Text style={{ color: "#6b7280", lineHeight: 20, marginBottom: 12 }}>
+      <Text style={{ color: colors.mutedForeground, lineHeight: 20, marginBottom: 12 }}>
         Toque na lista abaixo para adicionar músicas. Reordene as escolhidas e
         salve.
       </Text>
@@ -50,13 +52,13 @@ export default function SetlistEditor({
           style={{
             borderRadius: 16,
             borderWidth: 1,
-            borderColor: "#e5e7eb",
+            borderColor: colors.border,
             borderStyle: "dashed",
             padding: 18,
             marginBottom: 14,
           }}
         >
-          <Text style={{ color: "#6b7280" }}>
+          <Text style={{ color: colors.mutedForeground }}>
             Nenhuma música na setlist ainda.
           </Text>
         </View>
@@ -68,11 +70,11 @@ export default function SetlistEditor({
               flexDirection: "row",
               alignItems: "center",
               borderWidth: 1,
-              borderColor: "#e5e7eb",
+              borderColor: colors.border,
               borderRadius: 16,
               padding: 12,
               marginBottom: 10,
-              backgroundColor: "#fff",
+              backgroundColor: colors.surface,
             }}
           >
             <View
@@ -80,13 +82,13 @@ export default function SetlistEditor({
                 width: 30,
                 height: 30,
                 borderRadius: 15,
-                backgroundColor: "#111827",
+                backgroundColor: colors.primary,
                 alignItems: "center",
                 justifyContent: "center",
                 marginRight: 12,
               }}
             >
-              <Text style={{ color: "#fff", fontWeight: "700", fontSize: 12 }}>
+              <Text style={{ color: colors.primaryForeground, fontWeight: "700", fontSize: 12 }}>
                 {index + 1}
               </Text>
             </View>
@@ -94,7 +96,7 @@ export default function SetlistEditor({
               <Text style={{ fontWeight: "700", fontSize: 15 }}>
                 {item.song.title}
               </Text>
-              <Text style={{ color: "#6b7280", fontSize: 13 }}>
+              <Text style={{ color: colors.mutedForeground, fontSize: 13 }}>
                 {item.song.artist || "Sem artista"} · Tom{" "}
                 {item.song_key || item.song.key || "-"}
               </Text>
@@ -108,12 +110,12 @@ export default function SetlistEditor({
                   height: 34,
                   borderRadius: 17,
                   borderWidth: 1,
-                  borderColor: "#e5e7eb",
+                  borderColor: colors.border,
                   alignItems: "center",
                   justifyContent: "center",
                 }}
               >
-                <ArrowUp size={16} color="#111827" />
+                <ArrowUp size={16} color={colors.foreground} />
               </TouchableOpacity>
               <TouchableOpacity
                 disabled={isSaving || disabled || index === songs.length - 1}
@@ -123,12 +125,12 @@ export default function SetlistEditor({
                   height: 34,
                   borderRadius: 17,
                   borderWidth: 1,
-                  borderColor: "#e5e7eb",
+                  borderColor: colors.border,
                   alignItems: "center",
                   justifyContent: "center",
                 }}
               >
-                <ArrowDown size={16} color="#111827" />
+                <ArrowDown size={16} color={colors.foreground} />
               </TouchableOpacity>
               <TouchableOpacity
                 disabled={isSaving || disabled}
@@ -138,13 +140,13 @@ export default function SetlistEditor({
                   height: 34,
                   borderRadius: 17,
                   borderWidth: 1,
-                  borderColor: "#fecaca",
-                  backgroundColor: "#fff1f2",
+                  borderColor: colors.destructiveBorder,
+                  backgroundColor: colors.destructiveMuted,
                   alignItems: "center",
                   justifyContent: "center",
                 }}
               >
-                <X size={16} color="#be123c" />
+                <X size={16} color={colors.destructive} />
               </TouchableOpacity>
             </View>
           </View>

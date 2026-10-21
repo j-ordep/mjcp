@@ -1,3 +1,6 @@
+import { colors } from "../../theme/colors";
+import { Text } from "../../components/ui/text";
+import { Input } from "../../components/ui/input";
 import { useRef, useState } from "react";
 import {
   Alert,
@@ -8,7 +11,8 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
-import { Avatar, Divider, Text, TextInput } from "react-native-paper";
+import { Avatar } from "react-native-paper";
+import { Separator as Divider } from "../../components/ui/separator";
 import { SafeAreaView } from "react-native-safe-area-context";
 import HeaderSecondary from "../../components/Header/HeaderSecondary";
 import DefaultButton from "../../components/button/DefaultButton";
@@ -81,7 +85,7 @@ export default function EditProfileScreen({ navigation }) {
 
   return (
     <SafeAreaView
-      style={{ flex: 1, backgroundColor: "#fff" }}
+      style={{ flex: 1, backgroundColor: colors.background }}
       edges={["top", "left", "right"]}
     >
       <HeaderSecondary
@@ -122,15 +126,15 @@ export default function EditProfileScreen({ navigation }) {
                 <Avatar.Text
                   size={110}
                   label={getProfileInitials(name)}
-                  color="#111111"
-                  style={{ backgroundColor: "#f3f4f6" }}
+                  color={colors.foreground}
+                  style={{ backgroundColor: colors.muted }}
                 />
               )}
               <Text
                 style={{
                   textAlign: "center",
                   fontSize: 16,
-                  color: "#6b7280",
+                  color: colors.mutedForeground,
                   marginTop: 10,
                 }}
               >
@@ -140,48 +144,42 @@ export default function EditProfileScreen({ navigation }) {
 
             <View style={{ paddingHorizontal: 24 }}>
               <View style={{ marginBottom: 16 }}>
-                <TextInput
+                <Input
                   label="Nome"
-                  mode="outlined"
-                  activeOutlineColor="black"
                   value={name}
                   onChangeText={setName}
                   autoCapitalize="words"
                   autoCorrect
                   spellCheck
                   returnKeyType="next"
-                  style={{ backgroundColor: "transparent" }}
+                  containerStyle={{ backgroundColor: "transparent" }}
                   onSubmitEditing={() => emailRef.current?.focus()}
                 />
               </View>
               <View style={{ marginBottom: 16 }}>
-                <TextInput
+                <Input
                   ref={emailRef}
                   label="Email"
-                  mode="outlined"
-                  activeOutlineColor="black"
                   value={email}
                   onChangeText={setEmail}
                   autoCapitalize="none"
                   keyboardType="email-address"
                   returnKeyType="next"
                   editable={false}
-                  style={{ backgroundColor: "transparent", opacity: 0.6 }}
+                  containerStyle={{ backgroundColor: "transparent", opacity: 0.6 }}
                   onSubmitEditing={() => phoneRef.current?.focus()}
                 />
               </View>
               <View style={{ marginBottom: 16 }}>
-                <TextInput
+                <Input
                   ref={phoneRef}
                   label="Telefone"
-                  mode="outlined"
-                  activeOutlineColor="black"
                   value={phone}
                   onChangeText={(text) => setPhone(applyPhoneMask(text))}
                   keyboardType="number-pad"
                   maxLength={15}
                   returnKeyType="done"
-                  style={{ backgroundColor: "transparent" }}
+                  containerStyle={{ backgroundColor: "transparent" }}
                   onSubmitEditing={handleSave}
                 />
               </View>
@@ -197,7 +195,7 @@ export default function EditProfileScreen({ navigation }) {
             >
               {isLoading ? (
                 <View className="items-center py-3">
-                  <Text style={{ color: "#888" }}>Salvando...</Text>
+                  <Text style={{ color: colors.mutedForeground }}>Salvando...</Text>
                 </View>
               ) : (
                 <DefaultButton variant="primary" onPress={handleSave}>

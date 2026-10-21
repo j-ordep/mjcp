@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { colors } from "../src/theme/colors";
 import { mountScreen, deferred, textContent } from "./screenTestHelpers";
 
 const member = { id: "member-example", ministry_id: "ministry-a", user_id: "user-example", full_name: "Pessoa exemplo", is_leader: false, capability_role_ids: ["role-example"], capability_roles: [{ id: "role-example", name: "Vocal" }] };
@@ -67,7 +68,7 @@ test("a capabilities failure keeps the editor open and reconciles persisted lead
   await view.screen.flush();
   assert.equal(view.closed, 0);
   assert.ok(view.reloads > 0);
-  assert.equal(view.screen.findAll("TouchableOpacity").find((node) => textContent(node) === "Vocal")!.props.style.backgroundColor, "#f3f4f6");
+  assert.equal(view.screen.findAll("TouchableOpacity").find((node) => textContent(node) === "Vocal")!.props.style.backgroundColor, colors.muted);
   assert.match(view.screen.findAll("Text").map(textContent).join(" "), /Este usuário será líder/);
   assert.equal(view.screen.alerts.some((args) => args[0] === "Sucesso"), false);
   view.screen.cleanup();
@@ -85,7 +86,7 @@ test("a partial capability write completed after refocus rereads persisted data 
   await view.screen.flush();
   assert.ok(view.reloads > 0);
   assert.ok(view.refreshes > 0);
-  assert.equal(view.screen.findAll("TouchableOpacity").find((node) => textContent(node) === "Vocal")!.props.style.backgroundColor, "#f3f4f6");
+  assert.equal(view.screen.findAll("TouchableOpacity").find((node) => textContent(node) === "Vocal")!.props.style.backgroundColor, colors.muted);
   assert.match(view.screen.findAll("Text").map(textContent).join(" "), /Algumas alterações podem ter sido gravadas/);
   assert.equal(view.closed, 0);
   assert.equal(view.screen.alerts.some((args) => args[0] === "Sucesso"), false);
@@ -208,7 +209,7 @@ test("a failed removal leaves the editor available and preserves its draft", asy
   await view.screen.alerts.at(-1)![2].find((button: any) => button.text === "Remover").onPress();
   await view.screen.flush();
   assert.equal(view.closed, 0);
-  assert.equal(view.screen.findAll("TouchableOpacity").find((node) => textContent(node) === "Vocal")!.props.style.backgroundColor, "#f3f4f6");
+  assert.equal(view.screen.findAll("TouchableOpacity").find((node) => textContent(node) === "Vocal")!.props.style.backgroundColor, colors.muted);
   assert.ok(view.screen.alerts.some((args) => args[0] === "Nao foi possivel remover o membro"));
   view.screen.cleanup();
 });

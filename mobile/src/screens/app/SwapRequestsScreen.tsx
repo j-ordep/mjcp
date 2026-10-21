@@ -1,8 +1,10 @@
+import { colors } from "../../theme/colors";
+import { Text } from "../../components/ui/text";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Alert, RefreshControl, ScrollView, TouchableOpacity, View } from "react-native";
-import { Text } from "react-native-paper";
+
 import { SafeAreaView } from "react-native-safe-area-context";
 import HeaderSecondary from "../../components/Header/HeaderSecondary";
 import type { RootStackParamList } from "../../types/navigation";
@@ -96,31 +98,31 @@ export default function SwapRequestsScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={["top", "left", "right"]}>
+    <SafeAreaView className="flex-1 bg-background" edges={["top", "left", "right"]}>
       <HeaderSecondary title="Trocas" onBack={() => navigation.goBack()} />
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 32 }} refreshControl={
         <RefreshControl refreshing={isRefreshing} onRefresh={() => void loadRequests(true)} />
       }>
-        <Text style={{ color: "#6b7280", marginBottom: 16 }}>
+        <Text style={{ color: colors.mutedForeground, marginBottom: 16 }}>
           A primeira pessoa elegível que aceitar assume a escala. O líder apenas acompanha e pode agir manualmente se quiser.
         </Text>
         <View style={{ flexDirection: "row", gap: 8, marginBottom: 20 }}>
           {FILTERS.map(({ key, label }) => (
-            <TouchableOpacity key={key} onPress={() => setFilter(key)} style={{ flex: 1, paddingVertical: 12, borderRadius: 14, backgroundColor: filter === key ? "#111827" : "#f3f4f6" }}>
-              <Text style={{ textAlign: "center", fontWeight: "700", color: filter === key ? "#fff" : "#111827" }}>{label}</Text>
+            <TouchableOpacity key={key} onPress={() => setFilter(key)} style={{ flex: 1, paddingVertical: 12, borderRadius: 14, backgroundColor: filter === key ? colors.primary : colors.muted }}>
+              <Text style={{ textAlign: "center", fontWeight: "700", color: filter === key ? colors.primaryForeground : colors.foreground }}>{label}</Text>
             </TouchableOpacity>
           ))}
         </View>
         {isLoading ? <ActivityIndicator /> : error ? (
-          <View><Text style={{ color: "#991b1b" }}>{error}</Text>
+          <View><Text style={{ color: colors.destructive }}>{error}</Text>
             <TouchableOpacity onPress={() => void loadRequests()} style={{ paddingVertical: 14 }}><Text>Tentar novamente</Text></TouchableOpacity>
           </View>
         ) : visibleItems.length === 0 ? (
-          <Text style={{ color: "#6b7280" }}>
+          <Text style={{ color: colors.mutedForeground }}>
             {filter === "mine" ? "Nenhuma solicitação própria pendente." : filter === "history" ? "Nenhuma troca encerrada disponível no histórico." : "Nenhuma troca disponível. Quando houver uma solicitação compatível com seu ministério e função, ela aparecerá aqui."}
           </Text>
         ) : visibleItems.map((item) => (
-          <View key={item.id} style={{ borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 20, padding: 18, marginBottom: 14 }}>
+          <View key={item.id} style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 20, padding: 18, marginBottom: 14 }}>
             <Text style={{ fontWeight: "700", fontSize: 16, marginBottom: 8 }}>
               {filter === "history" ? "Troca encerrada" : item.from_assignment?.member_name ?? "Membro"}
             </Text>
@@ -130,12 +132,12 @@ export default function SwapRequestsScreen() {
             <Text>Função: {item.from_assignment?.role_name ?? "Não informada"}</Text>
             <Text>Data: {item.from_assignment ? formatDateTime(item.from_assignment.event_start_at) : "Não informada"}</Text>
             <Text>Destinatário: {item.to_user?.full_name ?? "Não informado"}</Text>
-            <Text style={{ color: "#6b7280", marginTop: 6 }}>Criada em: {formatDateTime(item.created_at)}</Text>
+            <Text style={{ color: colors.mutedForeground, marginTop: 6 }}>Criada em: {formatDateTime(item.created_at)}</Text>
             <Text style={{ marginVertical: 12 }}>Motivo: {item.reason?.trim() || "Sem motivo informado."}</Text>
-            {filter !== "history" && !canActOnSwapRequest(item) ? <Text style={{ color: "#6b7280" }}>Troca somente leitura no horário do evento ou depois dele.</Text> : null}
+            {filter !== "history" && !canActOnSwapRequest(item) ? <Text style={{ color: colors.mutedForeground }}>Troca somente leitura no horário do evento ou depois dele.</Text> : null}
             {filter !== "history" && canActOnSwapRequest(item) ? (
-              <TouchableOpacity disabled={actingId !== null} onPress={() => filter === "mine" ? void runAction(item, "cancel") : handleAccept(item)} style={{ paddingVertical: 12, borderRadius: 14, backgroundColor: filter === "mine" ? "#fff1f2" : "#111827", opacity: actingId ? 0.6 : 1 }}>
-                <Text style={{ textAlign: "center", fontWeight: "700", color: filter === "mine" ? "#be123c" : "#fff" }}>{filter === "mine" ? "Cancelar solicitação" : "Aceitar troca"}</Text>
+              <TouchableOpacity disabled={actingId !== null} onPress={() => filter === "mine" ? void runAction(item, "cancel") : handleAccept(item)} style={{ paddingVertical: 12, borderRadius: 14, backgroundColor: filter === "mine" ? colors.destructiveMuted : colors.primary, opacity: actingId ? 0.6 : 1 }}>
+                <Text style={{ textAlign: "center", fontWeight: "700", color: filter === "mine" ? colors.destructive : colors.primaryForeground }}>{filter === "mine" ? "Cancelar solicitação" : "Aceitar troca"}</Text>
               </TouchableOpacity>
             ) : null}
           </View>

@@ -88,7 +88,7 @@ Essas estruturas precisam continuar protegidas enquanto fizerem parte do sistema
 
 | Parte | Atual | Direção aprovada |
 | --- | --- | --- |
-| Cliente | React Native, Expo, TypeScript, React Navigation, Zustand, Paper e NativeWind | Manter; trocar acesso direto ao Supabase por HTTP para a API |
+| Cliente | React Native, Expo, TypeScript, React Navigation, Zustand, React Native Reusables local, NativeWind 4 e Paper nos componentes remanescentes | Manter; trocar acesso direto ao Supabase por HTTP para a API |
 | Backend | Serviços de Auth/API/Realtime do Supabase | API própria com Node.js, Fastify e TypeScript |
 | Banco | PostgreSQL gerenciado pelo Supabase | PostgreSQL independente do Supabase |
 

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { deferred, mountScreen } from "./screenTestHelpers";
+import { deferred, mountScreen, textContent } from "./screenTestHelpers";
 import * as participation from "../src/utils/scheduleParticipation";
 import * as rules from "../src/utils/scheduleRules";
 
@@ -45,6 +45,106 @@ function screenModules(scope: any, services: any) {
     "lucide-react-native": { ShieldAlert: "ShieldAlert" },
   };
 }
+
+test("ministry modal selection combines with search and period without refetching", async () => {
+  const scope = { userMinistries: [ministry], userMinistriesUserId: "user-example", error: null, fetchUserMinistries: async () => {} };
+  const modules = screenModules(scope, {});
+  let reads = 0;
+  const makeCard = (id: string, ministryId: string, start_at: string, title: string) => ({
+    id, ministry: { id: ministryId, name: `Ministério ${ministryId}` }, event: { ...event, start_at, title }, my_assignments: [],
+  });
+  const state = { scheduleCards: [
+    makeCard("future-a", "a", "2099-01-01T12:00:00Z", "Culto exemplo"),
+    makeCard("past-a", "a", "2000-01-01T12:00:00Z", "Culto exemplo"),
+    makeCard("past-b", "b", "2000-01-01T12:00:00Z", "Culto exemplo"),
+    makeCard("past-other", "a", "2000-01-01T12:00:00Z", "Ensaio exemplo"),
+  ], isLoadingSchedules: false, error: null, fetchScheduleCards: async () => { reads++; } };
+  modules.useScheduleStore = { useScheduleStore: Object.assign(() => state, { getState: () => ({ viewMode: "personal" }) }) } as any;
+  const screen = mountScreen("src/screens/app/ScheduleScreen.tsx", modules);
+  await screen.flush();
+  assert.equal(screen.findAll("ScheduleMinistryFilter").length, 1);
+  screen.findAll("ScheduleMinistryFilter")[0].props.onSelect("a");
+  screen.findAll("TextInput")[0].props.onChangeText("culto");
+  screen.findAll("TouchableOpacity").find((node) => textContent(node) === "Anteriores")!.props.onPress();
+  await screen.flush();
+  assert.deepEqual(screen.findAll("FlatList")[0].props.data.map((card: any) => card.id), ["past-a"]);
+  screen.findAll("ScheduleMinistryFilter")[0].props.onSelect(null);
+  await screen.flush();
+  assert.deepEqual(screen.findAll("FlatList")[0].props.data.map((card: any) => card.id), ["past-a", "past-b"]);
+  screen.findAll("ScheduleMinistryFilter")[0].props.onSelect("b");
+  await screen.flush();
+  state.scheduleCards = state.scheduleCards.filter((card) => card.ministry.id === "a");
+  screen.rerender();
+  await screen.flush();
+  assert.equal(screen.findAll("ScheduleMinistryFilter")[0].props.selectedId, null);
+  assert.deepEqual(Array.from(screen.findAll("ScheduleMinistryFilter")[0].props.ministries, (item: any) => item.id), ["a"]);
+  assert.deepEqual(screen.findAll("FlatList")[0].props.data.map((card: any) => card.id), ["past-a"]);
+  assert.equal(reads, 1);
+  screen.cleanup();
+});
+
+test("schedule actions retain creation permission and existing destinations", async () => {
+  const scope: any = { userMinistries: [], userMinistriesUserId: "user-example", error: null, fetchUserMinistries: async () => {} };
+  const modules = screenModules(scope, {});
+  const state = { scheduleCards: [], isLoadingSchedules: false, error: null, fetchScheduleCards: async () => {} };
+  modules.useScheduleStore = { useScheduleStore: Object.assign(() => state, { getState: () => ({ viewMode: "personal" }) }) } as any;
+  const screen = mountScreen("src/screens/app/ScheduleScreen.tsx", modules);
+  const destinations: string[] = [];
+  (screen.navigation as any).navigate = (route: string) => { destinations.push(route); };
+  await screen.flush();
+  assert.equal(screen.findAll("ScheduleActions").length, 1);
+  const actions = screen.findAll("ScheduleActions")[0].props;
+  assert.equal(screen.findAll("Button").length, 0);
+  actions.onOpenSwaps();
+  actions.onOpenBlockedDates();
+  assert.deepEqual(destinations, ["SwapRequests", "BlockDatesScreen"]);
+  scope.userMinistries = [ministry];
+  screen.rerender();
+  await screen.flush();
+  assert.equal(screen.findAll("Button").length, 1);
+  assert.equal(screen.findAll("Button")[0].props.accessibilityLabel, "Criar escala");
+  screen.findAll("Button")[0].props.onPress();
+  assert.equal(destinations[2], "CreateSchedule");
+  screen.cleanup();
+});
+
+test("cards highlight only the next filtered schedule and keep history and detail navigation", async () => {
+  const scope = { userMinistries: [], userMinistriesUserId: "user-example", error: null, fetchUserMinistries: async () => {} };
+  const modules = screenModules(scope, {});
+  const makeCard = (id: string, start_at: string, name: string) => ({ id,
+    ministry: { id, name }, event: { ...event, start_at }, my_assignments: [],
+  });
+  const state = { scheduleCards: [makeCard("later", "2099-01-02T12:00:00Z", "Louvor"),
+    makeCard("first", "2099-01-01T12:00:00Z", "Recepção"),
+    makeCard("past", "2000-01-01T12:00:00Z", "Louvor")],
+    isLoadingSchedules: false, error: null, fetchScheduleCards: async () => {},
+  };
+  modules.useScheduleStore = { useScheduleStore: Object.assign(() => state, { getState: () => ({ viewMode: "personal" }) }) } as any;
+  const screen = mountScreen("src/screens/app/ScheduleScreen.tsx", modules);
+  const destinations: any[] = [];
+  screen.navigation.navigate = (...args: any[]) => { destinations.push(args); };
+  await screen.flush();
+  const renderedCard = (index: number) => {
+    const list = screen.findAll("FlatList")[0];
+    const row = list.props.renderItem({ item: list.props.data[index], index });
+    return [row, ...(Array.isArray(row.props.children) ? row.props.children : [row.props.children])]
+      .find((node) => node?.type === "ScheduleListCard");
+  };
+  assert.equal(textContent(screen.findAll("FlatList")[0].props.ListHeaderComponent), "Próxima escala");
+  assert.equal(renderedCard(0)?.props.featured, true);
+  assert.equal(renderedCard(1)?.props.featured, false);
+  renderedCard(0).props.onPress();
+  assert.deepEqual(JSON.parse(JSON.stringify(destinations[0])), ["EditSchedule", { scheduleId: "first" }]);
+  screen.findAll("TextInput")[0].props.onChangeText("Louvor");
+  await screen.flush();
+  assert.equal(renderedCard(0)?.props.ministryName, "Louvor");
+  assert.equal(renderedCard(0)?.props.featured, true);
+  screen.findAll("TouchableOpacity").find((node) => textContent(node) === "Anteriores")!.props.onPress();
+  await screen.flush();
+  assert.equal(textContent(screen.findAll("FlatList")[0].props.ListHeaderComponent), "Histórico");
+  assert.equal(renderedCard(0)?.props.featured, false);
+  screen.cleanup();
+});
 
 test("detail reads assignments without querying management options for another ministry", async () => {
   let roles = 0, members = 0, reads = 0;

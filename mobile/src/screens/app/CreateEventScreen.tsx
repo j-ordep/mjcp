@@ -1,3 +1,4 @@
+import { colors } from "../../theme/colors";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
@@ -8,7 +9,11 @@ import {
   TouchableOpacity as RNTouchableOpacity,
   View,
 } from "react-native";
-import { Chip, Text, TextInput } from "react-native-paper";
+import { Chip } from "react-native-paper";
+import { SelectField } from "../../components/ui/select-field";
+import { Text } from "../../components/ui/text";
+import { Input } from "../../components/ui/input";
+import { Textarea } from "../../components/ui/textarea";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Calendar as CalendarIcon, Clock, Sparkles } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
@@ -531,7 +536,7 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={["top", "left", "right"]}>
+    <SafeAreaView className="flex-1 bg-background" edges={["top", "left", "right"]}>
       <HeaderSecondary
         title={isEdit ? "Editar Evento" : "Novo Evento"}
         onBack={() => navigation.goBack()}
@@ -559,7 +564,7 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
             <Text
               style={{
                 fontSize: 13,
-                color: "#6b7280",
+                color: colors.mutedForeground,
                 marginBottom: 16,
               }}
             >
@@ -576,11 +581,11 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
                   gap: 6,
                 }}
               >
-                <Sparkles size={16} color="#666" />
+                <Sparkles size={16} color={colors.mutedForeground} />
                 <Text
                   style={{
                     fontSize: 13,
-                    color: "#666",
+                    color: colors.mutedForeground,
                     fontWeight: "bold",
                   }}
                 >
@@ -597,7 +602,7 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
                   <Chip
                     key={preset.id}
                     onPress={() => applyPreset(preset)}
-                    style={{ backgroundColor: "#f3f4f6" }}
+                    style={{ backgroundColor: colors.muted }}
                     textStyle={{ fontSize: 13 }}
                   >
                     {preset.label}
@@ -607,61 +612,23 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
             </View>
           ) : null}
 
-          <TextInput
+          <Input
             label="Título do evento"
-            mode="outlined"
             value={title}
             onChangeText={setTitle}
-            style={{ marginBottom: 15 }}
-            activeOutlineColor="#000"
+            containerStyle={{ marginBottom: 15 }}
           />
 
-          <View style={{ marginBottom: 15 }}>
-            <Text
-              style={{
-                fontSize: 13,
-                color: "#666",
-                fontWeight: "bold",
-                marginBottom: 8,
-              }}
-            >
-              CATEGORIA
-            </Text>
+          <SelectField label="Categoria" value={category}
+            options={EVENT_CATEGORY_OPTIONS}
+            onValueChange={(value) => setCategory(normalizeEventCategory(value))}
+            containerStyle={{ marginBottom: 15 }} />
 
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-              {EVENT_CATEGORY_OPTIONS.map((option) => {
-                const selected = category === option.value;
-
-                return (
-                  <Chip
-                    key={option.value}
-                    selected={selected}
-                    showSelectedCheck={false}
-                    onPress={() => setCategory(option.value)}
-                    style={{
-                      backgroundColor: selected ? "#111827" : "#f3f4f6",
-                      borderColor: selected ? "#111827" : "#e5e7eb",
-                      borderWidth: 1,
-                    }}
-                    textStyle={{
-                      color: selected ? "#fff" : "#374151",
-                      fontWeight: selected ? "bold" : "normal",
-                    }}
-                  >
-                    {option.label}
-                  </Chip>
-                );
-              })}
-            </View>
-          </View>
-
-          <TextInput
+          <Input
             label="Localização"
-            mode="outlined"
             value={location}
             onChangeText={setLocation}
-            style={{ marginBottom: 15 }}
-            activeOutlineColor="#000"
+            containerStyle={{ marginBottom: 15 }}
           />
 
           <RNTouchableOpacity
@@ -670,34 +637,28 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
             activeOpacity={0.7}
           >
             <View pointerEvents="none">
-              <TextInput
+              <Input
                 label="Data do evento"
-                mode="outlined"
                 value={getEventDateLabel(selectedDays)}
                 editable={false}
                 right={
-                  <TextInput.Icon
-                    icon={() => <CalendarIcon size={20} color="#666" />}
-                  />
+                  <CalendarIcon size={20} color={colors.mutedForeground} />
                 }
-                activeOutlineColor="#000"
               />
             </View>
           </RNTouchableOpacity>
 
-          <TextInput
+          <Input
             label="Hora"
-            mode="outlined"
             value={time}
             onChangeText={handleTimeChange}
             onBlur={handleTimeBlur}
-            style={{ marginBottom: 15 }}
+            containerStyle={{ marginBottom: 15 }}
             placeholder="Ex: 19:00"
             keyboardType="number-pad"
             right={
-              <TextInput.Icon icon={() => <Clock size={20} color="#666" />} />
+              <Clock size={20} color={colors.mutedForeground} />
             }
-            activeOutlineColor="#000"
           />
 
           <EventRoomSection
@@ -715,20 +676,18 @@ export default function CreateEventScreen({ route }: CreateEventScreenProps) {
             <Text
               style={{
                 fontSize: 13,
-                color: "#666",
+                color: colors.mutedForeground,
                 fontWeight: "bold",
                 marginBottom: 8,
               }}
             >
               DESCRIÇÃO
             </Text>
-            <TextInput
-              mode="outlined"
+            <Textarea
               label="Descrição"
               value={description}
               onChangeText={setDescription}
-              style={{ marginBottom: 15 }}
-              activeOutlineColor="#000"
+              containerStyle={{ marginBottom: 15 }}
             />
           </View>
 

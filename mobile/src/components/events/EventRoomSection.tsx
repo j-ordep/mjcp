@@ -1,7 +1,9 @@
+import { colors } from "../../theme/colors";
+import { Text } from "../ui/text";
 import { useCallback, useRef, useState } from "react";
 import { TouchableOpacity as RNTouchableOpacity, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { Text } from "react-native-paper";
+
 import {
   getRoomsForWindow,
   type RoomAvailability,
@@ -201,8 +203,9 @@ export default function EventRoomSection({
     <View
       style={{
         marginBottom: 20,
+        backgroundColor: colors.surface,
         borderWidth: 1,
-        borderColor: "#e5e7eb",
+        borderColor: colors.border,
         borderRadius: 20,
         padding: 16,
         gap: 12,
@@ -213,7 +216,7 @@ export default function EventRoomSection({
           style={{
             fontSize: 16,
             fontWeight: "700",
-            color: "#111827",
+            color: colors.foreground,
           }}
         >
           Sala (opcional)
@@ -221,7 +224,7 @@ export default function EventRoomSection({
         <Text
           style={{
             fontSize: 13,
-            color: "#6b7280",
+            color: colors.mutedForeground,
             lineHeight: 18,
           }}
         >
@@ -230,11 +233,11 @@ export default function EventRoomSection({
       </View>
 
       {singleSelectedDateKey == null ? (
-        <Text style={{ fontSize: 13, color: "#6b7280", lineHeight: 18 }}>
+        <Text style={{ fontSize: 13, color: colors.mutedForeground, lineHeight: 18 }}>
           Se houver múltiplas datas selecionadas, o evento será salvo sem sala.
         </Text>
       ) : !window ? (
-        <Text style={{ fontSize: 13, color: "#6b7280", lineHeight: 18 }}>
+        <Text style={{ fontSize: 13, color: colors.mutedForeground, lineHeight: 18 }}>
           Informe uma hora válida para carregar as salas disponíveis.
         </Text>
       ) : (
@@ -244,16 +247,16 @@ export default function EventRoomSection({
             activeOpacity={0.8}
             style={{
               borderWidth: 1,
-              borderColor: selectedRoomId === null ? "#111827" : "#e5e7eb",
+              borderColor: selectedRoomId === null ? colors.primary : colors.border,
               borderRadius: 16,
               paddingHorizontal: 14,
               paddingVertical: 14,
-              backgroundColor: selectedRoomId === null ? "#111827" : "#ffffff",
+              backgroundColor: selectedRoomId === null ? colors.primary : colors.surface,
             }}
           >
             <Text
               style={{
-                color: selectedRoomId === null ? "#ffffff" : "#111827",
+                color: selectedRoomId === null ? colors.primaryForeground : colors.foreground,
                 fontWeight: "700",
               }}
             >
@@ -261,7 +264,7 @@ export default function EventRoomSection({
             </Text>
             <Text
               style={{
-                color: selectedRoomId === null ? "#e5e7eb" : "#6b7280",
+                color: selectedRoomId === null ? colors.inverseMuted : colors.mutedForeground,
                 fontSize: 13,
                 marginTop: 4,
               }}
@@ -271,13 +274,13 @@ export default function EventRoomSection({
           </RNTouchableOpacity>
 
           {isLoadingRooms ? (
-            <Text style={{ fontSize: 13, color: "#6b7280" }}>
+            <Text style={{ fontSize: 13, color: colors.mutedForeground }}>
               Carregando salas...
             </Text>
           ) : null}
 
           {isRoomSelectionAutoCleared && currentReservedRoomId != null ? (
-            <Text style={{ fontSize: 13, color: "#b45309", lineHeight: 18 }}>
+            <Text style={{ fontSize: 13, color: colors.warning, lineHeight: 18 }}>
               Sala vinculada ficou indisponível para o horário atual. Se salvar
               agora, a reserva será removida.
             </Text>
@@ -287,13 +290,13 @@ export default function EventRoomSection({
             <View
               style={{
                 borderWidth: 1,
-                borderColor: "#fecaca",
+                borderColor: colors.destructiveBorder,
                 borderRadius: 16,
                 padding: 14,
                 gap: 8,
               }}
             >
-              <Text style={{ color: "#b91c1c", fontSize: 13 }}>
+              <Text style={{ color: colors.destructive, fontSize: 13 }}>
                 {roomsError}
               </Text>
               <RNTouchableOpacity
@@ -301,7 +304,7 @@ export default function EventRoomSection({
                 activeOpacity={0.8}
               >
                 <Text
-                  style={{ color: "#111827", fontSize: 13, fontWeight: "700" }}
+                  style={{ color: colors.foreground, fontSize: 13, fontWeight: "700" }}
                 >
                   Tentar novamente
                 </Text>
@@ -310,7 +313,7 @@ export default function EventRoomSection({
           ) : null}
 
           {!isLoadingRooms && !roomsError && rooms.length === 0 ? (
-            <Text style={{ fontSize: 13, color: "#6b7280" }}>
+            <Text style={{ fontSize: 13, color: colors.mutedForeground }}>
               Nenhuma sala cadastrada para este horário.
             </Text>
           ) : null}
@@ -332,11 +335,11 @@ export default function EventRoomSection({
                 }}
                 style={{
                   borderWidth: 1,
-                  borderColor: isSelected ? "#111827" : "#e5e7eb",
+                  borderColor: isSelected ? colors.primary : colors.border,
                   borderRadius: 16,
                   paddingHorizontal: 14,
                   paddingVertical: 14,
-                  backgroundColor: isSelected ? "#111827" : "#ffffff",
+                  backgroundColor: isSelected ? colors.primary : colors.surface,
                   opacity: isSelectable ? 1 : 0.55,
                   gap: 6,
                 }}
@@ -354,7 +357,7 @@ export default function EventRoomSection({
                       style={{
                         fontSize: 15,
                         fontWeight: "700",
-                        color: isSelected ? "#ffffff" : "#111827",
+                        color: isSelected ? colors.primaryForeground : colors.foreground,
                       }}
                     >
                       {room.name}
@@ -369,11 +372,11 @@ export default function EventRoomSection({
                       backgroundColor:
                         room.status === "available"
                           ? isSelected
-                            ? "#ffffff"
-                            : "#f3f4f6"
+                            ? colors.surface
+                            : colors.muted
                           : isSelected
-                            ? "#374151"
-                            : "#111827",
+                            ? colors.mutedForeground
+                            : colors.primary,
                     }}
                   >
                     <Text
@@ -381,7 +384,7 @@ export default function EventRoomSection({
                         fontSize: 12,
                         fontWeight: "700",
                         color:
-                          room.status === "available" ? "#111827" : "#ffffff",
+                          room.status === "available" ? colors.foreground : colors.primaryForeground,
                       }}
                     >
                       {room.status === "available"
@@ -397,7 +400,7 @@ export default function EventRoomSection({
                   style={{
                     fontSize: 13,
                     lineHeight: 18,
-                    color: isSelected ? "#e5e7eb" : "#6b7280",
+                    color: isSelected ? colors.inverseMuted : colors.mutedForeground,
                   }}
                 >
                   {formatReservationSummary(room, eventId)}
@@ -407,7 +410,7 @@ export default function EventRoomSection({
                   style={{
                     fontSize: 12,
                     fontWeight: "700",
-                    color: isSelected ? "#ffffff" : "#111827",
+                    color: isSelected ? colors.primaryForeground : colors.foreground,
                   }}
                 >
                   {isSelected

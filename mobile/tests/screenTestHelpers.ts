@@ -5,7 +5,7 @@ import ts from "typescript";
 
 // Exercise screen coordination and callbacks without a native renderer.
 // Child components remain elements: this does not verify layout or device behavior.
-export function mountScreen(filename: string, modules: Record<string, unknown>, params: unknown = {}, props: Record<string, unknown> = {}) {
+export function mountScreen(filename: string, modules: Record<string, unknown>, params: unknown = {}, props: Record<string, unknown> = {}, exportName = "default") {
   const hooks: any[] = [];
   let cursor = 0, dirty = true, focused = true;
   let tree: any;
@@ -30,6 +30,8 @@ export function mountScreen(filename: string, modules: Record<string, unknown>, 
   const mocks: Record<string, any> = {
     react: {
       ...require("react"), useEffect, useMemo,
+      useContext: (context: any) => context._currentValue,
+      useId: () => { const index = cursor++; return `test-field-${index}`; },
       useCallback: (fn: () => unknown, deps: unknown[]) => useMemo(() => fn, deps),
       useRef: (value: unknown) => { const index = cursor++; return hooks[index] ?? (hooks[index] = { current: value }); },
       useState: (initial: any) => {
@@ -47,13 +49,21 @@ export function mountScreen(filename: string, modules: Record<string, unknown>, 
       usePreventRemove: (enabled: boolean, callback: (data: any) => void) => { preventRemove = { enabled, callback }; },
     },
     "react-native": {
-      View: "View", Text: "Text", TouchableOpacity: "TouchableOpacity", ScrollView: "ScrollView",
+      View: "View", Text: "Text", TextInput: "NativeTextInput", TouchableOpacity: "TouchableOpacity", ScrollView: "ScrollView", FlatList: "FlatList",
       RefreshControl: "RefreshControl", ActivityIndicator: "ActivityIndicator", Modal: "Modal",
       KeyboardAvoidingView: "KeyboardAvoidingView", Pressable: "Pressable", TouchableWithoutFeedback: "TouchableWithoutFeedback",
-      Platform: { OS: "android" }, Keyboard: { dismiss() {} },
+      Platform: { OS: "android", select: (options: any) => options.android ?? options.native ?? options.default }, Keyboard: { dismiss() {} },
       Alert: { alert: (...args: any[]) => alerts.push(args) },
     },
     "react-native-paper": { Text: "Text", TextInput: "TextInput" },
+    text: { Text: "Text" },
+    input: { Input: "TextInput" },
+    textarea: { Textarea: "TextInput" },
+    label: { Label: "Label" },
+    button: { Button: "Button" },
+    checkbox: { Checkbox: "Checkbox" },
+    switch: { Switch: "Switch" },
+    "select-field": { SelectField: "SelectField" },
     "react-native-safe-area-context": { SafeAreaView: "SafeAreaView" },
     "lucide-react-native": { Search: "Search", ShieldCheck: "ShieldCheck", UserPlus: "UserPlus", X: "X", Calendar: "Calendar" },
     ...modules,
@@ -78,7 +88,7 @@ export function mountScreen(filename: string, modules: Record<string, unknown>, 
   };
   vm.runInNewContext(source, { exports: module.exports, module, require: customRequire, setTimeout, clearTimeout, console }, { filename: absolute });
   const render = () => {
-    cursor = 0; dirty = false; tree = module.exports.default({ navigation, ...props });
+    cursor = 0; dirty = false; tree = module.exports[exportName]({ navigation, ...props });
     while (effects.length) effects.shift()!();
   };
   const flush = async () => {

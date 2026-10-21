@@ -1,3 +1,6 @@
+import { colors } from "../../theme/colors";
+import { Text } from "../../components/ui/text";
+import { Input } from "../../components/ui/input";
 import { Calendar as CalendarIcon } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -7,7 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Text, TextInput } from "react-native-paper";
+
 import { SafeAreaView } from "react-native-safe-area-context";
 import RoomCard from "../../components/card/RoomCard";
 import RoomReservationModal from "../../components/rooms/RoomReservationModal";
@@ -176,7 +179,7 @@ export default function RoomsScreen() {
     isLoadingDailyAgenda && !dailyAgendaError && dailyAgendaRooms.length === 0;
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={["left", "right"]}>
+    <SafeAreaView className="flex-1 bg-background" edges={["left", "right"]}>
       <ScrollView
         contentContainerStyle={{
           paddingHorizontal: 20,
@@ -192,35 +195,31 @@ export default function RoomsScreen() {
         }
       >
         <View style={{ marginBottom: 16 }}>
-          <Text style={{ color: "#6b7280", fontSize: 13, fontWeight: "700", marginBottom: 8 }}>
+          <Text style={{ color: colors.mutedForeground, fontSize: 13, fontWeight: "700", marginBottom: 8 }}>
             AGENDA DAS SALAS
           </Text>
 
           <TouchableOpacity activeOpacity={0.8} onPress={() => setCalendarVisible(true)}>
             <View pointerEvents="none">
-              <TextInput
+              <Input
                 label="Data da agenda"
-                mode="outlined"
                 value={formatDisplayDate(selectedDateISO)}
                 editable={false}
-                activeOutlineColor="#000"
                 right={
-                  <TextInput.Icon
-                    icon={() => <CalendarIcon size={20} color="#6b7280" />}
-                  />
+                  <CalendarIcon size={20} color={colors.mutedForeground} />
                 }
               />
             </View>
           </TouchableOpacity>
 
-          <Text style={{ color: "#6b7280", fontSize: 13, lineHeight: 18, marginTop: 10 }}>
+          <Text style={{ color: colors.mutedForeground, fontSize: 13, lineHeight: 18, marginTop: 10 }}>
             Use a agenda do dia para ver a ocupacao de cada sala e toque em Reservar
             quando quiser criar uma nova reserva avulsa.
           </Text>
         </View>
 
         <View style={{ marginBottom: 12 }}>
-          <Text style={{ color: "#111827", fontSize: 14, fontWeight: "700", marginBottom: 4 }}>
+          <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: "700", marginBottom: 4 }}>
             {roomsSummaryLabel}
           </Text>
           <View
@@ -230,9 +229,9 @@ export default function RoomsScreen() {
               justifyContent: "space-between",
             }}
           >
-            <Text style={{ color: "#6b7280", fontSize: 13 }}>{roomsSummaryCaption}</Text>
+            <Text style={{ color: colors.mutedForeground, fontSize: 13 }}>{roomsSummaryCaption}</Text>
             {isLoadingDailyAgenda ? (
-              <Text style={{ color: "#6b7280", fontSize: 13 }}>Carregando agenda...</Text>
+              <Text style={{ color: colors.mutedForeground, fontSize: 13 }}>Carregando agenda...</Text>
             ) : null}
           </View>
         </View>
@@ -243,8 +242,8 @@ export default function RoomsScreen() {
               <View
                 key={placeholder}
                 style={{
-                  backgroundColor: "#ffffff",
-                  borderColor: "#ececec",
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
                   borderRadius: 24,
                   borderWidth: 1,
                   marginBottom: 16,
@@ -253,7 +252,7 @@ export default function RoomsScreen() {
               >
                 <View
                   style={{
-                    backgroundColor: "#f3f4f6",
+                    backgroundColor: colors.muted,
                     borderRadius: 8,
                     height: 18,
                     marginBottom: 12,
@@ -262,14 +261,14 @@ export default function RoomsScreen() {
                 />
                 <View
                   style={{
-                    backgroundColor: "#f9fafb",
+                    backgroundColor: colors.muted,
                     borderRadius: 16,
                     padding: 12,
                   }}
                 >
                   <View
                     style={{
-                      backgroundColor: "#f3f4f6",
+                      backgroundColor: colors.muted,
                       borderRadius: 8,
                       height: 14,
                       marginBottom: 10,
@@ -278,7 +277,7 @@ export default function RoomsScreen() {
                   />
                   <View
                     style={{
-                      backgroundColor: "#f3f4f6",
+                      backgroundColor: colors.muted,
                       borderRadius: 8,
                       height: 16,
                       marginBottom: 8,
@@ -287,7 +286,7 @@ export default function RoomsScreen() {
                   />
                   <View
                     style={{
-                      backgroundColor: "#f3f4f6",
+                      backgroundColor: colors.muted,
                       borderRadius: 8,
                       height: 14,
                       width: "45%",
@@ -302,21 +301,21 @@ export default function RoomsScreen() {
         {dailyAgendaError ? (
           <View
             style={{
-              borderColor: "#fecaca",
+              borderColor: colors.destructiveBorder,
               borderRadius: 16,
               borderWidth: 1,
               marginBottom: 16,
               padding: 14,
             }}
           >
-            <Text style={{ color: "#b91c1c", fontSize: 13, marginBottom: 10 }}>
+            <Text style={{ color: colors.destructive, fontSize: 13, marginBottom: 10 }}>
               {dailyAgendaError}
             </Text>
             <TouchableOpacity
               onPress={() => void loadDailyAgenda(selectedDateISO)}
               activeOpacity={0.8}
             >
-              <Text style={{ color: "#111827", fontSize: 13, fontWeight: "700" }}>
+              <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: "700" }}>
                 Tentar novamente agenda do dia
               </Text>
             </TouchableOpacity>
@@ -327,7 +326,7 @@ export default function RoomsScreen() {
         !isLoadingDailyAgenda &&
         !dailyAgendaError &&
         dailyAgendaRooms.length === 0 ? (
-          <Text style={{ color: "#6b7280", fontSize: 13 }}>
+          <Text style={{ color: colors.mutedForeground, fontSize: 13 }}>
             Nenhuma sala cadastrada.
           </Text>
         ) : null}

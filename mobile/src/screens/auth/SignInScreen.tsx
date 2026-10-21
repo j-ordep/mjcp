@@ -1,3 +1,6 @@
+import { colors } from "../../theme/colors";
+import { Text } from "../../components/ui/text";
+import { Input } from "../../components/ui/input";
 import { Eye, EyeOff } from "lucide-react-native";
 import { useRef, useState } from "react";
 import {
@@ -7,7 +10,7 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
-import { Text, TextInput } from "react-native-paper";
+
 import DefaultButton from "../../components/button/DefaultButton";
 import { signIn } from "../../services/authService";
 
@@ -40,22 +43,20 @@ export default function SignInScreen({ navigation }) {
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      <View className="flex-1 justify-center p-8 bg-white">
+      <View className="flex-1 justify-center p-8 bg-background">
         <Text
-          variant="headlineMedium"
+          variant="h3"
           style={{ textAlign: "center", marginBottom: 32 }}
         >
           Login
         </Text>
 
         <View style={{ marginBottom: 16 }}>
-          <TextInput
+          <Input
             label="Email"
-            mode="outlined"
-            activeOutlineColor="black"
             value={email}
             onChangeText={setEmail}
-            style={{ backgroundColor: "transparent" }}
+            containerStyle={{ backgroundColor: "transparent" }}
             returnKeyType="next"
             autoCapitalize="none"
             keyboardType="email-address"
@@ -64,30 +65,30 @@ export default function SignInScreen({ navigation }) {
         </View>
 
         <View style={{ marginBottom: 32 }}>
-          <TextInput
+          <Input
             ref={passwordRef}
             label="Senha"
-            mode="outlined"
             value={password}
             onChangeText={setPassword}
             secureTextEntry={!passwordVisible}
             returnKeyType="done"
             onSubmitEditing={handleLogin}
             right={
-              <TextInput.Icon
-                icon={() =>
-                  passwordVisible ? <EyeOff size={20} /> : <Eye size={20} />
-                }
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={passwordVisible ? "Ocultar senha" : "Mostrar senha"}
                 onPress={() => setPasswordVisible(!passwordVisible)}
-              />
+              >
+                {passwordVisible ? <EyeOff size={20} color={colors.mutedForeground} /> : <Eye size={20} color={colors.mutedForeground} />}
+              </TouchableOpacity>
             }
-            style={{ backgroundColor: "transparent" }}
+            containerStyle={{ backgroundColor: "transparent" }}
           />
         </View>
 
         {isLoading ? (
           <View className="items-center py-3">
-            <Text style={{ color: "#888" }}>Entrando...</Text>
+            <Text style={{ color: colors.mutedForeground }}>Entrando...</Text>
           </View>
         ) : (
           <DefaultButton onPress={handleLogin} variant="primary">
@@ -98,7 +99,7 @@ export default function SignInScreen({ navigation }) {
         <TouchableOpacity onPress={handleSignupClick} style={{ marginTop: 24 }}>
           <Text
             style={{
-              color: "#2563eb",
+              color: colors.primary,
               textAlign: "center",
               textDecorationLine: "underline",
             }}

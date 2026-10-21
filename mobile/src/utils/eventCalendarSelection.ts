@@ -1,9 +1,11 @@
+import { colors } from "../theme/colors";
+
 export type CalendarSelectionMark = {
   selected: boolean;
   selectedColor: string;
 };
 
-const DEFAULT_SELECTION_COLOR = "#000";
+const DEFAULT_SELECTION_COLOR = colors.primary;
 
 export function createCalendarSelectionMark(): CalendarSelectionMark {
   return {

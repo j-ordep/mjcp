@@ -41,6 +41,28 @@ bunx expo start --tunnel
 `@expo/ngrok` está nas dependências de desenvolvimento e é instalado por `npm ci`.
 O túnel exige internet no computador e no celular; use o QR Code exibido pelo Expo.
 
+## Componentes de interface
+
+Textos, campos e controles de formulário ficam em `src/components/ui`, com código local
+adaptado do [React Native Reusables](https://reactnativereusables.com/) e licença MIT preservada.
+Use `Text`, `Input`, `Textarea`, `SelectField`, `Button`, `Checkbox`, `Switch` e `Separator`.
+`Input` aceita rótulo, erro, ajuda e ícones; `containerStyle` controla espaçamento externo,
+`fieldClassName` aplica fundo/borda à caixa (sem pintar o rótulo) e `style` estiliza o campo nativo.
+Buscas usam placeholder e ícone em `left`, sem outra caixa externa. Refs e callbacks nativos
+continuam disponíveis.
+
+Tokens visuais ficam em `global.css` e `tailwind.config.js`, mantendo NativeWind 4.
+`src/theme/colors.ts` fornece a mesma paleta para estilos nativos, ícones, Paper e navegação.
+Use tokens semânticos (`bg-background`, `bg-card`, `text-foreground`, `bg-primary`,
+`text-muted-foreground`, `border-border`) em vez de cores por tela. A identidade é verde floresta,
+com cartões brancos e fundo claro; erros, avisos e confirmações mantêm suas cores próprias.
+`Card` padroniza superfícies e `Badge` apresenta metadados/situações. Reutilize-os quando houver
+esse papel visual, mantendo ações e estado no componente do fluxo. `DefaultButton` mantém a
+API existente sobre `Button`; ambos permitem rótulos em múltiplas linhas e altura mínima de toque.
+Seletores em modais nativos precisam de um PortalHost local e ajuste de posicionamento;
+`RoomReservationModal` contém o exemplo. Buscas e seleções múltiplas mantêm seus componentes.
+Paper permanece nos cartões, avatares, chips e modal de notificações ainda utilizados.
+
 ## Validar alterações
 
 ```sh

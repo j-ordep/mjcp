@@ -1,8 +1,11 @@
+import { colors } from "../../theme/colors";
+import { Text } from "../../components/ui/text";
+import { Input } from "../../components/ui/input";
 import { useFocusEffect, useNavigation, usePreventRemove, useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Alert, RefreshControl, ScrollView, TouchableOpacity, View } from "react-native";
-import { Text, TextInput } from "react-native-paper";
+
 import { SafeAreaView } from "react-native-safe-area-context";
 import DefaultButton from "../../components/button/DefaultButton";
 import HeaderSecondary from "../../components/Header/HeaderSecondary";
@@ -180,7 +183,7 @@ export default function EventSetlistScreen() {
   const selectedIds = new Set(draft.map((item) => item.song_id));
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={["top", "left", "right"]}>
+    <SafeAreaView className="flex-1 bg-background" edges={["top", "left", "right"]}>
       <HeaderSecondary title="Repertório" onBack={() => navigation.goBack()} />
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }} refreshControl={
         <RefreshControl refreshing={isRefreshing} onRefresh={() => !saving.current && void loadScreen(true)} />
@@ -190,18 +193,18 @@ export default function EventSetlistScreen() {
             {event ? <View style={{ marginBottom: 18 }}>
               <Text style={{ fontWeight: "700", fontSize: 20 }}>{event.title}</Text>
               <Text>{formatDateTime(event.start_at)}</Text>
-              <Text style={{ color: "#6b7280", marginTop: 8 }}>Este repertório é compartilhado por todas as escalas deste evento.</Text>
-              {!canEdit ? <Text style={{ color: "#6b7280", marginTop: 8 }}>Consulta do repertório. A edição exige gestão de eventos e é bloqueada no horário de início.</Text> : null}
+              <Text style={{ color: colors.mutedForeground, marginTop: 8 }}>Este repertório é compartilhado por todas as escalas deste evento.</Text>
+              {!canEdit ? <Text style={{ color: colors.mutedForeground, marginTop: 8 }}>Consulta do repertório. A edição exige gestão de eventos e é bloqueada no horário de início.</Text> : null}
             </View> : null}
             {error ? <View style={{ marginBottom: 16 }}>
-              <Text style={{ color: "#991b1b" }}>{error}</Text>
+              <Text style={{ color: colors.destructive }}>{error}</Text>
               <TouchableOpacity onPress={() => !saving.current && void loadScreen(true)} style={{ paddingVertical: 12 }}><Text>Tentar novamente</Text></TouchableOpacity>
             </View> : null}
             {event && hasSetlist && !isEditing ? <>
               {persisted.length === 0 ? <Text style={{ marginBottom: 16 }}>Nenhuma música definida.</Text> : persisted.map((item) => (
                 <TouchableOpacity key={item.id} onPress={() => navigation.navigate("MusicDetails", { songId: item.song_id })} style={{ paddingVertical: 12 }}>
                   <Text style={{ fontWeight: "700" }}>{item.position}. {item.song.title}</Text>
-                  <Text style={{ color: "#6b7280" }}>Tom {item.song_key ?? item.song.key ?? "-"}</Text>
+                  <Text style={{ color: colors.mutedForeground }}>Tom {item.song_key ?? item.song.key ?? "-"}</Text>
                 </TouchableOpacity>
               ))}
               {canEdit ? <DefaultButton onPress={beginEditing}>Editar repertório</DefaultButton> : null}
@@ -210,7 +213,9 @@ export default function EventSetlistScreen() {
               <SetlistEditor songs={draft} isSaving={isSaving} disabled={!canEdit || needsReadback} onMoveSong={moveSong}
                 onRemoveSong={(id) => { if (canChangeDraft()) setDraft((current) => current.filter((item) => item.song_id !== id)); }} onSave={saveSetlist} />
               <DefaultButton variant="outline" disabled={isSaving || needsReadback} onPress={cancelEditing}>Cancelar edição</DefaultButton>
-              <TextInput placeholder="Buscar música ou artista..." value={search} onChangeText={setSearch} style={{ backgroundColor: "#f3f4f6", marginVertical: 16 }} />
+              <Input placeholder="Buscar música ou artista..." accessibilityLabel="Buscar música ou artista"
+                value={search} onChangeText={setSearch} fieldClassName="bg-muted border-border"
+                containerStyle={{ marginVertical: 16 }} returnKeyType="search" />
               {visibleSongs.map((song) => <TouchableOpacity key={song.id} disabled={isSaving || needsReadback || !canEdit || selectedIds.has(song.id)}
                 onPress={() => {
                   if (!canChangeDraft()) return;

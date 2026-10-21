@@ -1,3 +1,6 @@
+import { colors } from "../../theme/colors";
+import { Text } from "../../components/ui/text";
+import { Input } from "../../components/ui/input";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Plus, Search } from "lucide-react-native";
@@ -8,7 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Text, TextInput } from "react-native-paper";
+
 import { SafeAreaView } from "react-native-safe-area-context";
 import EventCard from "../../components/card/EventCard";
 import HeaderSecondary from "../../components/Header/HeaderSecondary";
@@ -148,7 +151,7 @@ export default function EventsScreen() {
 
     return (
       <View className="items-center justify-center py-16 px-10">
-        <Text style={{ color: "#888", fontSize: 16, textAlign: "center" }}>
+        <Text style={{ color: colors.mutedForeground, fontSize: 16, textAlign: "center" }}>
           {emptyMessage}
         </Text>
         {hasSearch ? (
@@ -162,10 +165,10 @@ export default function EventsScreen() {
               paddingHorizontal: 16,
               paddingVertical: 10,
               borderRadius: 999,
-              backgroundColor: "#111827",
+              backgroundColor: colors.primary,
             }}
           >
-            <Text style={{ color: "#fff", fontWeight: "700" }}>
+            <Text style={{ color: colors.primaryForeground, fontWeight: "700" }}>
               Limpar busca e voltar para próximos
             </Text>
           </TouchableOpacity>
@@ -177,10 +180,10 @@ export default function EventsScreen() {
               paddingHorizontal: 16,
               paddingVertical: 10,
               borderRadius: 999,
-              backgroundColor: "#111827",
+              backgroundColor: colors.primary,
             }}
           >
-            <Text style={{ color: "#fff", fontWeight: "700" }}>Voltar para próximos</Text>
+            <Text style={{ color: colors.primaryForeground, fontWeight: "700" }}>Voltar para próximos</Text>
           </TouchableOpacity>
         ) : null}
       </View>
@@ -191,40 +194,27 @@ export default function EventsScreen() {
 
   return (
     <SafeAreaView
-      className="flex-1 bg-white"
+      className="flex-1 bg-background"
       edges={["top", "left", "right"]}
     >
       <HeaderSecondary
         title="Eventos"
         onBack={() => navigation.goBack()}
-        rightIcon={canManageEvents ? <Plus size={22} color="#000" /> : undefined}
+        rightIcon={canManageEvents ? <Plus size={22} color={colors.foreground} /> : undefined}
         onRightPress={canManageEvents ? () => navigation.navigate("CreateEvent") : undefined}
       />
 
       <View className="px-5">
-        <View
-          className="flex-row items-center rounded-xl px-3 mb-4"
-          style={{
-            backgroundColor: "#f9fafb",
-            borderWidth: 1,
-            borderColor: "#e5e7eb",
-          }}
-        >
-          <Search size={18} color="#888" />
-          <TextInput
+          <Input
             placeholder="Buscar evento..."
             value={search}
             onChangeText={setSearch}
-            style={{
-              flex: 1,
-              backgroundColor: "transparent",
-              fontSize: 15,
-              height: 44,
-            }}
-            underlineColor="transparent"
-            activeUnderlineColor="transparent"
+            accessibilityLabel="Buscar evento"
+            left={<Search size={18} color={colors.mutedForeground} />}
+            fieldClassName="bg-muted border-border"
+            containerStyle={{ marginBottom: 16 }}
+            returnKeyType="search"
           />
-        </View>
 
         <View className="flex-row gap-2 mb-4">
           {filters.map((filter) => (
@@ -234,15 +224,17 @@ export default function EventsScreen() {
               style={{
                 paddingVertical: 8,
                 paddingHorizontal: 18,
-                borderRadius: 10,
-                backgroundColor: activeFilter === filter.key ? "#000" : "#f3f4f6",
+                borderRadius: 12,
+                minHeight: 44,
+                justifyContent: "center",
+                backgroundColor: activeFilter === filter.key ? colors.primary : colors.muted,
                 borderWidth: activeFilter === filter.key ? 0 : 1,
-                borderColor: "#e5e7eb",
+                borderColor: colors.border,
               }}
             >
               <Text
                 style={{
-                  color: activeFilter === filter.key ? "#fff" : "#222",
+                  color: activeFilter === filter.key ? colors.primaryForeground : colors.foreground,
                   fontWeight: activeFilter === filter.key ? "bold" : "normal",
                   fontSize: 14,
                 }}
@@ -255,7 +247,7 @@ export default function EventsScreen() {
 
         <Text
           style={{
-            color: "#6b7280",
+            color: colors.mutedForeground,
             fontSize: 13,
             marginBottom: 14,
           }}
@@ -266,7 +258,7 @@ export default function EventsScreen() {
 
       {isInitialLoading ? (
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#000" />
+          <ActivityIndicator size="large" color={colors.foreground} />
         </View>
       ) : (
         <FlatList

@@ -1,5 +1,7 @@
+import { colors } from "../../theme/colors";
+import { Text } from "../ui/text";
 import { TouchableOpacity, View } from "react-native";
-import { Text } from "react-native-paper";
+
 import { Trash2 } from "lucide-react-native";
 import DefaultButton from "../button/DefaultButton";
 import type { ScheduleAssignmentDetailed } from "../../types/scheduling";
@@ -26,11 +28,11 @@ export default function ScheduleAssignmentList({
       {assignments.length === 0 ? (
         <View
           style={{
-            backgroundColor: "#f9fafb",
+            backgroundColor: colors.muted,
             borderRadius: 18,
             padding: 16,
             borderWidth: 1,
-            borderColor: "#eef2f7",
+            borderColor: colors.border,
           }}
         >
           <Text style={{ fontWeight: "600", marginBottom: 4 }}>
@@ -38,7 +40,7 @@ export default function ScheduleAssignmentList({
           </Text>
           {canManageSchedule ? (
             <>
-              <Text style={{ color: "#6b7280", marginBottom: 14 }}>
+              <Text style={{ color: colors.mutedForeground, marginBottom: 14 }}>
                 Use o fluxo de adição para começar a montar a equipe.
               </Text>
               <DefaultButton
@@ -56,11 +58,11 @@ export default function ScheduleAssignmentList({
             key={assignment.id}
             style={{
               borderWidth: 1,
-              borderColor: "#eef2f7",
+              borderColor: colors.border,
               borderRadius: 18,
               padding: 14,
               marginBottom: 10,
-              backgroundColor: "#fff",
+              backgroundColor: colors.surface,
               flexDirection: "row",
               alignItems: "center",
             }}
@@ -69,11 +71,11 @@ export default function ScheduleAssignmentList({
               <Text style={{ fontWeight: "700", fontSize: 15 }}>
                 {assignment.member_name}
               </Text>
-              <Text style={{ color: "#6b7280", marginTop: 2 }}>
+              <Text style={{ color: colors.mutedForeground, marginTop: 2 }}>
                 {assignment.role_name}
               </Text>
               <Text
-                style={{ color: "#6b7280", marginTop: 2, fontSize: 12 }}
+                style={{ color: colors.mutedForeground, marginTop: 2, fontSize: 12 }}
               >
                 Status: {getAssignmentStatusLabel(assignment.status)}
               </Text>
@@ -86,7 +88,7 @@ export default function ScheduleAssignmentList({
                   width: 40,
                   height: 40,
                   borderRadius: 20,
-                  backgroundColor: "#fff1f2",
+                  backgroundColor: colors.destructiveMuted,
                   alignItems: "center",
                   justifyContent: "center",
                   opacity:
@@ -95,7 +97,7 @@ export default function ScheduleAssignmentList({
                       : 1,
                 }}
               >
-                <Trash2 size={18} color="#be123c" />
+                <Trash2 size={18} color={colors.destructive} />
               </TouchableOpacity>
             ) : null}
           </View>

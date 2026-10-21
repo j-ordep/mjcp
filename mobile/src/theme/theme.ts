@@ -1,45 +1,64 @@
-import { MD3LightTheme, MD3DarkTheme } from "react-native-paper";
+import { DefaultTheme } from "@react-navigation/native";
+import { MD3LightTheme } from "react-native-paper";
+import { colors } from "./colors";
 
-/* 
-  ...MD3LightTheme copia todas as propriedades do tema padrão do Paper.
-  Dentro de colors: { ...MD3LightTheme.colors, ... }, 
-  copia todas as cores padrão e sobrescreve algumas (como primary, secondary, etc.) com suas próprias cores.
-*/
+// Paper remains in use for avatars, chips and notifications.
 export const lightTheme = {
   ...MD3LightTheme,
+  roundness: 4,
   colors: {
     ...MD3LightTheme.colors,
-    primary: '#000000',           // preto para botões principais
-    secondary: '#ffae00',         // amarelo para destaques
-    tertiary: '#10b981',          // verde (opcional)
-    error: '#ef4444',             // vermelho para erros
-    background: '#ffffff',        // cinza muito claro (gray-50)
-    surface: '#ffffff',           // branco para cards
-    surfaceVariant: '#f3f4f6',    // cinza claro (gray-100)
-    surfaceDisabled: '#e5e7eb',   // cinza médio (gray-200)
-    onPrimary: '#ffffff',         // texto em cima do primary
-    onSecondary: '#ffffff',       // texto em cima do secondary
-    onSurface: '#111827',         // texto principal (gray-900)
-    onSurfaceVariant: '#6b7280',  // texto secundário (gray-500)
-    outline: '#d1d5db',           // bordas (gray-300)
-    outlineVariant: '#e5e7eb',    // bordas secundárias (gray-200)
+    primary: colors.primary,
+    onPrimary: colors.primaryForeground,
+    primaryContainer: colors.secondary,
+    onPrimaryContainer: colors.secondaryForeground,
+    secondary: colors.secondaryForeground,
+    onSecondary: colors.primaryForeground,
+    secondaryContainer: colors.secondary,
+    onSecondaryContainer: colors.secondaryForeground,
+    tertiary: colors.success,
+    onTertiary: colors.primaryForeground,
+    tertiaryContainer: colors.successMuted,
+    onTertiaryContainer: colors.success,
+    error: colors.destructive,
+    onError: colors.primaryForeground,
+    errorContainer: colors.destructiveMuted,
+    onErrorContainer: colors.destructive,
+    background: colors.background,
+    onBackground: colors.foreground,
+    surface: colors.surface,
+    onSurface: colors.foreground,
+    surfaceVariant: colors.muted,
+    onSurfaceVariant: colors.mutedForeground,
+    surfaceDisabled: colors.disabled,
+    onSurfaceDisabled: colors.mutedForeground,
+    inverseSurface: colors.primary,
+    inverseOnSurface: colors.primaryForeground,
+    inversePrimary: colors.inverseMuted,
+    outline: colors.input,
+    outlineVariant: colors.border,
+    backdrop: colors.overlay,
+    shadow: colors.shadow,
     elevation: {
-      level0: 'transparent',
-      level1: '#ffffff',          // cards elevados
-      level2: '#ffffff',
-      level3: '#ffffff',
-      level4: '#ffffff',
-      level5: '#ffffff',
+      level0: "transparent",
+      level1: colors.surface,
+      level2: colors.surface,
+      level3: colors.surface,
+      level4: colors.surface,
+      level5: colors.surface,
     },
   },
 };
 
-export const darkTheme = {
-  ...MD3DarkTheme,
+export const navigationTheme = {
+  ...DefaultTheme,
   colors: {
-    ...MD3DarkTheme.colors,
-    primary: "#fff",
-    outline: "#fff",
+    ...DefaultTheme.colors,
+    primary: colors.primary,
+    background: colors.background,
+    card: colors.surface,
+    text: colors.foreground,
+    border: colors.border,
+    notification: colors.primary,
   },
 };
-

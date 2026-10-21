@@ -1,3 +1,6 @@
+import { colors } from "../../theme/colors";
+import { Text } from "../ui/text";
+import { Input } from "../ui/input";
 import { X } from "lucide-react-native";
 import {
   Alert,
@@ -11,7 +14,7 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
-import { Text, TextInput } from "react-native-paper";
+
 import DefaultButton from "../button/DefaultButton";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -260,7 +263,7 @@ export default function AssignmentPickerModal({
           <View
             style={{
               flex: 1,
-              backgroundColor: "rgba(15,23,42,0.45)",
+              backgroundColor: colors.overlay,
               justifyContent: "center",
               alignItems: "center",
               paddingHorizontal: 16,
@@ -283,10 +286,10 @@ export default function AssignmentPickerModal({
                 width: "100%",
                 maxWidth: 440,
                 maxHeight: "86%",
-                backgroundColor: "#fff",
+                backgroundColor: colors.surface,
                 borderRadius: 24,
                 borderWidth: 1,
-                borderColor: "#e5e7eb",
+                borderColor: colors.border,
                 overflow: "hidden",
               }}
             >
@@ -296,7 +299,7 @@ export default function AssignmentPickerModal({
                   paddingTop: 16,
                   paddingBottom: 12,
                   borderBottomWidth: 1,
-                  borderBottomColor: "#eef2f7",
+                  borderBottomColor: colors.border,
                   flexDirection: "row",
                   justifyContent: "space-between",
                   alignItems: "flex-start",
@@ -308,7 +311,7 @@ export default function AssignmentPickerModal({
                   >
                     Adicionar membro
                   </Text>
-                  <Text style={{ color: "#6b7280" }}>
+                  <Text style={{ color: colors.mutedForeground }}>
                     Escolha a pessoa do ministerio e a funcao que ela vai
                     cumprir nesta escala.
                   </Text>
@@ -320,12 +323,12 @@ export default function AssignmentPickerModal({
                     width: 40,
                     height: 40,
                     borderRadius: 20,
-                    backgroundColor: "#f3f4f6",
+                    backgroundColor: colors.muted,
                     alignItems: "center",
                     justifyContent: "center",
                   }}
                 >
-                  <X size={18} color="#111827" />
+                  <X size={18} color={colors.foreground} />
                 </TouchableOpacity>
               </View>
 
@@ -343,22 +346,22 @@ export default function AssignmentPickerModal({
               >
                 <View
                   style={{
-                    backgroundColor: "#f8fafc",
+                    backgroundColor: colors.muted,
                     borderRadius: 18,
                     padding: 14,
                     borderWidth: 1,
-                    borderColor: "#e5e7eb",
+                    borderColor: colors.border,
                     marginBottom: 16,
                   }}
                 >
                   <Text
-                    style={{ color: "#6b7280", fontSize: 12, marginBottom: 6 }}
+                    style={{ color: colors.mutedForeground, fontSize: 12, marginBottom: 6 }}
                   >
                     Escala ativa
                   </Text>
                   <Text
                     style={{
-                      color: "#111827",
+                      color: colors.foreground,
                       fontWeight: "700",
                       fontSize: 16,
                       marginBottom: 4,
@@ -366,7 +369,7 @@ export default function AssignmentPickerModal({
                   >
                     {eventTitle ?? "Evento selecionado"}
                   </Text>
-                  <Text style={{ color: "#6b7280" }}>
+                  <Text style={{ color: colors.mutedForeground }}>
                     {ministryName ?? "Ministerio selecionado"}
                   </Text>
                 </View>
@@ -375,18 +378,16 @@ export default function AssignmentPickerModal({
                   <Text>Carregando membros e funções...</Text>
                 ) : null}
                 {loadError ? (
-                  <Text style={{ color: "#991b1b", marginBottom: 12 }}>
+                  <Text style={{ color: colors.destructive, marginBottom: 12 }}>
                     {loadError}
                   </Text>
                 ) : null}
-                <TextInput
+                <Input
                   placeholder="Buscar membro..."
                   value={memberSearch}
                   onChangeText={onSearchChange}
-                  mode="outlined"
-                  style={{ marginBottom: 16, backgroundColor: "#fff" }}
-                  activeOutlineColor="#111827"
-                  outlineColor="#d1d5db"
+                  containerStyle={{ marginBottom: 16 }}
+                  style={{ backgroundColor: colors.surface }}
                   returnKeyType="search"
                 />
 
@@ -395,7 +396,7 @@ export default function AssignmentPickerModal({
                 </Text>
                 <View style={{ marginBottom: 18 }}>
                   {filteredMembers.length === 0 ? (
-                    <Text style={{ color: "#888" }}>
+                    <Text style={{ color: colors.mutedForeground }}>
                       Nenhum membro encontrado.
                     </Text>
                   ) : (
@@ -416,18 +417,18 @@ export default function AssignmentPickerModal({
                           style={{
                             borderWidth: 1.5,
                             borderColor: selected
-                              ? "#111827"
+                              ? colors.primary
                               : isAlreadyAssigned
-                                ? "#d1d5db"
-                                : "#e5e7eb",
+                                ? colors.border
+                                : colors.border,
                             borderRadius: 16,
                             padding: 12,
                             marginBottom: 10,
                             backgroundColor: selected
-                              ? "#f9fafb"
+                              ? colors.muted
                               : isAlreadyAssigned
-                                ? "#f3f4f6"
-                                : "#fff",
+                                ? colors.muted
+                                : colors.surface,
                             flexDirection: "row",
                             alignItems: "center",
                             opacity: isAlreadyAssigned ? 0.55 : 1,
@@ -439,14 +440,14 @@ export default function AssignmentPickerModal({
                               height: 42,
                               borderRadius: 21,
                               backgroundColor: isAlreadyAssigned
-                                ? "#9ca3af"
-                                : "#111827",
+                                ? colors.mutedForeground
+                                : colors.primary,
                               alignItems: "center",
                               justifyContent: "center",
                               marginRight: 12,
                             }}
                           >
-                            <Text style={{ color: "#fff", fontWeight: "700" }}>
+                            <Text style={{ color: colors.primaryForeground, fontWeight: "700" }}>
                               {getInitials(member.full_name)}
                             </Text>
                           </View>
@@ -454,14 +455,14 @@ export default function AssignmentPickerModal({
                             <Text style={{ fontWeight: "700" }}>
                               {member.full_name}
                             </Text>
-                            <Text style={{ color: "#6b7280", fontSize: 13 }}>
+                            <Text style={{ color: colors.mutedForeground, fontSize: 13 }}>
                               Toque para selecionar
                             </Text>
                           </View>
                           {isAlreadyAssigned ? (
                             <View
                               style={{
-                                backgroundColor: "#e5e7eb",
+                                backgroundColor: colors.border,
                                 borderRadius: 999,
                                 paddingHorizontal: 10,
                                 paddingVertical: 5,
@@ -469,7 +470,7 @@ export default function AssignmentPickerModal({
                             >
                               <Text
                                 style={{
-                                  color: "#374151",
+                                  color: colors.mutedForeground,
                                   fontWeight: "600",
                                   fontSize: 12,
                                 }}
@@ -480,7 +481,7 @@ export default function AssignmentPickerModal({
                           ) : selected ? (
                             <View
                               style={{
-                                backgroundColor: "#111827",
+                                backgroundColor: colors.primary,
                                 borderRadius: 999,
                                 paddingHorizontal: 10,
                                 paddingVertical: 5,
@@ -488,7 +489,7 @@ export default function AssignmentPickerModal({
                             >
                               <Text
                                 style={{
-                                  color: "#fff",
+                                  color: colors.primaryForeground,
                                   fontWeight: "600",
                                   fontSize: 12,
                                 }}
@@ -515,7 +516,7 @@ export default function AssignmentPickerModal({
                   }}
                 >
                   {roles.length === 0 ? (
-                    <Text style={{ color: "#888" }}>
+                    <Text style={{ color: colors.mutedForeground }}>
                       Nenhuma funcao no ministerio.
                     </Text>
                   ) : (
@@ -532,10 +533,10 @@ export default function AssignmentPickerModal({
                           activeOpacity={enabled ? 0.85 : 1}
                           style={{
                             backgroundColor: selected
-                              ? "#111827"
+                              ? colors.primary
                               : enabled
-                                ? "#f3f4f6"
-                                : "#e5e7eb",
+                                ? colors.muted
+                                : colors.border,
                             borderRadius: 999,
                             paddingHorizontal: 14,
                             paddingVertical: 10,
@@ -544,7 +545,7 @@ export default function AssignmentPickerModal({
                         >
                           <Text
                             style={{
-                              color: selected ? "#fff" : "#111827",
+                              color: selected ? colors.primaryForeground : colors.foreground,
                               fontWeight: "600",
                             }}
                           >
@@ -558,11 +559,11 @@ export default function AssignmentPickerModal({
 
                 <View
                   style={{
-                    backgroundColor: "#f8fafc",
+                    backgroundColor: colors.muted,
                     borderRadius: 18,
                     padding: 14,
                     borderWidth: 1,
-                    borderColor: "#e5e7eb",
+                    borderColor: colors.border,
                   }}
                 >
                   <Text style={{ fontWeight: "700", marginBottom: 6 }}>
@@ -570,14 +571,14 @@ export default function AssignmentPickerModal({
                   </Text>
                   <Text
                     style={{
-                      color: "#111827",
+                      color: colors.foreground,
                       fontWeight: "600",
                       marginBottom: 4,
                     }}
                   >
                     {selectedMemberName ?? "Escolha um membro"}
                   </Text>
-                  <Text style={{ color: "#6b7280" }}>
+                  <Text style={{ color: colors.mutedForeground }}>
                     {selectedRoleName ?? "Escolha uma funcao"}
                   </Text>
                 </View>
@@ -589,8 +590,8 @@ export default function AssignmentPickerModal({
                   paddingTop: 12,
                   paddingBottom: 16,
                   borderTopWidth: 1,
-                  borderTopColor: "#eef2f7",
-                  backgroundColor: "#fff",
+                  borderTopColor: colors.border,
+                  backgroundColor: colors.surface,
                 }}
               >
                 <DefaultButton

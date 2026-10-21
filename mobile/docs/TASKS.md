@@ -1,7 +1,80 @@
 # Próximos passos
 
-Revisado em 2026-10-11. Este é o único backlog.
+Revisado em 2026-10-21. Este é o único backlog.
 Produto e regras em [CONTEXT](CONTEXT.md); execução e banco atual no [README](../README.md).
+
+## Padronização com React Native Reusables
+
+Implementado: componentes locais `Text`, `Input`, `Textarea`, `Label`, `Button`, `Checkbox`,
+`Switch`, `Separator` e `SelectField`, adaptados do React Native Reusables com licença preservada.
+Textos e campos das telas usam a base compartilhada; categorias e ministérios simples usam select.
+Busca/seleção múltipla, refs, máscaras, callbacks e contratos permanecem nos fluxos existentes.
+Tokens e portals seguem NativeWind 4; reserva possui portal próprio e Voltar fecha primeiro o select.
+Paper permanece em avatares, cartões, chips e notificações; não foi removido como dependência.
+
+Correção visual: buscas de Escalas, Músicas, Eventos e repertório usam apenas a caixa do `Input`,
+sem fundo no rótulo nem bordas duplicadas. `fieldClassName` separa aparência da caixa e espaçamento
+externo. Textos respeitam a altura natural da fonte; botão cresce com o rótulo e select limita
+texto longo antes da seta. Preservados callbacks, filtros e persistência.
+
+Alinhamento vertical do `Input`: campos de uma linha têm altura de 48, alinhamento central,
+sem altura de linha imposta nem padding extra de fonte no Android. Inclui campos de leitura
+que abrem calendário (data da agenda de Salas); textareas mantêm o início no topo.
+
+Verificado em 2026-10-12 após as correções: TypeScript, 352 testes Node e bundles Android/web passaram.
+`npm test` ainda encontra `EPERM` na saída `.tests-dist`; a mesma configuração passa
+usando uma pasta nova em `.expo`, conforme o README. Nenhuma alteração de banco neste ciclo.
+
+Preparação do PR em 2026-10-20: TypeScript e `npm test` passaram em uma cópia limpa dos
+arquivos preparados para commit (352 testes), sem alterações locais de autenticação ou banco.
+Revisões de código concluídas sem problemas impeditivos. A conferência em dispositivo permanece
+pendente; o PR de interface fica em rascunho. Escalas independentes de eventos continuam futuras.
+
+- [ ] Conferir no celular: foco/teclado, senha e máscaras; erros e campos de leitura; selects
+  com muitas opções, rolagem, fonte ampliada e fechamento; categoria da reserva dentro do modal
+  (Voltar primeiro fecha o select, depois a reserva). Conferir Android/iOS; bundles não validam UI.
+
+## Refinamento da tela de Escalas
+
+Direção B aprovada em 2026-10-21: próxima escala em destaque e cartões espaçados, atalhos compactos,
+busca ao lado do filtro de ministério e criação no rodapé para gestores. Dados continuam reais;
+o protótipo visual não altera o vínculo com eventos nem as ações disponíveis no detalhe.
+
+Implementado: `ScheduleListCard` apresenta data/horário locais com ano, ministério, evento,
+função e situação. Só a primeira próxima escala dos resultados filtrados recebe destaque;
+histórico usa cartões neutros. `ScheduleSummaryCard` permanece nos formulários/detalhes.
+`ScheduleActions` concentra os dois atalhos; o filtro mantém seu modal e a criação fica no
+rodapé, com o escopo existente. Filtros, ordenação, refresh, erros e descarte de respostas
+antigas foram preservados.
+
+Verificado em 2026-10-21: TypeScript, 359 testes Node e exportações Android/web passaram.
+Conferência web dos componentes reais com dados fictícios em larguras de 320 e 390 pixels:
+sem transbordamento horizontal; seleção de ministério atualiza a lista e fecha o modal.
+Essa conferência não valida teclado, fonte ampliada ou comportamento nativo Android/iOS.
+
+- [ ] Conferir no celular o destaque das ações, nomes longos, lista extensa, fonte ampliada,
+  teclado e fechamento do modal pelo X, toque fora e voltar do Android.
+
+## Identidade verde em todo o mobile
+
+Direção aprovada: aplicar a identidade da opção B às telas existentes, com referência
+shadcn/Reusables, usando NativeWind e Paper atuais. Verde floresta nas ações e destaques,
+fundo claro, superfícies brancas, bordas suaves e cores semânticas próprias para avisos/erros.
+
+Implementado: tokens semânticos compartilhados entre NativeWind, estilos nativos, Paper e
+navegação; botões, campos, cabeçalhos e seletores coerentes. `Card` e `Badge` consolidam
+superfícies e metadados repetidos. Todas as 18 telas, calendários e modais usam a paleta;
+cartões de destaque mantêm texto claro. Alinhamento, refs, estados e ações foram preservados.
+
+Verificado em 2026-10-21: TypeScript, 360 testes Node e exportações Android/web passaram.
+Pares de texto da paleta atendem contraste AA (4,5:1). Prévia web exportada com consultas
+substituídas por dados fictícios: abas, calendário e seletor de categorias conferidos;
+Equipe sem transbordamento horizontal em 320 pixels. Essa prévia não valida o ambiente remoto.
+
+- [ ] Conferir em Android/iOS a identidade, fonte ampliada, toque, teclado, calendário e
+  seletores em modais. Exportações e testes Node não comprovam layout/interação nativos.
+
+Escopo exclusivamente visual: nenhuma mudança em services, stores, contratos, banco ou backend.
 
 ## Validação do ciclo de simplificação
 

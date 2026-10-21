@@ -1,7 +1,10 @@
+import { colors } from "../../theme/colors";
+import { Text } from "../../components/ui/text";
 import { useEffect, useState } from "react";
 import { Alert, Linking, ScrollView, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { Chip, Text } from "react-native-paper";
+import { Badge } from "../../components/ui/badge";
+import { Card } from "../../components/ui/card";
 import { SafeAreaView } from "react-native-safe-area-context";
 import HeaderSecondary from "../../components/Header/HeaderSecondary";
 import DefaultButton from "../../components/button/DefaultButton";
@@ -23,18 +26,10 @@ const CATEGORY_LABELS: Record<SongCategory, string> = {
 
 function SongStat({ label, value }: { label: string; value: string }) {
   return (
-    <View
-      style={{
-        borderRadius: 18,
-        borderWidth: 1,
-        borderColor: "#e5e7eb",
-        padding: 14,
-        minWidth: 110,
-      }}
-    >
-      <Text style={{ color: "#6b7280", fontSize: 12, marginBottom: 4 }}>{label}</Text>
+    <Card className="min-w-[110px] rounded-[18px] p-3.5">
+      <Text style={{ color: colors.mutedForeground, fontSize: 12, marginBottom: 4 }}>{label}</Text>
       <Text style={{ fontWeight: "700", fontSize: 16 }}>{value}</Text>
-    </View>
+    </Card>
   );
 }
 
@@ -92,7 +87,7 @@ export default function MusicDetailsScreen({
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={["top", "left", "right"]}>
+    <SafeAreaView className="flex-1 bg-background" edges={["top", "left", "right"]}>
       <HeaderSecondary title="Musica" onBack={() => navigation.goBack()} />
 
       <ScrollView
@@ -100,18 +95,18 @@ export default function MusicDetailsScreen({
         contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
       >
         {isLoading ? (
-          <Text style={{ color: "#6b7280" }}>Carregando musica...</Text>
+          <Text style={{ color: colors.mutedForeground }}>Carregando musica...</Text>
         ) : screenError ? (
           <View
             style={{
               borderRadius: 20,
               borderWidth: 1,
-              borderColor: "#fecaca",
-              backgroundColor: "#fef2f2",
+              borderColor: colors.destructiveBorder,
+              backgroundColor: colors.destructiveMuted,
               padding: 18,
             }}
           >
-            <Text style={{ color: "#991b1b", lineHeight: 22, marginBottom: 14 }}>
+            <Text style={{ color: colors.destructive, lineHeight: 22, marginBottom: 14 }}>
               {screenError}
             </Text>
             <DefaultButton variant="outline" onPress={() => void loadSong()}>
@@ -124,7 +119,7 @@ export default function MusicDetailsScreen({
               <Text style={{ fontSize: 28, fontWeight: "800", marginBottom: 6 }}>
                 {song.title}
               </Text>
-              <Text style={{ color: "#6b7280", fontSize: 16 }}>
+              <Text style={{ color: colors.mutedForeground, fontSize: 16 }}>
                 {song.artist || "Artista nao informado"}
               </Text>
             </View>
@@ -138,15 +133,15 @@ export default function MusicDetailsScreen({
               }}
             >
               {song.category ? (
-                <Chip style={{ backgroundColor: "#f3f4f6" }}>
+                <Badge>
                   {CATEGORY_LABELS[song.category]}
-                </Chip>
+                </Badge>
               ) : null}
               {song.key ? (
-                <Chip style={{ backgroundColor: "#f9fafb" }}>Tom {song.key}</Chip>
+                <Badge variant="outline">Tom {song.key}</Badge>
               ) : null}
               {typeof song.bpm === "number" ? (
-                <Chip style={{ backgroundColor: "#f9fafb" }}>{song.bpm} BPM</Chip>
+                <Badge variant="outline">{song.bpm} BPM</Badge>
               ) : null}
             </View>
 
@@ -169,19 +164,11 @@ export default function MusicDetailsScreen({
               />
             </View>
 
-            <View
-              style={{
-                borderRadius: 22,
-                borderWidth: 1,
-                borderColor: "#e5e7eb",
-                padding: 18,
-                marginBottom: 18,
-              }}
-            >
+            <Card className="mb-[18px] rounded-[20px] p-[18px]">
               <Text style={{ fontSize: 16, fontWeight: "700", marginBottom: 8 }}>
                 Letra / cifra
               </Text>
-              <Text style={{ color: "#6b7280", lineHeight: 22, marginBottom: 16 }}>
+              <Text style={{ color: colors.mutedForeground, lineHeight: 22, marginBottom: 16 }}>
                 {song.lyrics_url
                   ? "Abra a referencia cadastrada para consultar a letra ou cifra desta musica."
                   : "Esta musica ainda nao possui um link de apoio cadastrado."}
@@ -193,7 +180,7 @@ export default function MusicDetailsScreen({
               >
                 {song.lyrics_url ? "Abrir letra / cifra" : "Sem link disponivel"}
               </DefaultButton>
-            </View>
+            </Card>
           </>
         ) : null}
       </ScrollView>

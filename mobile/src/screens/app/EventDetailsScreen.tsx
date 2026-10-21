@@ -1,3 +1,4 @@
+import { colors } from "../../theme/colors";
 import { useFocusEffect } from "@react-navigation/native";
 import { Edit } from "lucide-react-native";
 import React, { useCallback, useState } from "react";
@@ -48,13 +49,13 @@ export default function EventDetailsScreen({
 
   return (
     <SafeAreaView
-      style={{ flex: 1, backgroundColor: "#fff" }}
+      style={{ flex: 1, backgroundColor: colors.background }}
       edges={["top", "left", "right"]}
     >
       <HeaderSecondary
         title="Detalhes"
         onBack={() => navigation.goBack()}
-        rightIcon={canManageEvents ? <Edit size={22} color="#000" /> : undefined}
+        rightIcon={canManageEvents ? <Edit size={22} color={colors.primary} /> : undefined}
         onRightPress={
           canManageEvents
             ? () =>

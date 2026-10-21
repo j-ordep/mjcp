@@ -1,9 +1,11 @@
+import { colors } from "../../theme/colors";
+import { Text } from "../../components/ui/text";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { ShieldAlert } from "lucide-react-native";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { Alert, ScrollView, View } from "react-native";
-import { Text } from "react-native-paper";
+
 import { SafeAreaView } from "react-native-safe-area-context";
 import HeaderSecondary from "../../components/Header/HeaderSecondary";
 import ScheduleContextSection from "../../components/schedule/ScheduleContextSection";
@@ -142,18 +144,18 @@ export default function CreateScheduleScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={["top", "left", "right"]}>
+    <SafeAreaView className="flex-1 bg-background" edges={["top", "left", "right"]}>
       <HeaderSecondary title="Criar Escala" onBack={() => navigation.goBack()} />
 
       <ScrollView
-        contentContainerStyle={{ padding: 20, paddingBottom: 32, backgroundColor: "#f8fafc" }}
+        contentContainerStyle={{ padding: 20, paddingBottom: 32, backgroundColor: colors.background }}
         showsVerticalScrollIndicator={false}
       >
         {!isLoadingMinistries && !ministryError && !canCreateSchedule ? (
           <View
             style={{
-              backgroundColor: "#fff7ed",
-              borderColor: "#fdba74",
+              backgroundColor: colors.warningMuted,
+              borderColor: colors.warning,
               borderWidth: 1,
               borderRadius: 18,
               padding: 14,
@@ -162,12 +164,12 @@ export default function CreateScheduleScreen() {
               gap: 10,
             }}
           >
-            <ShieldAlert size={20} color="#c2410c" />
+            <ShieldAlert size={20} color={colors.warning} />
             <View style={{ flex: 1 }}>
-              <Text style={{ color: "#9a3412", fontWeight: "600", marginBottom: 2 }}>
+              <Text style={{ color: colors.warning, fontWeight: "600", marginBottom: 2 }}>
                 Sem permissao para criar escala
               </Text>
-              <Text style={{ color: "#9a3412" }}>
+              <Text style={{ color: colors.warning }}>
                 Voce precisa ser lider de pelo menos um ministerio ou admin.
               </Text>
             </View>

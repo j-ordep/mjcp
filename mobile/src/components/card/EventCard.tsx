@@ -1,6 +1,8 @@
+import { colors } from "../../theme/colors";
+import { Text } from "../ui/text";
 import { ChevronRight, Clock, MapPin } from "lucide-react-native";
 import { View } from "react-native";
-import { Card, Text } from "react-native-paper";
+import { Card } from "react-native-paper";
 import { getEventCategoryOption } from "../../utils/eventCategory";
 
 interface EventCardProps {
@@ -74,11 +76,11 @@ export default function EventCard(props: EventCardProps) {
     <Card
       style={{
         marginBottom: 16,
-        borderRadius: 24,
-        backgroundColor: "#fff",
+        borderRadius: 20,
+        backgroundColor: colors.surface,
         borderWidth: 1,
-        borderColor: "#e5e7eb",
-        shadowColor: "#000",
+        borderColor: colors.border,
+        shadowColor: colors.shadow,
         shadowOpacity: 0.04,
         shadowRadius: 10,
         elevation: 2,
@@ -93,19 +95,19 @@ export default function EventCard(props: EventCardProps) {
                 width: 58,
                 minHeight: 64,
                 borderRadius: 20,
-                backgroundColor: "#111827",
+                backgroundColor: colors.primary,
                 alignItems: "center",
                 justifyContent: "center",
                 paddingVertical: 8,
               }}
             >
-              <Text style={{ color: "#fff", fontSize: 11, fontWeight: "700" }}>
+              <Text style={{ color: colors.primaryForeground, fontSize: 11, fontWeight: "700" }}>
                 {datePlate.weekday}
               </Text>
-              <Text style={{ color: "#fff", fontSize: 24, fontWeight: "900", lineHeight: 28 }}>
+              <Text style={{ color: colors.primaryForeground, fontSize: 24, fontWeight: "900", lineHeight: 28 }}>
                 {datePlate.day}
               </Text>
-              <Text style={{ color: "#fff", fontSize: 11, fontWeight: "700" }}>
+              <Text style={{ color: colors.primaryForeground, fontSize: 11, fontWeight: "700" }}>
                 {datePlate.month}
               </Text>
             </View>
@@ -115,32 +117,32 @@ export default function EventCard(props: EventCardProps) {
             <View
               style={{
                 alignSelf: "flex-start",
-                backgroundColor: "#f3f4f6",
+                backgroundColor: colors.muted,
                 borderRadius: 999,
                 paddingHorizontal: 10,
                 paddingVertical: 5,
                 marginBottom: 8,
               }}
             >
-              <Text style={{ color: "#111827", fontSize: 12, fontWeight: "800" }}>
+              <Text style={{ color: colors.foreground, fontSize: 12, fontWeight: "800" }}>
                 {category.label}
               </Text>
             </View>
 
-            <Text style={{ fontWeight: "900", fontSize: 20, marginBottom: 6, color: "#1f2937" }}>
+            <Text style={{ fontWeight: "900", fontSize: 20, marginBottom: 6, color: colors.foreground }}>
               {props.title}
             </Text>
 
             {showDateLine ? (
-              <Text style={{ color: "#111827", fontWeight: "700", fontSize: 14 }}>
+              <Text style={{ color: colors.foreground, fontWeight: "700", fontSize: 14 }}>
                 {props.date}
               </Text>
             ) : null}
 
             {timeRange ? (
               <View style={{ flexDirection: "row", alignItems: "center", marginTop: 8 }}>
-                <Clock size={16} color="#6b7280" style={{ marginRight: 6 }} />
-                <Text style={{ color: "#4b5563", fontSize: 14 }}>{timeRange}</Text>
+                <Clock size={16} color={colors.mutedForeground} style={{ marginRight: 6 }} />
+                <Text style={{ color: colors.mutedForeground, fontSize: 14 }}>{timeRange}</Text>
               </View>
             ) : null}
           </View>
@@ -148,8 +150,8 @@ export default function EventCard(props: EventCardProps) {
 
         {props.location ? (
           <View style={{ flexDirection: "row", alignItems: "center", marginTop: 14 }}>
-            <MapPin size={17} color="#6b7280" style={{ marginRight: 6 }} />
-            <Text style={{ color: "#4b5563", fontSize: 14 }}>{props.location}</Text>
+            <MapPin size={17} color={colors.mutedForeground} style={{ marginRight: 6 }} />
+            <Text style={{ color: colors.mutedForeground, fontSize: 14 }}>{props.location}</Text>
           </View>
         ) : null}
 
@@ -157,7 +159,7 @@ export default function EventCard(props: EventCardProps) {
           <Text
             numberOfLines={2}
             style={{
-              color: "#4b5563",
+              color: colors.mutedForeground,
               fontSize: 14,
               marginTop: 12,
               lineHeight: 20,
@@ -176,10 +178,10 @@ export default function EventCard(props: EventCardProps) {
               marginTop: 14,
             }}
           >
-            <Text style={{ color: "#6b7280", fontSize: 13, fontWeight: "700" }}>
+            <Text style={{ color: colors.mutedForeground, fontSize: 13, fontWeight: "700" }}>
               Ver detalhes
             </Text>
-            <ChevronRight size={16} color="#6b7280" style={{ marginLeft: 2 }} />
+            <ChevronRight size={16} color={colors.mutedForeground} style={{ marginLeft: 2 }} />
           </View>
         ) : null}
       </Card.Content>
