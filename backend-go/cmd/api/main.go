@@ -5,7 +5,7 @@ import (
 
 	"github.com/j-ordep/mjcp/backend/config"
 	"github.com/j-ordep/mjcp/backend/internal/infra/auth"
-	"github.com/j-ordep/mjcp/backend/internal/infra/db"
+	"github.com/j-ordep/mjcp/backend/internal/infra/database"
 	"github.com/j-ordep/mjcp/backend/internal/repositories"
 	"github.com/j-ordep/mjcp/backend/internal/service"
 	"github.com/j-ordep/mjcp/backend/internal/web/server"
@@ -19,7 +19,7 @@ func main() {
 	}
 	config.LoadEnv()
 
-	db, err := db.NewConnect()
+	db, err := database.NewPostgres()
 	if err != nil {
 		slog.Error("Failed to connect to database", "error", err)
 		return
@@ -38,12 +38,12 @@ func main() {
 		config.Config.BaseURL,
 	)
 
-	srv := server.NewServer(config.Config.APIPort, userService, authService)
-	srv.ConfigureRoutes()
+	server := server.NewServer(config.Config.APIPort, userService, authService)
+	server.ConfigureRoutes()
 
 	slog.Info("Starting server", "port", config.Config.APIPort)
 
-	if err := srv.Start(); err != nil {
+	if err := server.Start(); err != nil {
 		slog.Error("Failed to start server", "error", err)
 	}
 }
