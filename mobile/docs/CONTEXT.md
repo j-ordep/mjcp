@@ -1,6 +1,6 @@
 # Contexto do MJCP
 
-Revisado em 2026-10-11. Comportamento atual: código e migrations.
+Revisado em 2026-10-21. Comportamento atual: código e migrations.
 A direção futura abaixo exige mudanças de banco; o recorte mobile já usa Escalas como entrada.
 
 ## Dor e objetivo
@@ -26,6 +26,12 @@ Cada escala terá seu ministério, data, horário e identificação, como “Cul
 Escalas de ministérios diferentes serão independentes. Um ministério poderá ter mais de
 uma escala no mesmo dia; a data sozinha não identifica uma escala.
 
+O líder cria a escala e define quem servirá em cada função. A data e o horário pertencem
+à escala, exista ou não um evento naquela ocasião. No novo backend Fastify, o schema será
+redesenhado a partir desse fluxo; eventos deixarão de organizar as demais entidades.
+Para um líder de apenas um ministério, o formulário assume esse ministério; administradores
+e líderes de vários ministérios escolhem entre os que podem gerenciar.
+
 O módulo de eventos será retirado: criar escala deixará de exigir criar um evento.
 Reservas terão agenda própria. O repertório ficará ligado à escala de louvor.
 Uma música poderá ter vários cantores cadastrados, cada um com seu tom preferido.
@@ -49,6 +55,10 @@ fora deste recorte.
   Hoje o horário vem do evento; passará a pertencer à escala.
 - Na troca, a primeira pessoa elegível do mesmo ministério e função assume, sem aprovação do líder.
   Ela não pode já estar na escala nem aceitar o próprio pedido. Apenas um aceite pode vencer.
+- O integrante pede substituição no detalhe da própria escala. O pedido notifica outras pessoas
+  do mesmo ministério com a função/capability correspondente e os líderes daquele ministério.
+  Por exemplo, uma ausência na guitarra avisa os outros guitarristas e a liderança.
+  Receber o aviso como líder não dispensa a elegibilidade para assumir a função.
 - Abrir troca retorna a participação para `pending`; assumir também exige nova confirmação.
   O solicitante pode cancelar o pedido pendente antes do início.
 - Conflitos de escala e datas bloqueadas geram avisos. Sobreposição de reservas da mesma sala é bloqueada.
@@ -93,7 +103,9 @@ Essas estruturas precisam continuar protegidas enquanto fizerem parte do sistema
 | Banco | PostgreSQL gerenciado pelo Supabase | PostgreSQL independente do Supabase |
 
 A migração inclui substituir Supabase Auth, acesso a dados e entrega de notificações.
-O destino é `mobile → API Fastify → PostgreSQL`; a API Fastify ainda precisa ser criada.
+O destino é `mobile → API Fastify → PostgreSQL`. Já existe um scaffold em `backend-node`,
+com rotas de eventos em memória; persistência, autenticação e integração com o mobile
+ainda não existem nele. O exemplo de eventos não define o modelo de domínio futuro.
 A implementação anterior em Go permanece no repositório e não é o backend integrado ao mobile.
 
 Telas/componentes apresentam e coordenam interação; services acessam dados; stores mantêm estado.

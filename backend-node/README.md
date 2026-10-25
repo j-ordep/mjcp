@@ -32,6 +32,22 @@ não estabelecem esses limites.
 
 Não é obrigatório criar um arquivo ou uma camada para cada item dessa lista.
 
+## Nomenclatura de acesso e funções de serviço
+
+No recorte atual de uma igreja, `users.accessRole` (`access_role` no banco)
+aceita `admin` ou `member`. Liderança pertence somente ao vínculo
+`ministry_members.is_leader`; uma pessoa pode liderar um ministério e ser
+apenas integrante de outro.
+
+`ministry_positions` define funções como baixo, bateria e transmissão.
+`ministry_member_capabilities` associa o integrante às funções que sabe exercer.
+`schedule_assignments.position_id` registra a função que exercerá naquela escala.
+
+Ao implementar gestão de equipe, a API deverá autorizar administradores ou
+líderes com vínculo no ministério da operação. Adicionar uma pessoa à equipe
+cria esse vínculo; não exige atribuir um papel global de líder. Rotas, permissões
+e migração dos dados ainda precisam ser implementadas e verificadas.
+
 ## Estado conferido em 22/10/2026
 
 ### Presente nos arquivos
