@@ -11,5 +11,5 @@ npm run dev
 ```
 
 Dependências e comandos em `package.json`.
-Produto e regras em [CONTEXT](../mobile/docs/CONTEXT.md);
-próximos passos somente em [TASKS](../mobile/docs/TASKS.md).
+Regras do produto em [REGRAS_DE_NEGOCIO](../backend-node/docs/REGRAS_DE_NEGOCIO.md).
+Pendências em [TASK do backend](../backend-node/docs/TASK.md) e [TASKS do mobile](../mobile/docs/TASKS.md).

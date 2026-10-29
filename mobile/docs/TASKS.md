@@ -1,7 +1,7 @@
 # Próximos passos
 
-Revisado em 2026-10-21. Este é o único backlog.
-Produto e regras em [CONTEXT](CONTEXT.md); execução e banco atual no [README](../README.md).
+Revisado em 2026-10-26. Este é o backlog do mobile.
+Comportamento atual em [CONTEXT](CONTEXT.md); execução e banco atual no [README](../README.md).
 
 ## Ajustes de navegação e filtros
 
@@ -154,76 +154,21 @@ audência/sala já possuem estado próprio, e a migração retirará esse módul
 `RoomReservationModal`/`CalendarModal`; manter consulta e revisão da data juntas em
 `RoomsScreen`, sem outra extração motivada apenas pelo número de hooks.
 
-## Modelo de dados — executar na migração, fora da refatoração mobile
+## Integração com o novo backend
 
-- [ ] Salvar alterações de integrante/capabilities de forma atômica. Hoje a substituição de
-  capabilities apaga antes de inserir; uma falha pode perder as funções anteriores e deixar edição parcial.
-- [ ] Dar data, horário e identificação próprios às escalas de cada ministério.
-  Redesenhar o schema do novo backend com a escala como dona desses dados, existindo ou não
-  um evento naquela ocasião. Assumir o ministério para líder de apenas um; nos demais casos,
-  oferecer só o escopo gerenciável. Migrar preservando equipe, confirmações, trocas e histórico.
-- [ ] Ligar repertórios às escalas de louvor e manter a agenda de salas independente.
-  Resolver os vínculos atuais com eventos sem perder repertórios ou reservas.
-- [ ] Retirar telas, services, permissões de audiência/gestão e estruturas de eventos somente
-  depois de adaptar dependências, notificações e bloqueios ao horário da escala.
-- [ ] Implementar tom preferido por música/cantor e cantor/tom por item do repertório,
-  preservando a execução histórica quando uma preferência mudar.
-- [ ] Registrar o solicitante original de uma troca para atribuir autoria histórica com segurança.
-- [ ] Garantir no banco a unicidade de integrante por escala e a capability da atribuição direta.
-  A migration `20260426000117` usa `IF EXISTS` sem constraint única por escala/pessoa;
-  testar duas inserções concorrentes e sanear histórico antes de impor a nova unicidade.
-  Conferir também as policies de atribuição em `20260423000115`, que não repetem a validação
-  de capability de `src/services/scheduling/assignments.ts`. No novo schema, a gravação
-  autorizada deve garantir essas regras sem depender do cliente.
-- [ ] Avaliar restrição adicional de leitura por ministério; esconder a gestão na UI não altera RLS.
+Banco, API e migração dos dados ficam no [TASK do backend](../../backend-node/docs/TASK.md).
+As [regras de negócio](../../backend-node/docs/REGRAS_DE_NEGOCIO.md) são a referência do produto.
 
-Melhorias exclusivas do módulo antigo de eventos foram retiradas da fila:
-exclusão na UI, mensagens do formulário e índice de listagem.
+- [ ] Adaptar os services para HTTP por fluxo, preservando sessão, logout, tratamento de erros,
+  falhas de SecureStore, descarte de respostas atrasadas e invalidação dos caches.
+- [ ] Adaptar criação e detalhes das escalas aos horários próprios, aos conflitos bloqueantes
+  e às sugestões de integrantes retornadas pela API.
+- [ ] Retirar telas, services, audiência e vínculos de eventos depois de adaptar repertórios,
+  reservas, notificações e bloqueios ao novo domínio.
+- [ ] Retirar o SDK e a configuração do Supabase somente após validar autenticação, dados
+  e notificações substitutos nos fluxos do cliente.
 
-## P2 — migrar Supabase para Fastify e PostgreSQL
+## Verificações pendentes
 
-Direção aprovada. Existe um scaffold Fastify em `backend-node`, com rotas de eventos
-em memória; ainda não há persistência, autenticação ou integração HTTP com o mobile.
-
-- [ ] Definir autenticação, transição de contas/sessões e recuperação de acesso;
-  substituir Supabase Auth e decidir hospedagem do servidor/banco.
-  A revisão de `src/lib/supabase.ts`/SecureStore fica para essa definição, sem refatoração
-  imediata do adaptador legado. Falhas de leitura/gravação/remoção hoje são capturadas sem
-  propagar o erro; a migração não as corrige automaticamente. O substituto deve testar
-  persistência/remoção que falham, logout e troca de conta, preservando o isolamento atual.
-- [ ] Evoluir o scaffold para API Fastify/TypeScript com PostgreSQL, validação de entrada, autenticação
-  e autorização por usuário/ministério, com organização simples.
-- [ ] Migrar as features por etapas e adaptar os services do mobile para HTTP.
-  Preservar constraints, transações, concorrência, proteção de perfis e leitura histórica.
-- [ ] Substituir notificações/realtime do Supabase e validar isolamento entre sessões.
-  Preservar o fluxo: pedir substituição na própria escala notifica colegas do mesmo ministério
-  com a função correspondente e seus líderes; o primeiro elegível assume sem aprovação.
-  O líder também precisa ser elegível para assumir. A migration `20260412000110` já descreve
-  os destinatários das notificações internas atuais; entrega push externa continua sem definição.
-- [ ] Validar permissões e fluxos com dados fictícios; testar aceites concorrentes,
-  reservas sobrepostas e limite exato do horário de início na nova implementação.
-- [ ] Conferir migração dos dados, recuperação/retorno ao ambiente anterior e corte de acesso
-  ao Supabase; só então remover SDK, configuração e proteções que tiverem sido substituídas.
-
-## PENDENTE DE DEFINICAO
-
-| Tema | Decisão |
-| --- | --- |
-| Entrada de pessoas | Convite, cadastro administrativo ou cadastro livre; o convite foi recomendado, ainda não decidido |
-| Músicas | Quem cadastra músicas, altera tons preferidos e escolhe cantor/tom no repertório |
-| Catálogos | Permissões e manutenção mínima de ministérios, funções, salas e músicas |
-| Escalas | Regra de unicidade dentro do ministério, identificação obrigatória/opcional e migração de repertório hoje compartilhado |
-| Nova infraestrutura | Solução de autenticação, hospedagem, entrega de notificações e ferramenta de acesso/migrations do PostgreSQL |
-
-Trocas continuam sem aprovação e conflitos de escala/indisponibilidade continuam avisos.
-Mudanças nessas regras, recusa na UI e push externo dependem de necessidade confirmada.
-
-## INFORMACAO INSUFICIENTE — verificações pendentes
-
-- [ ] Conferir migrations remotas, inconsistências históricas, duplicidades e constraints
-  `NOT VALID` antes de saneamento/validação ou migração de dados.
-- [ ] Confirmar estratégia e execução de testes no CI; a validação Android/iOS segue o roteiro acima.
-- [ ] Validar build de produção e a configuração das variáveis públicas do Expo;
-  exportações de desenvolvimento não comprovam o comportamento de um build de produção.
-
-Ao concluir trabalho, remova a pendência. Não crie outro roadmap, plano histórico ou backlog Markdown.
+- [ ] Confirmar a execução dos testes do mobile no CI.
+- [ ] Validar build de produção e variáveis públicas do Expo.
