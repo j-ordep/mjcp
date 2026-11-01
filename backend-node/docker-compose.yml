@@ -1,6 +1,7 @@
 services:
   postgres:
     image: postgres:18
+    container_name: mjcp-postgres-dev
 
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
