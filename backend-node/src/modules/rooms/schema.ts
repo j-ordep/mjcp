@@ -52,8 +52,8 @@ export const roomReservations = pgTable(
       sql`${table.category} IN ('geral', 'culto', 'ensino', 'jovens', 'oração', 'reunião', 'especial')`,
     ),
     index("room_reservations_room_start_idx").on(table.roomId, table.startAt),
-    // EXCLUDE is defined in drizzle/0001_room_reservations_no_overlap.sql.
-    // Drizzle 0.44 has no EXCLUDE builder; apply the versioned SQL migrations
-    // to enforce non-overlapping active reservations. This index is for queries.
+    // constraints.sql is the source for the custom exclusion migration.
+    // Drizzle 0.44 has no EXCLUDE builder; generate a custom migration and copy
+    // that SQL before migrating. This index only supports queries.
   ],
 );
