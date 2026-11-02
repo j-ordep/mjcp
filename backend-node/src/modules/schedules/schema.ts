@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   check,
+  date,
   foreignKey,
   index,
   pgTable,
@@ -14,10 +15,56 @@ import {
 import { ministries, ministryPositions } from "../ministries/schema.ts";
 import { users } from "../users/schema.ts";
 
-export const schedules = pgTable(
-  "schedules",
+// A monthly plan groups occurrences. Ownership and publication operations
+// must be authorized by the API; these columns alone do not enforce access.
+export const schedulePlans = pgTable(
+  "schedule_plans",
   {
     id: uuid("id").defaultRandom().primaryKey(),
+    ministryId: uuid("ministry_id")
+      .notNull()
+      .references(() => ministries.id),
+    referenceMonth: date("reference_month", { mode: "string" }).notNull(),
+    createdByUserId: uuid("created_by_user_id")
+      .notNull()
+      .references(() => users.id),
+    status: text("status", { enum: ["draft", "published"] })
+      .default("draft")
+      .notNull(),
+    publishedAt: timestamp("published_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    unique("schedule_plans_ministry_month_unique").on(table.ministryId, table.referenceMonth),
+    unique("schedule_plans_id_ministry_unique").on(table.id, table.ministryId),
+    check(
+      "schedule_plans_month_first_day",
+      sql`EXTRACT(DAY FROM ${table.referenceMonth}) = 1`,
+    ),
+    check(
+      "schedule_plans_status_check",
+      sql`${table.status} IN ('draft', 'published')`,
+    ),
+    check(
+      "schedule_plans_publication_check",
+      sql`(
+        ${table.status} = 'draft' AND ${table.publishedAt} IS NULL
+      ) OR (
+        ${table.status} = 'published' AND ${table.publishedAt} IS NOT NULL
+      )`,
+    ),
+    index("schedule_plans_author_idx").on(table.createdByUserId),
+  ],
+);
+
+export const scheduleOccurrences = pgTable(
+  "schedule_occurrences",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+
+    planId: uuid("plan_id").notNull(),
 
     ministryId: uuid("ministry_id")
       .notNull()
@@ -36,22 +83,28 @@ export const schedules = pgTable(
       .notNull(),
   },
   (table) => [
+    foreignKey({
+      name: "occurrences_plan_ministry_fk",
+      columns: [table.planId, table.ministryId],
+      foreignColumns: [schedulePlans.id, schedulePlans.ministryId],
+    }),
     check(
-      "schedules_end_after_start",
+      "occurrences_end_after_start",
       sql`${table.endAt} IS NULL OR ${table.endAt} > ${table.startAt}`,
     ),
-    unique("schedules_id_ministry_unique").on(table.id, table.ministryId),
-    // This only prevents equal starts. General overlap still needs an
-    // exclusion constraint and a decision about schedules without an end.
-    unique("schedules_ministry_start_unique").on(table.ministryId, table.startAt),
+    unique("occurrences_id_ministry_unique").on(table.id, table.ministryId),
+    // This only prevents equal starts, including in drafts. Published-period
+    // overlap, the 60-minute fallback and month consistency need the write operation
+    // and further database protection before exposing the API.
+    unique("occurrences_ministry_start_unique").on(table.ministryId, table.startAt),
   ],
 );
 
-export const scheduleAssignments = pgTable(
-  "schedule_assignments",
+export const scheduleOccurrenceAssignments = pgTable(
+  "schedule_occurrence_assignments",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    scheduleId: uuid("schedule_id").notNull(),
+    occurrenceId: uuid("occurrence_id").notNull(),
     ministryId: uuid("ministry_id").notNull(),
     // Keep the user reference independent of current ministry membership so
     // removing a member or capability does not remove historical assignments.
@@ -68,12 +121,12 @@ export const scheduleAssignments = pgTable(
       .notNull(),
   },
   (table) => [
-    unique("assignments_schedule_user_unique").on(table.scheduleId, table.userId),
-    unique("assignments_id_schedule_unique").on(table.id, table.scheduleId),
+    unique("assignments_occurrence_user_unique").on(table.occurrenceId, table.userId),
+    unique("assignments_id_occurrence_unique").on(table.id, table.occurrenceId),
     foreignKey({
-      name: "assignments_schedule_ministry_fk",
-      columns: [table.scheduleId, table.ministryId],
-      foreignColumns: [schedules.id, schedules.ministryId],
+      name: "assignments_occurrence_ministry_fk",
+      columns: [table.occurrenceId, table.ministryId],
+      foreignColumns: [scheduleOccurrences.id, scheduleOccurrences.ministryId],
     }),
     foreignKey({
       name: "assignments_position_ministry_fk",
@@ -95,7 +148,7 @@ export const swapRequests = pgTable(
   {
     id: uuid("id").defaultRandom().primaryKey(),
     assignmentId: uuid("assignment_id").notNull(),
-    scheduleId: uuid("schedule_id").notNull(),
+    occurrenceId: uuid("occurrence_id").notNull(),
     // Preserve the original requester when known. Completed legacy requests
     // may have no recoverable author; new pending requests require one below.
     requesterUserId: uuid("requester_user_id").references(() => users.id),
@@ -113,9 +166,9 @@ export const swapRequests = pgTable(
   },
   (table) => [
     foreignKey({
-      name: "swap_requests_assignment_schedule_fk",
-      columns: [table.assignmentId, table.scheduleId],
-      foreignColumns: [scheduleAssignments.id, scheduleAssignments.scheduleId],
+      name: "swap_requests_assignment_occurrence_fk",
+      columns: [table.assignmentId, table.occurrenceId],
+      foreignColumns: [scheduleOccurrenceAssignments.id, scheduleOccurrenceAssignments.occurrenceId],
     }),
     uniqueIndex("swaps_one_pending_per_assignment")
       .on(table.assignmentId)

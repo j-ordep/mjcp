@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
-import { check, index, integer, pgTable, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
+import { check, foreignKey, index, integer, pgTable, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
 
-import { schedules } from "../schedules/schema.ts";
+import { scheduleOccurrences } from "../schedules/schema.ts";
 import { users } from "../users/schema.ts";
 
 export const songs = pgTable(
@@ -44,16 +44,14 @@ export const songSingerPreferences = pgTable(
   ],
 );
 
-// Each row is an item of a schedule's repertoire; no separate 1:1 header
+// Each row is an item of an occurrence's repertoire; no separate 1:1 header
 // table is needed. A preference is copied to songKey when choosing the item;
 // later preference changes must not rewrite the historical execution.
-export const scheduleSetlistItems = pgTable(
-  "schedule_setlist_items",
+export const scheduleOccurrenceSetlistItems = pgTable(
+  "schedule_occurrence_setlist_items",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    scheduleId: uuid("schedule_id")
-      .notNull()
-      .references(() => schedules.id),
+    occurrenceId: uuid("occurrence_id").notNull(),
     songId: uuid("song_id")
       .notNull()
       .references(() => songs.id),
@@ -62,8 +60,13 @@ export const scheduleSetlistItems = pgTable(
     songKey: text("song_key"),
   },
   (table) => [
-    unique("setlist_items_schedule_song_unique").on(table.scheduleId, table.songId),
-    unique("setlist_items_schedule_position_unique").on(table.scheduleId, table.position),
+    foreignKey({
+      name: "setlist_items_occurrence_fk",
+      columns: [table.occurrenceId],
+      foreignColumns: [scheduleOccurrences.id],
+    }),
+    unique("setlist_items_occurrence_song_unique").on(table.occurrenceId, table.songId),
+    unique("setlist_items_occurrence_position_unique").on(table.occurrenceId, table.position),
     check("setlist_items_position_check", sql`${table.position} >= 0`),
     // Singer eligibility and permission to edit the worship repertoire
     // belong to the authorized operation, not the public request body.

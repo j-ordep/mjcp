@@ -26,6 +26,6 @@ export const notifications = pgTable(
     ),
     index("notifications_user_read_created_idx").on(table.userId, table.read, table.createdAt.desc()),
     // Delivery, recipients and payload validation are separate operations.
-    // Future payloads identify schedules/swap requests, without event links.
+    // Future payloads identify monthly plans, occurrences and swap requests.
   ],
 );
