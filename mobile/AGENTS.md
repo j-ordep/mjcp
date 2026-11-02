@@ -13,9 +13,11 @@
 ## Fontes de verdade
 
 1. `supabase/migrations/*.sql` e `src/`: integridade, autorização e comportamento atuais.
-2. [CONTEXT](docs/CONTEXT.md): objetivo, regras de negócio e tecnologia atual/planejada.
-3. [TASKS](docs/TASKS.md): único backlog e decisões abertas.
+2. [CONTEXT](docs/CONTEXT.md): comportamento e limites do cliente atual.
+3. [TASKS](docs/TASKS.md): backlog do mobile.
 4. [README](README.md): execução, validação e operação do banco atual.
+5. [Regras do produto](../backend-node/docs/REGRAS_DE_NEGOCIO.md) e
+   [TASK do backend](../backend-node/docs/TASK.md): regras por fluxo, banco, API e migração.
 
 Antes de alterar uma feature, leia suas migrations, services e telas.
 Verifique persistência, permissão e tratamento de erro antes de declará-la pronta.
@@ -23,7 +25,7 @@ Durante a migração, preserve contratos e dados até verificar seus substitutos
 
 ## Engenharia
 
-- Consulte as regras de domínio no CONTEXT; evite duplicá-las aqui.
+- Consulte as regras do produto no backend e o comportamento atual no CONTEXT; evite duplicá-los aqui.
 - Permissões são obrigatórias no servidor/banco: líder só opera o próprio ministério.
   Consulte vínculo e policies, não apenas o papel global.
 - Preserve RLS, triggers e RPCs atuais; não os substitua por checks na UI.
@@ -33,7 +35,7 @@ Durante a migração, preserve contratos e dados até verificar seus substitutos
 - Ao refatorar, preserve mensagens, validações, debounce, respostas atrasadas e a distinção
   entre campo omitido, `null` e lista vazia nos contratos existentes.
 - Ao mudar regra/permissão, atualize banco, cliente/API e documentação correspondente.
-- Backlog somente em TASKS. Atualize documentos existentes, remova tarefas concluídas
+- Backlog do mobile somente em TASKS; banco/API no TASK do backend. Remova tarefas concluídas
   e não crie Markdown por rodada. Orientações operacionais ficam no README.
 
 ## Segurança — todo arquivo pode se tornar público

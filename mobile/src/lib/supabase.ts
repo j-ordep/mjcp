@@ -7,9 +7,35 @@ import { getPublicSupabaseConfigOrThrow } from "./publicEnv";
 const isWeb = Platform.OS === "web";
 
 const nativeStorageAdapter = {
-  getItem: (key: string) => SecureStore.getItemAsync(key),
-  setItem: (key: string, value: string) => SecureStore.setItemAsync(key, value),
-  removeItem: (key: string) => SecureStore.deleteItemAsync(key),
+  getItem: async (key: string): Promise<string | null> => {
+    console.log('[SecureStore] getItem chamado para:', key);
+    try {
+      const value = await SecureStore.getItemAsync(key);
+      console.log('[SecureStore] getItem sucesso:', key, value ? 'existe' : 'null');
+      return value ?? null;
+    } catch (error) {
+      console.warn('[SecureStore] getItemAsync error:', key, error);
+      return null;
+    }
+  },
+  setItem: async (key: string, value: string): Promise<void> => {
+    console.log('[SecureStore] setItem chamado para:', key);
+    try {
+      await SecureStore.setItemAsync(key, value);
+      console.log('[SecureStore] setItem sucesso:', key);
+    } catch (error) {
+      console.warn('[SecureStore] setItemAsync error:', key, error);
+    }
+  },
+  removeItem: async (key: string): Promise<void> => {
+    console.log('[SecureStore] removeItem chamado para:', key);
+    try {
+      await SecureStore.deleteItemAsync(key);
+      console.log('[SecureStore] removeItem sucesso:', key);
+    } catch (error) {
+      console.warn('[SecureStore] deleteItemAsync error:', key, error);
+    }
+  },
 };
 
 const {

@@ -1,70 +1,55 @@
-# Backend MJCP — aprendendo do zero
+# MJCP Backend
 
-A base anterior foi removida. As pastas de módulos foram preservadas vazias,
-mas ainda não há código de aplicação. Configurações e dependências continuam
-disponíveis para serem exploradas aos poucos.
+Backend em Fastify, TypeScript e PostgreSQL para o aplicativo MJCP.
 
-## Primeiro objetivo
+- [Regras de negócio](docs/REGRAS_DE_NEGOCIO.md): referência única, organizada por fluxo.
+- [Tarefas](docs/TASK.md): pendências, definições abertas, migração e futuras features.
+- [Orientações de trabalho](AGENTS.md): tutoria, manutenção e segurança.
 
-Criar um servidor que receba `GET /health` e responda um JSON.
+## Executar
 
-O caminho de uma requisição é:
-
-```text
-Navegador ou app → requisição HTTP → Fastify → resposta HTTP
-```
-
-- TypeScript é a linguagem do código.
-- Bun executa o código e gerencia as dependências.
-- Fastify é a biblioteca que organiza o servidor e suas rotas.
-- Uma rota combina método HTTP (como GET) e caminho (como /health).
-
-## Primeiro exercício, ainda não implementado
-
-Criar `src/server.ts` com:
-
-```ts
-import Fastify from "fastify";
-
-const app = Fastify({ logger: true });
-
-app.get("/health", async () => {
-	return { status: "ok" };
-});
-
-await app.listen({ port: 3000 });
-```
-
-1. O import traz a função que cria a aplicação Fastify.
-2. A chamada Fastify cria a aplicação; logger habilita os registros de execução.
-3. app.get registra a função que atende GET /health. A função só executa quando
-   chega uma requisição para essa rota.
-4. O objeto retornado é enviado como JSON na resposta HTTP.
-5. app.listen inicia o servidor na porta 3000; await espera a inicialização terminar.
-
-Depois de criar esse arquivo, executar nesta pasta:
+Dentro de `backend-node`, instale as dependências, configure `.env` a partir de
+`.env.example` e execute:
 
 ```sh
+bun install
 bun run dev
 ```
 
-Abrir http://localhost:3000/health. A resposta esperada é:
+O servidor usa a porta 3000. As rotas `/events` ainda são exemplos em memória.
+A persistência e os fluxos definitivos da API estão pendentes em TASK.
 
-```json
-{ "status": "ok" }
+## Banco e migrations
+
+Configure `DATABASE_URL` para o PostgreSQL novo de desenvolvimento.
+Os schemas ficam em `src/modules/**/schema.ts` e as migrations em `drizzle/`.
+
+Para aplicar as migrations existentes:
+
+```sh
+bunx drizzle-kit migrate
 ```
 
-Encerrar com Ctrl+C no terminal. O comando dev observa alterações no código.
-Até o exercício ser implementado, os comandos dev e start não funcionam.
+Depois de alterar um schema, gere e revise o SQL antes de aplicar:
 
-## Depois do primeiro servidor
+```sh
+bunx drizzle-kit generate --name=nome_da_mudanca
+```
 
-Entender parâmetros, corpo da requisição, códigos HTTP e erros. Depois separar
-a criação da aplicação da inicialização do servidor, e extrair a primeira rota
-para um módulo.
+Para SQL que o construtor do Drizzle não representa, gere uma migration customizada:
 
-Um monolito modular é uma aplicação publicada como uma unidade, organizada em
-áreas de negócio com responsabilidades e limites claros. Só criar pastas não
-estabelece esses limites; vamos construí-los quando houver código para organizar.
+```sh
+bunx drizzle-kit generate --custom --name=nome_da_regra
+```
 
-Validação, banco de dados e autenticação entram em etapas posteriores.
+`0001_room_reservations_no_overlap.sql` contém a proteção de concorrência das salas.
+Versione o SQL e os metadados gerados. Preserve migrations já aplicadas.
+Criar a estrutura não transfere contas nem dados do Supabase; essa migração está em TASK.
+
+## Conferir tipos
+
+```sh
+node node_modules/typescript/bin/tsc --noEmit
+```
+
+Não versione `.env`, credenciais, exports do banco nem dados reais.

@@ -1,7 +1,8 @@
 # MJCP Mobile
 
 Aplicativo interno para organizar o serviço das equipes da igreja.
-Objetivo e regras em [CONTEXT](docs/CONTEXT.md); próximos passos em [TASKS](docs/TASKS.md).
+Comportamento atual em [CONTEXT](docs/CONTEXT.md); ajustes do cliente em [TASKS](docs/TASKS.md).
+Regras do produto e trabalho da API ficam na [documentação do backend](../backend-node/README.md).
 
 ## Executar
 
@@ -128,11 +129,13 @@ select count(*) from (
 ```
 
 Constraints `NOT VALID` protegem novas escritas, mas dados antigos precisam de saneamento
-antes de `VALIDATE CONSTRAINT`. Registre verificações e pendências somente em TASKS,
+antes de `VALIDATE CONSTRAINT`. Registre pendências de migração no [TASK do backend](../backend-node/docs/TASK.md),
 sem tokens, identificadores internos ou payloads reais.
 
 ## Manter a documentação
 
-CONTEXT reúne produto, regras e tecnologia; TASKS é o único backlog.
+CONTEXT descreve o cliente atual; TASKS é o backlog do mobile.
+As regras do produto ficam em [REGRAS_DE_NEGOCIO](../backend-node/docs/REGRAS_DE_NEGOCIO.md).
+Banco, API e migração ficam no [TASK do backend](../backend-node/docs/TASK.md).
 [AGENTS](AGENTS.md) contém as orientações de trabalho.
 Atualize esses documentos existentes e remova tarefas concluídas; evite novos planos Markdown.

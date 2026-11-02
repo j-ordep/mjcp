@@ -37,7 +37,6 @@ func NewAuthService(
 
 // ForgotPassword gera token de reset e envia email
 func (s *AuthService) ForgotPassword(input userDTO.ForgotPasswordInput) error {
-	// Buscar usuário por email
 	user, err := s.userRepo.GetByEmail(input.Email)
 	if err != nil {
 		// Por segurança, não revelamos se o email existe ou não
@@ -45,7 +44,6 @@ func (s *AuthService) ForgotPassword(input userDTO.ForgotPasswordInput) error {
 		return nil
 	}
 
-	// Gerar token aleatório seguro
 	token, err := generateSecureToken()
 	if err != nil {
 		return fmt.Errorf("failed to generate token: %w", err)
