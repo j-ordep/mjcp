@@ -1,6 +1,6 @@
 # Próximos passos
 
-Revisado em 2026-10-26. Este é o backlog do mobile.
+Revisado em 2026-11-01. Este é o backlog do mobile.
 Comportamento atual em [CONTEXT](CONTEXT.md); execução e banco atual no [README](../README.md).
 
 ## Ajustes de navegação e filtros
@@ -157,16 +157,40 @@ audência/sala já possuem estado próprio, e a migração retirará esse módul
 ## Integração com o novo backend
 
 Banco, API e migração dos dados ficam no [TASK do backend](../../backend-node/docs/TASK.md).
-As [regras de negócio](../../backend-node/docs/REGRAS_DE_NEGOCIO.md) são a referência do produto.
+As [regras de negócio](../../backend-node/docs/REGRAS_DE_NEGOCIO.md) são a referência única do produto.
+O foco atual é a API; implementar estes fluxos no cliente depois de validar seus contratos no backend.
 
 - [ ] Adaptar os services para HTTP por fluxo, preservando sessão, logout, tratamento de erros,
   falhas de SecureStore, descarte de respostas atrasadas e invalidação dos caches.
-- [ ] Adaptar criação e detalhes das escalas aos horários próprios, aos conflitos bloqueantes
-  e às sugestões de integrantes retornadas pela API.
+- [ ] Implementar o fluxo principal de criação mensal: ministério/mês, padrões de dias e horários,
+  geração com exceções, edição de pessoas/funções e gravação em lote com IDs preservados.
+- [ ] Integrar rascunho persistido e publicação pela API; mostrar ao autor avisos de conflito,
+  preservar o trabalho em erro e só atualizar a equipe após confirmação do servidor.
+- [ ] Oferecer edição individual e acréscimo de ocorrências conforme o contrato da API;
+  após ajuste publicado, invalidar as consultas afetadas e apresentar os avisos correspondentes.
+- [ ] Integrar presets de agenda e cópia de equipes, sem controle de vagas ou quantidades
+  obrigatórias; tratar integrantes indisponíveis ou sem habilitação retornados pela API.
+- [ ] Manter os cards pessoais e oferecer consulta mensal do ministério com os dados autorizados
+  pela API; adaptar filtros e navegação sem duplicar registros entre visualizações.
+- [ ] Validar a apresentação mensal no celular e a edição com recorte semanal; o layout exato
+  e a escolha entre agenda/calendário permanecem abertos. O PDF é referência, não um layout obrigatório.
+- [ ] Tratar repetição de requisições após falha de rede conforme o contrato de idempotência,
+  preservando a intenção do comando; impedir toque repetido na UI não substitui a garantia da API.
+- [ ] Adaptar os avisos e sugestões de integrantes, distinguindo rascunho, conflito bloqueante
+  na publicação e avisos de dia indisponível conforme as regras compartilhadas.
 - [ ] Retirar telas, services, audiência e vínculos de eventos depois de adaptar repertórios,
   reservas, notificações e bloqueios ao novo domínio.
 - [ ] Retirar o SDK e a configuração do Supabase somente após validar autenticação, dados
   e notificações substitutos nos fluxos do cliente.
+
+## Aprendizado aplicado ao mobile
+
+- [ ] Contratos HTTP e DTOs: apresentar erros de autorização, conflito e publicação sem
+  reproduzir as garantias de integridade do servidor em checks locais.
+- [ ] Separar estado de edição, rascunho persistido e publicação; tratar respostas atrasadas,
+  troca de sessão, caches e reenvios conforme o contrato da API.
+- [ ] Entender acesso à API por celular/emulador: loopback depende do dispositivo;
+  conferir rede, endereço do servidor e tratamento de falhas.
 
 ## Verificações pendentes
 
