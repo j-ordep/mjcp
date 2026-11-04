@@ -5,9 +5,10 @@ Mobile e suas telas ficam em [TASKS do mobile](../../mobile/docs/TASKS.md); exec
 
 ## Foco agora: API da escala mensal
 
-- [ ] Conectar a API ao PostgreSQL com o cliente Drizzle, validar `DATABASE_URL`, executar `SELECT 1` e encerrar as conexões com a aplicação.
-- [ ] Gerar, revisar e aplicar a base inicial no PostgreSQL de desenvolvimento com os schemas de plano mensal e ocorrências; incluir a migration customizada de salas conforme o README.
-- [ ] Definir DTOs de entrada/saída, geração por padrões de dias/horários e exceções, alterações em lote com IDs preservados, filtros de período e erros HTTP.
+- [ ] Validar `checkDatabaseConnection` em `src/db/client.ts` com o PostgreSQL de desenvolvimento disponível, confirmando `connected: 1`. Conceito: consulta real e propagação de erros.
+- [ ] Validar o encerramento em `src/server.ts` com `Ctrl+C` e falha de inicialização (porta ocupada). Conceito: ciclo de vida do Fastify. Concluir: confirmar fechamento do PostgreSQL e saída com código `1` quando a inicialização falhar.
+- [ ] Definir o contrato mínimo proposto para criar o rascunho mensal em `src/modules/schedules/dto.ts`: `ministryId` UUID nos parâmetros, `month` no formato `YYYY-MM` no corpo, objetos estritos e tipos inferidos com Zod. Conceito: DTO, validação em execução e tipos TypeScript. Concluir: aceitar mês válido e rejeitar UUID/mês inválidos e campos extras; sem registrar a rota neste recorte.
+- [ ] Completar os contratos de entrada/saída com ocorrências, equipe, geração por padrões de dias/horários e exceções, alterações em lote com IDs preservados, filtros de período e erros HTTP.
 - [ ] Implementar autenticação/sessão e autorização no servidor: autoria do rascunho, leitura mensal por vínculo, feed pessoal por atribuição e gestão por liderança do ministério.
 - [ ] Implementar criação mensal e gravação do rascunho sem avisos à equipe; retornar ao autor conflitos e integrantes alternativos elegíveis.
 - [ ] Proteger no banco os períodos publicados por ministério e por pessoa, inclusive na publicação concorrente, trocas e edições; usar 60 minutos sem término e permitir períodos consecutivos.

@@ -38,6 +38,10 @@ A API Fastify possui schemas e migrations em `backend-node`. Persistência, aute
 e integração HTTP ainda precisam ser implementadas. O exemplo de eventos em memória
 não define o domínio do produto.
 
+A criação mensal com rascunho/publicação, os presets e as novas consultas por ministério
+estão planejados, ainda sem implementação no cliente. As regras compartilhadas ficam no
+arquivo de negócio citado acima; tarefas de interface e HTTP ficam em [TASKS](TASKS.md).
+
 Preserve contratos, dados, RLS, triggers e RPCs do Supabase até verificar seus substitutos.
 As refatorações do mobile atual devem preservar seu comportamento durante essa transição.
 

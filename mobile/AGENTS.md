@@ -10,6 +10,22 @@
 - Separe **Confirmado no codigo**, **PENDENTE DE DEFINICAO** e **INFORMACAO INSUFICIENTE**.
   Uma decisão documentada não comprova implementação nem aplicação remota.
 
+## Microentregas e aprendizado
+
+- Ao receber um pedido de feature, primeiro mapeie o fluxo e divida em tarefas muito pequenas.
+  Um pedido genérico como "faça a feature" não autoriza implementar o fluxo inteiro.
+- Cada microentrega deve ter preferencialmente uma função e no máximo três funções de produção
+  relacionadas. Handler, service e repository são exemplos, não camadas obrigatórias.
+  Para outras alterações, escolha uma unidade pequena e revisável, como um schema ou contrato.
+- Registre a decomposição no [TASKS](docs/TASKS.md), sem criar planos paralelos. Cada tarefa deve
+  indicar objetivo, arquivos/funções, conceito a aprender e como verificar a conclusão.
+- Só implemente o recorte explicitamente solicitado; se o pedido for de orientação, explique
+  para o usuário escrever à mão. Execute as ações já autorizadas dentro desse recorte.
+- Ao concluir a microentrega, apresente mudanças e verificações para revisão e aprendizado.
+  Não encadeie automaticamente a implementação das próximas tarefas.
+- Só implemente a feature ou o fluxo completo quando o usuário pedir isso expressamente,
+  por exemplo: "implemente o fluxo completo" ou instrução equivalente inequívoca.
+
 ## Fontes de verdade
 
 1. `supabase/migrations/*.sql` e `src/`: integridade, autorização e comportamento atuais.
