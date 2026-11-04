@@ -1,15 +1,28 @@
 # MJCP
 
-Aplicativo interno para organizar escalas, equipe, salas e músicas de uma igreja.
+Organização das equipes e escalas de serviço da igreja.
 
-- [Backend Fastify](backend-node/README.md): execução e migrations.
-- [Regras de negócio](backend-node/docs/REGRAS_DE_NEGOCIO.md): referência única por fluxo.
-- [Tarefas do backend](backend-node/docs/TASK.md): pendências, definições, migração do Supabase e futuras features.
-- [Mobile](mobile/README.md): execução e operação do cliente atual.
-- [Contexto do mobile](mobile/docs/CONTEXT.md): comportamento atual e limites da transição.
-- [Tarefas do mobile](mobile/docs/TASKS.md): ajustes e integração do cliente.
+O MJCP ajuda líderes a organizar seus ministérios e integrantes a acompanhar quando e em qual função vão servir. O aplicativo reúne escalas, confirmações, trocas, reservas de salas e repertórios.
 
-O mobile ainda usa Supabase. O backend Fastify possui schemas e migrations;
-persistência e fluxos da API continuam pendentes de implementação.
+O projeto está em desenvolvimento, voltado inicialmente ao uso interno de uma igreja.
 
-As bases [Go](backend-legacy/README.md) e [web](web/README.md) ficam fora do ciclo atual.
+## No aplicativo
+
+- **Escalas e equipes:** acompanhar as próprias participações e organizar integrantes e funções por ministério.
+- **Confirmações e trocas:** confirmar participação, solicitar substituição e assumir trocas disponíveis.
+- **Indisponibilidade:** informar os dias em que não poderá servir.
+- **Salas:** consultar a agenda dos espaços e gerenciar reservas.
+- **Músicas:** consultar o catálogo e organizar repertórios com os tons de cada execução.
+- **Notificações:** acompanhar os avisos dentro do aplicativo.
+
+## Evolução do aplicativo
+
+Está planejada a criação da escala mensal: o líder prepara o mês em rascunho, distribui pessoas e funções por data e publica o conjunto para a equipe.
+
+Modelos reutilizáveis de agenda e equipe, além de visualizações diária, semanal e mensal das mesmas escalas, também fazem parte dessa evolução.
+
+## Documentação
+
+- [Aplicativo mobile](mobile/README.md): execução e manutenção do aplicativo.
+- [API](backend-node/README.md): desenvolvimento e execução do servidor.
+- [Regras do produto](backend-node/docs/REGRAS_DE_NEGOCIO.md): comportamento dos fluxos.
