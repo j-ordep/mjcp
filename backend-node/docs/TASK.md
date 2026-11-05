@@ -7,8 +7,7 @@ Mobile e suas telas ficam em [TASKS do mobile](../../mobile/docs/TASKS.md); exec
 
 - [ ] Validar `checkDatabaseConnection` em `src/db/client.ts` com o PostgreSQL de desenvolvimento disponível, confirmando `connected: 1`. Conceito: consulta real e propagação de erros.
 - [ ] Validar o encerramento em `src/server.ts` com `Ctrl+C` e falha de inicialização (porta ocupada). Conceito: ciclo de vida do Fastify. Concluir: confirmar fechamento do PostgreSQL e saída com código `1` quando a inicialização falhar.
-- [ ] Definir o contrato mínimo proposto para criar o rascunho mensal em `src/modules/schedules/dto.ts`: `ministryId` UUID nos parâmetros, `month` no formato `YYYY-MM` no corpo, objetos estritos e tipos inferidos com Zod. Conceito: DTO, validação em execução e tipos TypeScript. Concluir: aceitar mês válido e rejeitar UUID/mês inválidos e campos extras; sem registrar a rota neste recorte.
-- [ ] Completar os contratos de entrada/saída com ocorrências, equipe, geração por padrões de dias/horários e exceções, alterações em lote com IDs preservados, filtros de período e erros HTTP.
+- [ ] Completar os contratos de entrada/saída com ocorrências, equipe, geração por padrões de dias/horários e exceções, alterações em lote com IDs preservados, filtros de período, precisão dos horários (a comparação atual com `Date.parse` considera milissegundos) e erros HTTP.
 - [ ] Implementar autenticação/sessão e autorização no servidor: autoria do rascunho, leitura mensal por vínculo, feed pessoal por atribuição e gestão por liderança do ministério.
 - [ ] Implementar criação mensal e gravação do rascunho sem avisos à equipe; retornar ao autor conflitos e integrantes alternativos elegíveis.
 - [ ] Proteger no banco os períodos publicados por ministério e por pessoa, inclusive na publicação concorrente, trocas e edições; usar 60 minutos sem término e permitir períodos consecutivos.
@@ -20,6 +19,15 @@ Mobile e suas telas ficam em [TASKS do mobile](../../mobile/docs/TASKS.md); exec
 ## Fluxo inicial da API — proposto
 
 Rotas ainda não implementadas; payloads serão fechados antes de codificar. `schedule_plans` guarda o mês; `schedule_occurrences` guarda cada ocorrência, com atribuições e repertório próprios.
+
+Mapa do contrato de criação mensal, ainda em construção:
+
+- URL: `ministryId`.
+- Corpo mensal: `month` e `occurrences[]`.
+- Ocorrência: `title`, `startAt`, `endAt`, `notes` e `assignments[]`.
+- Participação: `userId` e `positionId`.
+
+Os validadores atuais cobrem ministério, mês, horários e participações (`userId`/`positionId`). `occurrences` e `assignments` são obrigatórios e aceitam `[]`; título e observações ainda estão pendentes. O término é opcional; a obrigatoriedade do título ainda precisa ser definida.
 
 | Rota | Responsabilidade |
 | --- | --- |
