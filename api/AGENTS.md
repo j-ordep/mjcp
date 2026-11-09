@@ -8,6 +8,8 @@
 
 ## Microentregas e aprendizado
 
+- Use o [guia](https://github.com/j-ordep/agentic-development-guide/blob/main/PARA-AGENTES.md)
+  como referência para descoberta, microentregas e revisão, seguindo as instruções deste repositório.
 - Ao receber um pedido de feature, primeiro mapeie o fluxo e divida em tarefas muito pequenas.
   Um pedido genérico como "faça a feature" não autoriza implementar o fluxo inteiro.
 - Cada microentrega deve ter preferencialmente uma função e no máximo três funções de produção
