@@ -9,7 +9,10 @@ Mobile e suas telas ficam em [TASKS do mobile](../../mobile/docs/TASKS.md); exec
 - [ ] Validar o encerramento em `src/server.ts` com `Ctrl+C` e falha de inicialização (porta ocupada). Conceito: ciclo de vida do Fastify. Concluir: confirmar fechamento do PostgreSQL e saída com código `1` quando a inicialização falhar.
 - [ ] Completar os contratos de entrada/saída com ocorrências, equipe, geração por padrões de dias/horários e exceções, alterações em lote com IDs preservados, filtros de período, precisão dos horários (a comparação atual com `Date.parse` considera milissegundos) e erros HTTP.
 - [ ] Implementar autenticação/sessão e autorização no servidor: autoria do rascunho, leitura mensal por vínculo, feed pessoal por atribuição e gestão por liderança do ministério.
-- [ ] Implementar criação mensal e gravação do rascunho sem avisos à equipe; retornar ao autor conflitos e integrantes alternativos elegíveis.
+- [ ] Criar somente `insertSchedulePlan` em `src/modules/schedules/repository.ts`, recebendo a transação, ministério, autor e mês; persistir `schedule_plans` como rascunho, converter o mês para o primeiro dia e retornar o registro inserido. Conceito: `insert`, `returning` e valores gerados pelo banco. Concluir: verificar ID/estado/mês persistidos e rejeição de ministério/mês duplicado em transação de teste.
+- [ ] Criar somente `insertScheduleOccurrence` no mesmo `repository.ts`, recebendo a transação, plano, ministério e os dados de uma ocorrência. Conceito: FK e conversão de datas ISO para os valores de persistência. Concluir: verificar vínculo com o plano/ministério e preservar término ausente como `NULL` em transação de teste.
+- [ ] Criar somente `insertScheduleOccurrenceAssignments` no mesmo `repository.ts`, recebendo a transação, ocorrência, ministério e a lista de participações. Conceito: inserção de várias linhas e unicidade da pessoa na ocorrência. Concluir: aceitar lista vazia e pessoas diferentes na mesma função; rejeitar a mesma pessoa repetida na ocorrência em transação de teste.
+- [ ] Orquestrar a criação mensal em uma única transação usando as funções de persistência, gravando o rascunho sem avisos à equipe e retornando ao autor conflitos e integrantes alternativos elegíveis. As funções recebem a transação do chamador; não devem confirmar gravações separadamente. Habilitar a rota somente com autenticação e autorização.
 - [ ] Proteger no banco os períodos publicados por ministério e por pessoa, inclusive na publicação concorrente, trocas e edições; usar 60 minutos sem término e permitir períodos consecutivos.
 - [ ] Garantir vínculo e função habilitada, ocorrência dentro do mês do plano no fuso da igreja e alterações atômicas de equipe/funções; as FKs já mantêm plano/ocorrência/função no mesmo ministério.
 - [ ] Implementar publicação transacional e idempotente, revalidando o conjunto e registrando os avisos sem duplicação.
@@ -26,8 +29,9 @@ Mapa do contrato de criação mensal, ainda em construção:
 - Corpo mensal: `month` e `occurrences[]`.
 - Ocorrência: `title`, `startAt`, `endAt`, `notes` e `assignments[]`.
 - Participação: `userId` e `positionId`.
+- Resposta mínima da criação: `id`, `ministryId`, `month` e `status: "draft"`.
 
-Os validadores atuais cobrem ministério, mês, horários e participações (`userId`/`positionId`). `occurrences` e `assignments` são obrigatórios e aceitam `[]`; título e observações ainda estão pendentes. O término é opcional; a obrigatoriedade do título ainda precisa ser definida.
+Os validadores atuais cobrem ministério, mês, horários, participações (`userId`/`positionId`), título e observações. `occurrences` e `assignments` são obrigatórios e aceitam `[]`; título, observações e término podem ser omitidos. Título e observações têm espaços removidos das extremidades; título informado exige conteúdo e observações podem ser vazias.
 
 | Rota | Responsabilidade |
 | --- | --- |
@@ -64,7 +68,7 @@ Começar pela conexão real e pelo contrato de criação do rascunho; habilitar 
 - [ ] Exceções de acesso a rascunhos para outros líderes/administradores e inclusão de ocorrência em mês já publicado.
 - [ ] Contrato dos presets: persistência, edição, escopo e aplicação; definir se alternativas entre pessoas são apenas indecisão do rascunho ou um recurso próprio.
 - [ ] Entrada de pessoas e transição das contas; permissões de catálogos, tons por cantor e reservas de salas.
-- [ ] Obrigatoriedade do título e quais estados de participação ocupam horário em ocorrências publicadas, inclusive durante trocas.
+- [ ] Definir quais estados de participação ocupam horário em ocorrências publicadas, inclusive durante trocas.
 - [ ] Hospedagem do servidor e do banco.
 
 ## Migração do Supabase

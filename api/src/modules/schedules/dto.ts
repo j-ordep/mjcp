@@ -13,11 +13,13 @@ export const scheduleOccurrenceAssignmentInputSchema = z.strictObject({
 	positionId: z.uuid(),
 });
 
-// Ocorrência (parcial): valida os horários; equipe e demais campos virão depois.
+// Dados de uma ocorrência do planejamento mensal.
 export const scheduleOccurrenceInputSchema = z
 	.strictObject({
+		title: z.string().trim().min(1, "O título não pode ficar vazio.").optional(),
 		startAt: z.iso.datetime({ offset: true }),
 		endAt: z.iso.datetime({ offset: true }).optional(),
+		notes: z.string().trim().optional(),
 		assignments: z.array(scheduleOccurrenceAssignmentInputSchema),
 	})
 	.refine((data) => data.endAt === undefined || Date.parse(data.endAt) > Date.parse(data.startAt), {
@@ -35,7 +37,16 @@ export const createSchedulePlanBodySchema = z.strictObject({
 	occurrences: z.array(scheduleOccurrenceInputSchema),
 });
 
+// Resposta mínima após criar o rascunho mensal.
+export const createSchedulePlanResponseSchema = z.strictObject({
+	id: z.uuid(),
+	ministryId: z.uuid(),
+	month: monthSchema,
+	status: z.literal("draft"),
+});
+
 export type ScheduleOccurrenceAssignmentInput = z.infer<typeof scheduleOccurrenceAssignmentInputSchema>;
 export type ScheduleOccurrenceInput = z.infer<typeof scheduleOccurrenceInputSchema>;
 export type CreateSchedulePlanParams = z.infer<typeof createSchedulePlanParamsSchema>;
 export type CreateSchedulePlanBody = z.infer<typeof createSchedulePlanBodySchema>;
+export type CreateSchedulePlanResponse = z.infer<typeof createSchedulePlanResponseSchema>;
