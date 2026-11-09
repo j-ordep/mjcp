@@ -12,6 +12,10 @@
 
 ## Microentregas e aprendizado
 
+- Ao planejar ou executar uma microentrega, consulte o
+  [ponto de entrada do guia de desenvolvimento com agentes](https://github.com/j-ordep/agentic-development-guide/blob/main/PARA-AGENTES.md).
+  No fluxo do guia, use `docs/TASKS.md` como backlog do mobile.
+
 - Ao receber um pedido de feature, primeiro mapeie o fluxo e divida em tarefas muito pequenas.
   Um pedido genérico como "faça a feature" não autoriza implementar o fluxo inteiro.
 - Cada microentrega deve ter preferencialmente uma função e no máximo três funções de produção
@@ -32,8 +36,8 @@
 2. [CONTEXT](docs/CONTEXT.md): comportamento e limites do cliente atual.
 3. [TASKS](docs/TASKS.md): backlog do mobile.
 4. [README](README.md): execução, validação e operação do banco atual.
-5. [Regras do produto](../backend-node/docs/REGRAS_DE_NEGOCIO.md) e
-   [TASK do backend](../backend-node/docs/TASK.md): regras por fluxo, banco, API e migração.
+5. [Regras do produto](../api/docs/REGRAS_DE_NEGOCIO.md) e
+   [TASK do backend](../api/docs/TASK.md): regras por fluxo, banco, API e migração.
 
 Antes de alterar uma feature, leia suas migrations, services e telas.
 Verifique persistência, permissão e tratamento de erro antes de declará-la pronta.
