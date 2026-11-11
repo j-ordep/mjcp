@@ -8,6 +8,7 @@ import ts from "typescript";
 // Exercise the navigator effects without loading React Native in Node.
 // Supabase awaits auth callbacks while holding its session lock.
 function mountNavigator(options: {
+  isDev?: boolean;
   session?: unknown;
   getSession?: () => Promise<unknown>;
   getProfile?: (userId: string) => Promise<unknown>;
@@ -37,7 +38,7 @@ function mountNavigator(options: {
   const mocks: Record<string, unknown> = {
     react: { ...require("react"), useEffect: (effect: () => void) => effects.push(effect) },
     "@react-navigation/native": { NavigationContainer: () => null },
-    "@react-navigation/native-stack": { createNativeStackNavigator: () => ({}) },
+    "@react-navigation/native-stack": { createNativeStackNavigator: () => ({ Navigator: "Stack", Screen: "Screen" }) },
     "react-native": { View: () => null, ActivityIndicator: () => null },
     // Visual provider configuration must not load native Paper in this Node harness.
     theme: { navigationTheme: {} },
@@ -79,6 +80,7 @@ function mountNavigator(options: {
     };
     vm.runInNewContext(source, {
       exports: module.exports, module, require: customRequire,
+      __DEV__: options.isDev ?? false,
       setTimeout, clearTimeout, console: { log() {}, error() {} },
     }, { filename });
     return module.exports;
@@ -89,6 +91,17 @@ function mountNavigator(options: {
   return {
     state,
     resets,
+    screenNames: () => {
+      const names: string[] = [];
+      const visit = (node: any) => {
+        if (Array.isArray(node)) { node.forEach(visit); return; }
+        if (!node || typeof node !== "object") return;
+        if (node.type === "Screen") names.push(node.props.name);
+        visit(node.props?.children);
+      };
+      visit((navigator.default as () => unknown)());
+      return names;
+    },
     emit: (event: string, session: unknown) => authCallback(event, session),
     cleanup: () => cleanups.forEach((cleanup) => cleanup?.()),
     isUnsubscribed: () => unsubscribed,
@@ -97,6 +110,57 @@ function mountNavigator(options: {
 
 const session = { user: { id: "user-example" } };
 const tick = () => new Promise<void>((resolve) => setTimeout(resolve, 10));
+
+test("development opens Main immediately while session restoration is pending", () => {
+  const navigator = mountNavigator({ isDev: true, getSession: () => new Promise(() => {}) });
+  try {
+    const screens = navigator.screenNames();
+    assert.equal(screens[0], "Main");
+    assert.equal(screens.includes("SignIn"), false);
+    assert.equal(screens.includes("SignUp"), false);
+    assert.equal(navigator.state.session, null, "opening the app must not fabricate a Supabase session");
+  } finally {
+    navigator.cleanup();
+  }
+});
+
+test("development keeps Main accessible without a session and after logout", async () => {
+  const navigator = mountNavigator({ isDev: true });
+  try {
+    await tick();
+    assert.equal(navigator.screenNames()[0], "Main");
+    navigator.emit("SIGNED_IN", session);
+    navigator.emit("SIGNED_OUT", null);
+    assert.equal(navigator.screenNames()[0], "Main");
+    assert.equal(navigator.state.session, null);
+    assert.equal(navigator.state.profile, null);
+  } finally {
+    navigator.cleanup();
+  }
+});
+
+test("production waits for session restoration and requires login without a session", async () => {
+  const navigator = mountNavigator({ isDev: false });
+  try {
+    assert.deepEqual(navigator.screenNames(), []);
+    await tick();
+    assert.deepEqual(navigator.screenNames(), ["SignIn", "SignUp"]);
+  } finally {
+    navigator.cleanup();
+  }
+});
+
+test("production restores Main for an authenticated session and login after logout", async () => {
+  const navigator = mountNavigator({ isDev: false, session });
+  try {
+    await tick();
+    assert.equal(navigator.screenNames()[0], "Main");
+    navigator.emit("SIGNED_OUT", null);
+    assert.deepEqual(navigator.screenNames(), ["SignIn", "SignUp"]);
+  } finally {
+    navigator.cleanup();
+  }
+});
 
 test("notification subscription reconnects on same-user new login but preserves token refresh", () => {
   const calls: string[] = [];
