@@ -7,9 +7,13 @@ Mobile e suas telas ficam em [TASKS do mobile](../../mobile/docs/TASKS.md); exec
 
 - [ ] Validar `checkDatabaseConnection` em `src/db/client.ts` com o PostgreSQL de desenvolvimento disponível, confirmando `connected: 1`. Conceito: consulta real e propagação de erros.
 - [ ] Validar o encerramento em `src/server.ts` com `Ctrl+C` e falha de inicialização (porta ocupada). Conceito: ciclo de vida do Fastify. Concluir: confirmar fechamento do PostgreSQL e saída com código `1` quando a inicialização falhar.
-- [ ] Completar os contratos de entrada/saída com ocorrências, equipe, geração por padrões de dias/horários e exceções, alterações em lote com IDs preservados, filtros de período, precisão dos horários (a comparação atual com `Date.parse` considera milissegundos) e erros HTTP.
+- [ ] Definir os contratos de geração por padrões de dias/horários e exceções, alterações em lote com IDs preservados, filtros de período e erros HTTP.
 - [ ] Implementar autenticação/sessão e autorização no servidor: autoria do rascunho, leitura mensal por vínculo, feed pessoal por atribuição e gestão por liderança do ministério.
-- [ ] Criar somente `insertSchedulePlan` em `src/modules/schedules/repository.ts`, recebendo a transação, ministério, autor e mês; persistir `schedule_plans` como rascunho, converter o mês para o primeiro dia e retornar o registro inserido. Conceito: `insert`, `returning` e valores gerados pelo banco. Concluir: verificar ID/estado/mês persistidos e rejeição de ministério/mês duplicado em transação de teste.
+- [ ] Validar `insertSchedulePlan` em `src/modules/schedules/repository.ts` com o PostgreSQL local. A função recebe cliente/transação e os dados de persistência preparados pelo service e retorna o rascunho inserido. Conceito: `insert`, `returning` e valores gerados pelo banco. Concluir: verificar ID/estado/mês persistidos e rejeição de ministério/mês duplicado em transação de teste, desfazendo os dados fictícios ao final.
+- [ ] Validar com PostgreSQL real o fluxo conectado handler → service → repository → banco para a criação do rascunho vazio.
+  - Objetivo e arquivos. Em `routes.ts`, o handler recebe o DTO validado e o contexto autenticado, chama `createSchedulePlan` de `service.ts` e monta a resposta HTTP. O handler já chama o service e monta o DTO de resposta. O service restringe esta etapa a `occurrences: []`, prepara `referenceMonth` e chama `insertSchedulePlan`. O plugin recebe `db` e `authorizeMinistry`, que deve autenticar e verificar a gestão do ministério antes de fornecer o autor.
+  - Conceito. Limites entre HTTP, tratamento da operação e acesso ao banco. O service prepara os dados da operação e o handler mapeia o resultado para o DTO de resposta. Tipos de persistência podem ser inferidos do schema Drizzle.
+  - Verificação. Em teste isolado com contexto autorizado, acompanhar ministério/mês/autor até o registro gravado e conferir a resposta `201` com ID, ministério, mês e status. Rejeitar ocorrências não vazias até sua gravação estar implementada. O registro no servidor depende de autenticação e autorização.
 - [ ] Criar somente `insertScheduleOccurrence` no mesmo `repository.ts`, recebendo a transação, plano, ministério e os dados de uma ocorrência. Conceito: FK e conversão de datas ISO para os valores de persistência. Concluir: verificar vínculo com o plano/ministério e preservar término ausente como `NULL` em transação de teste.
 - [ ] Criar somente `insertScheduleOccurrenceAssignments` no mesmo `repository.ts`, recebendo a transação, ocorrência, ministério e a lista de participações. Conceito: inserção de várias linhas e unicidade da pessoa na ocorrência. Concluir: aceitar lista vazia e pessoas diferentes na mesma função; rejeitar a mesma pessoa repetida na ocorrência em transação de teste.
 - [ ] Orquestrar a criação mensal em uma única transação usando as funções de persistência, gravando o rascunho sem avisos à equipe e retornando ao autor conflitos e integrantes alternativos elegíveis. As funções recebem a transação do chamador; não devem confirmar gravações separadamente. Habilitar a rota somente com autenticação e autorização.
@@ -21,17 +25,18 @@ Mobile e suas telas ficam em [TASKS do mobile](../../mobile/docs/TASKS.md); exec
 
 ## Fluxo inicial da API — proposto
 
-Rotas ainda não implementadas; payloads serão fechados antes de codificar. `schedule_plans` guarda o mês; `schedule_occurrences` guarda cada ocorrência, com atribuições e repertório próprios.
+O handler em `src/modules/schedules/routes.ts` está conectado a `createSchedulePlan` e `insertSchedulePlan` para criar um rascunho vazio e devolver `201`. O plugin recebe o cliente/transação em `db` e a função `authorizeMinistry`, responsável pela autenticação e autorização do autor. A validação com PostgreSQL real está pendente. O registro em `server.ts` depende da implementação dessa autorização. As demais rotas são propostas.
 
-Mapa do contrato de criação mensal, ainda em construção:
+Contrato de criação do rascunho mensal:
 
 - URL: `ministryId`.
 - Corpo mensal: `month` e `occurrences[]`.
-- Ocorrência: `title`, `startAt`, `endAt`, `notes` e `assignments[]`.
+- A ocorrência recebe `startAt`, `endAt`, `notes` e `assignments[]`.
 - Participação: `userId` e `positionId`.
 - Resposta mínima da criação: `id`, `ministryId`, `month` e `status: "draft"`.
+- Erros da criação. `400` para entrada inválida ou ocorrências ainda não suportadas, `401`/`403` para falhas de autenticação/autorização, `409` para ministério/mês duplicado e `500` com mensagem genérica para falhas inesperadas.
 
-Os validadores atuais cobrem ministério, mês, horários, participações (`userId`/`positionId`), título e observações. `occurrences` e `assignments` são obrigatórios e aceitam `[]`; título, observações e término podem ser omitidos. Título e observações têm espaços removidos das extremidades; título informado exige conteúdo e observações podem ser vazias.
+`occurrences` e `assignments` são obrigatórios e aceitam `[]`. Observações e término podem ser omitidos. Os horários exigem `Z` ou um offset explícito e aceitam até três casas decimais nos segundos. Cada pessoa aparece no máximo uma vez por ocorrência. As observações passam por `trim()` e aceitam texto vazio.
 
 | Rota | Responsabilidade |
 | --- | --- |
@@ -69,6 +74,7 @@ Começar pela conexão real e pelo contrato de criação do rascunho; habilitar 
 - [ ] Contrato dos presets: persistência, edição, escopo e aplicação; definir se alternativas entre pessoas são apenas indecisão do rascunho ou um recurso próprio.
 - [ ] Entrada de pessoas e transição das contas; permissões de catálogos, tons por cantor e reservas de salas.
 - [ ] Definir quais estados de participação ocupam horário em ocorrências publicadas, inclusive durante trocas.
+- [ ] Avaliar a remoção da coluna `title` de `schedule_occurrences` em uma migration própria.
 - [ ] Hospedagem do servidor e do banco.
 
 ## Migração do Supabase

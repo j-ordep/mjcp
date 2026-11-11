@@ -35,7 +35,7 @@ Regras compartilhadas por API e mobile. Implementação e definições abertas e
 ## Horários e ajustes individuais
 
 - O início da ocorrência é obrigatório. O término é opcional e, quando informado, deve ser posterior ao início.
-- O título e as observações da ocorrência são opcionais. Quando informado, o título deve conter texto após remover espaços nas extremidades.
+- O mês do planejamento dá nome à escala mensal. Cada ocorrência é apresentada pela data e pelo horário e pode ter observações.
 - Para conflitos, uma ocorrência sem término ocupa 60 minutos; com término, vale o período informado.
 - Ocorrências publicadas do mesmo ministério não podem se sobrepor. Ministérios diferentes podem ter horários simultâneos.
 - Uma ocorrência pode começar exatamente quando a anterior termina.
