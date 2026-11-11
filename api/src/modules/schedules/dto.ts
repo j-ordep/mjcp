@@ -79,3 +79,4 @@ export type ScheduleOccurrenceInput = z.infer<typeof scheduleOccurrenceInputSche
 export type CreateSchedulePlanParams = z.infer<typeof createSchedulePlanParamsSchema>;
 export type CreateSchedulePlanBody = z.infer<typeof createSchedulePlanBodySchema>;
 export type CreateSchedulePlanResponse = z.infer<typeof createSchedulePlanResponseSchema>;
+export type CreateSchedulePlanErrorResponse = z.infer<typeof createSchedulePlanErrorResponseSchema>;
