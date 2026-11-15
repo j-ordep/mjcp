@@ -61,6 +61,19 @@ Versione SQL e metadados. Preserve migrations já aplicadas em bases mantidas.
 Essa geração inicial exige banco vazio; remover só o container não apaga seu volume.
 Criar a estrutura não transfere contas nem dados do Supabase; essa migração está em TASK.
 
+## Teste de integração
+
+Com as migrations aplicadas e o PostgreSQL de desenvolvimento disponível na
+`DATABASE_URL` do `.env`, execute dentro de `api`:
+
+```sh
+bun test tests --timeout 15000
+```
+
+Os testes verificam criação, duplicidade, autorização de gestão e rollback com dados fictícios.
+A identidade do autor é controlada apenas nos testes; a identificação real por sessão/token está em TASK.
+Se o banco roda no WSL, mantenha a distribuição em execução durante o teste.
+
 ## Conferir tipos
 
 ```sh
