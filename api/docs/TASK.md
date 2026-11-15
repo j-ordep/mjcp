@@ -5,15 +5,8 @@ Mobile e suas telas ficam em [TASKS do mobile](../../mobile/docs/TASKS.md); exec
 
 ## Foco agora: API da escala mensal
 
-- [ ] Validar `checkDatabaseConnection` em `src/db/client.ts` com o PostgreSQL de desenvolvimento disponível, confirmando `connected: 1`. Conceito: consulta real e propagação de erros.
 - [ ] Validar o encerramento em `src/server.ts` com `Ctrl+C` e falha de inicialização (porta ocupada). Conceito: ciclo de vida do Fastify. Concluir: confirmar fechamento do PostgreSQL e saída com código `1` quando a inicialização falhar.
 - [ ] Definir os contratos de geração por padrões de dias/horários e exceções, alterações em lote com IDs preservados, filtros de período e erros HTTP.
-- [ ] Implementar autenticação/sessão e autorização no servidor: autoria do rascunho, leitura mensal por vínculo, feed pessoal por atribuição e gestão por liderança do ministério.
-- [ ] Validar `createSchedulePlanRepository(db).insertSchedulePlan` em `src/modules/schedules/repository.ts` com o PostgreSQL local. A factory recebe o cliente/transação e a operação recebe os dados de persistência preparados pelo service. Conceito: `insert`, `returning` e valores gerados pelo banco. Concluir: verificar ID/estado/mês persistidos e rejeição de ministério/mês duplicado em transação de teste, desfazendo os dados fictícios ao final.
-- [ ] Validar com PostgreSQL real o fluxo conectado handler → service → repository → banco para a criação do rascunho vazio.
-  - Objetivo e arquivos. `createSchedulePlanRepository(db)` guarda o cliente/transação. `createSchedulePlanService(repository)` recebe o contrato de persistência definido em `service.ts`. O plugin em `routes.ts` recebe esse service e `authorizeMinistry` e registra o handler criado por `createSchedulePlanController` em `controller.ts`. O handler envia a entrada validada e o autor ao service e monta o DTO de resposta. O service restringe esta etapa a `occurrences: []`, prepara `referenceMonth` e chama o repository.
-  - Conceito. Injeção manual por factories e inversão de dependência por contratos. O repository traduz conflitos de persistência para erros da operação e o handler escolhe a resposta HTTP. O cliente Drizzle fica no repository.
-  - Verificação. Em teste isolado com contexto autorizado, acompanhar ministério/mês/autor até o registro gravado e conferir a resposta `201` com ID, ministério, mês e status. Rejeitar ocorrências não vazias até sua gravação estar implementada. O registro no servidor depende de autenticação e autorização.
 - [ ] Criar somente `insertScheduleOccurrence` no mesmo `repository.ts`, recebendo a transação, plano, ministério e os dados de uma ocorrência. Conceito: FK e conversão de datas ISO para os valores de persistência. Concluir: verificar vínculo com o plano/ministério e preservar término ausente como `NULL` em transação de teste.
 - [ ] Criar somente `insertScheduleOccurrenceAssignments` no mesmo `repository.ts`, recebendo a transação, ocorrência, ministério e a lista de participações. Conceito: inserção de várias linhas e unicidade da pessoa na ocorrência. Concluir: aceitar lista vazia e pessoas diferentes na mesma função; rejeitar a mesma pessoa repetida na ocorrência em transação de teste.
 - [ ] Orquestrar a criação mensal em uma única transação usando as funções de persistência, gravando o rascunho sem avisos à equipe e retornando ao autor conflitos e integrantes alternativos elegíveis. Os repositories devem ser criados com a mesma transação do chamador, preservando a confirmação conjunta das gravações. Habilitar a rota somente com autenticação e autorização.
@@ -25,7 +18,7 @@ Mobile e suas telas ficam em [TASKS do mobile](../../mobile/docs/TASKS.md); exec
 
 ## Fluxo inicial da API — proposto
 
-O handler em `src/modules/schedules/controller.ts` recebe o service já montado para criar um rascunho vazio e devolver `201`. `routes.ts` registra o handler com os schemas da rota. A composição é `createSchedulePlanRepository(db)` → `createSchedulePlanService(repository)` → registro de `schedulesRoutes` com `service` e `authorizeMinistry`. Essa última função é responsável pela autenticação e autorização do autor. A validação com PostgreSQL real está pendente. O registro em `server.ts` depende da implementação dessa autorização. As demais rotas são propostas.
+O handler em `src/modules/schedules/controller.ts` recebe o service já montado para criar um rascunho vazio e devolver `201`. `routes.ts` registra o handler com os schemas da rota. A composição é `createSchedulePlanRepository(db)` → `createSchedulePlanService(repository)` → registro de `schedulesRoutes` com `service` e `authorizeMinistry`. Essa última função deve obter a identidade autenticada e chamar `createMinistryAuthorizationService(repository).authorizeManagement`. O service consulta o papel global e o vínculo no ministério, permitindo administrador ou líder daquele ministério. O registro em `server.ts` depende da identificação real por sessão/token. As demais rotas são propostas.
 
 Contrato de criação do rascunho mensal:
 
@@ -34,7 +27,7 @@ Contrato de criação do rascunho mensal:
 - A ocorrência recebe `startAt`, `endAt`, `notes` e `assignments[]`.
 - Participação: `userId` e `positionId`.
 - Resposta mínima da criação: `id`, `ministryId`, `month` e `status: "draft"`.
-- Erros da criação. `400` para entrada inválida ou ocorrências ainda não suportadas, `401`/`403` para falhas de autenticação/autorização, `409` para ministério/mês duplicado e `500` com mensagem genérica para falhas inesperadas.
+- Erros da criação. `400` para entrada inválida ou ocorrências ainda não suportadas, `401`/`403` para falhas de autenticação/autorização (ministério inexistente também recebe `403`), `409` para ministério/mês duplicado e `500` com mensagem genérica para falhas inesperadas.
 
 `occurrences` e `assignments` são obrigatórios e aceitam `[]`. Observações e término podem ser omitidos. Os horários exigem `Z` ou um offset explícito e aceitam até três casas decimais nos segundos. Cada pessoa aparece no máximo uma vez por ocorrência. As observações passam por `trim()` e aceitam texto vazio.
 
@@ -49,6 +42,15 @@ Contrato de criação do rascunho mensal:
 | `GET /me/schedule-occurrences?from=...&to=...` | Consultar somente as próprias ocorrências publicadas no período. |
 
 Começar pela conexão real e pelo contrato de criação do rascunho; habilitar os endpoints somente com autorização. Uma VIEW SQL é opcional para reutilizar consultas, não um requisito das visualizações.
+
+## Para depois — autenticação e autorização
+
+Retomar este fluxo com o usuário escrevendo o código à mão, com mentoria.
+Começar pela revisão da autorização por ministério já criada em `src/modules/ministries/service.ts`
+e `repository.ts`, antes de evoluir a autenticação e a integração HTTP.
+
+- [ ] Implementar identificação por sessão/token e compor `authorizeMinistry` em `server.ts`, usando `createMinistryAuthorizationService`. Conceito: autenticação identifica a pessoa e autorização verifica a gestão do ministério. Concluir: obter o autor de uma sessão válida e testar o fluxo HTTP com autenticação real.
+- [ ] Implementar as permissões restantes: rascunho privado por autoria, leitura mensal por vínculo e feed pessoal por atribuição.
 
 ## Demais entregas
 
