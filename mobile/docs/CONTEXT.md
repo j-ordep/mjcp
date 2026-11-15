@@ -8,6 +8,9 @@ Este arquivo descreve o cliente atual; regras definidas para o novo backend aind
 ## Confirmado no codigo
 
 O mobile usa Supabase diretamente para autenticação, dados e notificações internas.
+Em desenvolvimento (`__DEV__`), a navegação abre diretamente em Escalas no Expo Go e na web,
+mesmo sem sessão; em produção, exige login. Esse atalho não cria uma sessão nem altera a
+autorização dos dados no Supabase: consultas e ações protegidas ainda exigem usuário autenticado.
 Escalas ainda dependem de `events`, com uma escala por `(event_id, ministry_id)`.
 Repertórios também dependem de eventos; reservas podem ser avulsas ou vinculadas a eles.
 Eventos públicos são visíveis a usuários autenticados; privados usam audiência e permissões próprias.

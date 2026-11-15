@@ -1,4 +1,5 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
+import { AuthenticationRequiredError, MinistryManagementDeniedError } from "../ministries/service.ts";
 import type {
 	CreateSchedulePlanBody,
 	CreateSchedulePlanErrorResponse,
@@ -54,8 +55,16 @@ export function createSchedulePlanController(options: SchedulePlanControllerDepe
 				status: "draft",
 			});
 		} catch (error) {
-			if (error instanceof Error && "statusCode" in error && (error.statusCode === 401 || error.statusCode === 403)) {
-				const statusCode = error.statusCode;
+			let statusCode: unknown;
+			if (error instanceof AuthenticationRequiredError) {
+				statusCode = 401;
+			} else if (error instanceof MinistryManagementDeniedError) {
+				statusCode = 403;
+			} else if (error instanceof Error && "statusCode" in error) {
+				statusCode = error.statusCode;
+			}
+
+			if (statusCode === 401 || statusCode === 403) {
 				return reply.code(statusCode).send({
 					statusCode,
 					error: statusCode === 401 ? "Unauthorized" : "Forbidden",

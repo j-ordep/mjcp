@@ -1,6 +1,6 @@
 # Próximos passos
 
-Revisado em 2026-11-01. Este é o backlog do mobile.
+Revisado em 2026-11-11. Este é o backlog do mobile.
 Comportamento atual em [CONTEXT](CONTEXT.md); execução e banco atual no [README](../README.md).
 
 ## Ajustes de navegação e filtros
@@ -27,6 +27,9 @@ simplificação já estão no código. As pendências abaixo são verificações
 refazer essas implementações. Comandos e alternativa para saída de testes bloqueada
 estão no [README](../README.md).
 
+- [ ] Conferir no Expo Go e no navegador a abertura direta em Escalas sem sessão em desenvolvimento,
+  incluindo navegação entre abas e retorno após logout. Tipos e testes de navegação/autenticação
+  passaram localmente; falta validar a interação no dispositivo.
 - [ ] Validar em Android/iOS, com contas fictícias: login/troca de conta, Minhas/Gerenciadas,
   criação/montagem/confirmação, trocas/histórico/notificações, indisponibilidade, repertório,
   reservas, Equipe e Perfil/logout. Repetir rede lenta, erros e retorno à tela; conferir
