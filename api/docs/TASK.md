@@ -18,7 +18,7 @@ Mobile e suas telas ficam em [TASKS do mobile](../../mobile/docs/TASKS.md); exec
 
 ## Fluxo inicial da API — proposto
 
-O handler em `src/modules/schedules/controller.ts` recebe o service já montado para criar um rascunho vazio e devolver `201`. `routes.ts` registra o handler com os schemas da rota. A composição é `createSchedulePlanRepository(db)` → `createSchedulePlanService(repository)` → registro de `schedulesRoutes` com `service` e `authorizeMinistry`. Essa última função deve obter a identidade autenticada e chamar `createMinistryAuthorizationService(repository).authorizeManagement`. O service consulta o papel global e o vínculo no ministério, permitindo administrador ou líder daquele ministério. O registro em `server.ts` depende da identificação real por sessão/token. As demais rotas são propostas.
+O handler em `src/modules/schedules/controller.ts` recebe o service já montado para criar um rascunho vazio e devolver `201`. `routes.ts` registra o handler com os schemas da rota. A composição é `createSchedulePlanRepository(db)` → `createSchedulePlanService(repository)` → registro de `schedulesRoutes` com `service` e `authorizeMinistryManagement`. Essa última função é criada por `createMinistryManagementAuthorizer(ministryAuthorizationService)` em `src/modules/ministries/authorization.ts`, lê `request.authenticatedUser` e chama `authorizeUserToManageMinistry` no service de ministérios. O service consulta o papel global e o vínculo no ministério, permitindo administrador ou líder daquele ministério. O `server.ts` já cria os repositories e services e registra essa rota, injetando o adaptador de autorização. Sem identidade autenticada, uma requisição válida recebe `401`; a identificação real por sessão/token está pendente. As demais rotas são propostas.
 
 Contrato de criação do rascunho mensal:
 
@@ -49,7 +49,7 @@ Retomar este fluxo com o usuário escrevendo o código à mão, com mentoria.
 Começar pela revisão da autorização por ministério já criada em `src/modules/ministries/service.ts`
 e `repository.ts`, antes de evoluir a autenticação e a integração HTTP.
 
-- [ ] Implementar identificação por sessão/token e compor `authorizeMinistry` em `server.ts`, usando `createMinistryAuthorizationService`. Conceito: autenticação identifica a pessoa e autorização verifica a gestão do ministério. Concluir: obter o autor de uma sessão válida e testar o fluxo HTTP com autenticação real.
+- [ ] Implementar identificação por sessão/token que preencha `request.authenticatedUser` antes do controller. A rota e o adaptador de autorização já estão conectados em `server.ts`. Conceito: autenticação fornece a identidade; autorização verifica a gestão do ministério. Concluir: obter o autor de uma sessão válida e verificar a integração com a regra de gestão do ministério.
 - [ ] Implementar as permissões restantes: rascunho privado por autoria, leitura mensal por vínculo e feed pessoal por atribuição.
 
 ## Demais entregas

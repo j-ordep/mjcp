@@ -44,6 +44,7 @@ export class SchedulePlanAlreadyExistsError extends Error {}
 export function createSchedulePlanService(repository: SchedulePlanRepository): SchedulePlanService {
 	return {
 		async createSchedulePlan(input) {
+			// essa verificação vai ser removida quando a criação de ocorrências estiver disponível
 			if (input.occurrences.length > 0) {
 				throw new ScheduleOccurrencesNotSupportedError("A criação de ocorrências ainda não está disponível.");
 			}

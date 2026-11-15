@@ -14,8 +14,8 @@ import {
 
 export type SchedulePlanControllerDependencies = {
 	service: SchedulePlanService;
-	// Autentica, verifica a gestão do ministério e devolve o ID do autor.
-	authorizeMinistry: (request: FastifyRequest, ministryId: string) => Promise<string>;
+	// Verifica a gestão do ministério usando a identidade já autenticada.
+	authorizeMinistryManagement: (request: FastifyRequest, ministryId: string) => Promise<string>;
 };
 
 // Ao extrair o handler, seus tipos de entrada e resposta ficam explícitos.
@@ -40,7 +40,7 @@ export function createSchedulePlanController(options: SchedulePlanControllerDepe
 	) {
 		const { ministryId } = request.params;
 		try {
-			const createdByUserId = await options.authorizeMinistry(request, ministryId);
+			const createdByUserId = await options.authorizeMinistryManagement(request, ministryId);
 			const plan = await options.service.createSchedulePlan({
 				ministryId,
 				createdByUserId,

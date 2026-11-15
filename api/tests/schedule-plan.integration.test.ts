@@ -45,8 +45,8 @@ test("cria rascunho, rejeita duplicata e desfaz os dados no PostgreSQL", { timeo
 			app.register(schedulesRoutes, {
 				service,
 				// A identidade é controlada apenas neste teste.
-				authorizeMinistry: (_request, selectedMinistryId) =>
-					authorization.authorizeManagement({ userId: authorId, ministryId: selectedMinistryId }),
+				authorizeMinistryManagement: (_request, selectedMinistryId) =>
+					authorization.authorizeUserToManageMinistry({ userId: authorId, ministryId: selectedMinistryId }),
 			});
 
 			try {

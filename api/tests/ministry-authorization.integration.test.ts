@@ -55,8 +55,8 @@ test("autoriza gestão por papel e vínculo, bloqueia acessos e revalida permiss
 			app.register(schedulesRoutes, {
 				service,
 				// Somente a identidade é controlada pelo teste. A permissão consulta o PostgreSQL.
-				authorizeMinistry: (_request, selectedMinistryId) =>
-					authorization.authorizeManagement({ userId: currentUserId, ministryId: selectedMinistryId }),
+				authorizeMinistryManagement: (_request, selectedMinistryId) =>
+					authorization.authorizeUserToManageMinistry({ userId: currentUserId, ministryId: selectedMinistryId }),
 			});
 
 			try {

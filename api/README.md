@@ -16,8 +16,11 @@ bun install
 bun run dev
 ```
 
-O servidor usa a porta 3000. As rotas `/events` ainda são exemplos em memória.
-A persistência e os fluxos definitivos da API estão pendentes em TASK.
+O servidor usa a porta 3000 e registra `POST /ministries/:ministryId/schedule-plans`.
+A composição conecta controller, service, repository e autorização por ministério.
+A autenticação por sessão/token ainda está pendente: requisições válidas sem identidade
+recebem `401`. A criação de ocorrências ainda não está disponível; o fluxo atual cria
+um rascunho mensal vazio. Próximas entregas em TASK.
 
 ## Banco e migrations
 
