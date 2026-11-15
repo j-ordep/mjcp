@@ -9,7 +9,7 @@ export type MinistryAuthorizationRepository = {
 };
 
 export type MinistryAuthorizationService = {
-	authorizeManagement: (input: { userId: string | undefined; ministryId: string }) => Promise<string>;
+	authorizeUserToManageMinistry: (input: { userId: string | undefined; ministryId: string }) => Promise<string>;
 };
 
 export class AuthenticationRequiredError extends Error {}
@@ -20,7 +20,7 @@ export function createMinistryAuthorizationService(
 	repository: MinistryAuthorizationRepository,
 ): MinistryAuthorizationService {
 	return {
-		async authorizeManagement({ userId, ministryId }) {
+		async authorizeUserToManageMinistry({ userId, ministryId }) {
 			if (!userId) {
 				throw new AuthenticationRequiredError("Autenticação necessária.");
 			}
