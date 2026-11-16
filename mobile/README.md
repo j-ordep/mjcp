@@ -31,10 +31,9 @@ npm start
 ```
 
 Também existem `npm run android`, `npm run ios` e `npm run web`; simulador iOS exige macOS.
-Em desenvolvimento (`__DEV__`), o Expo Go e a versão web abrem diretamente em Escalas,
-sem login nem espera pela restauração da sessão. Em produção, o login continua obrigatório.
-O atalho libera somente a navegação: não cria usuário/sessão nem libera os dados protegidos
-do Supabase. Sem uma sessão válida, listas podem ficar vazias e ações podem exigir autenticação.
+O Expo Go e a versão web aguardam a restauração da sessão e mostram o login quando não há
+sessão válida, tanto em desenvolvimento quanto em produção. Após entrar, abrem em Escalas;
+ao sair da conta, retornam ao login.
 As versões estão em [package.json](package.json). Sem configuração válida, o app mostra erro.
 No Expo Go, confira compatibilidade e a rede do celular/computador.
 Tente `npx expo start --go --clear`. Para conectar por túnel com Bun instalado:

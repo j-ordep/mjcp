@@ -6,6 +6,7 @@ import { useRef, useState } from "react";
 import {
   Alert,
   Keyboard,
+  Platform,
   TouchableOpacity,
   TouchableWithoutFeedback,
   View,
@@ -41,8 +42,7 @@ export default function SignInScreen({ navigation }) {
     navigation.replace("SignUp");
   }
 
-  return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+  const content = (
       <View className="flex-1 justify-center p-8 bg-background">
         <Text
           variant="h3"
@@ -108,6 +108,12 @@ export default function SignInScreen({ navigation }) {
           </Text>
         </TouchableOpacity>
       </View>
+  );
+
+  // On the web, dismissing the keyboard also blurs the clicked input.
+  return Platform.OS === "web" ? content : (
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+      {content}
     </TouchableWithoutFeedback>
   );
 }

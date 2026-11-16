@@ -111,27 +111,25 @@ function mountNavigator(options: {
 const session = { user: { id: "user-example" } };
 const tick = () => new Promise<void>((resolve) => setTimeout(resolve, 10));
 
-test("development opens Main immediately while session restoration is pending", () => {
+test("development waits for session restoration before exposing routes", () => {
   const navigator = mountNavigator({ isDev: true, getSession: () => new Promise(() => {}) });
   try {
-    const screens = navigator.screenNames();
-    assert.equal(screens[0], "Main");
-    assert.equal(screens.includes("SignIn"), false);
-    assert.equal(screens.includes("SignUp"), false);
-    assert.equal(navigator.state.session, null, "opening the app must not fabricate a Supabase session");
+    assert.deepEqual(navigator.screenNames(), []);
+    assert.equal(navigator.state.session, null);
   } finally {
     navigator.cleanup();
   }
 });
 
-test("development keeps Main accessible without a session and after logout", async () => {
+test("development requires login without a session and returns after logout", async () => {
   const navigator = mountNavigator({ isDev: true });
   try {
     await tick();
-    assert.equal(navigator.screenNames()[0], "Main");
+    assert.deepEqual(navigator.screenNames(), ["SignIn", "SignUp"]);
     navigator.emit("SIGNED_IN", session);
-    navigator.emit("SIGNED_OUT", null);
     assert.equal(navigator.screenNames()[0], "Main");
+    navigator.emit("SIGNED_OUT", null);
+    assert.deepEqual(navigator.screenNames(), ["SignIn", "SignUp"]);
     assert.equal(navigator.state.session, null);
     assert.equal(navigator.state.profile, null);
   } finally {

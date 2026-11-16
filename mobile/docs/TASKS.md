@@ -27,9 +27,9 @@ simplificação já estão no código. As pendências abaixo são verificações
 refazer essas implementações. Comandos e alternativa para saída de testes bloqueada
 estão no [README](../README.md).
 
-- [ ] Conferir no Expo Go e no navegador a abertura direta em Escalas sem sessão em desenvolvimento,
-  incluindo navegação entre abas e retorno após logout. Tipos e testes de navegação/autenticação
-  passaram localmente; falta validar a interação no dispositivo.
+- [ ] Conferir no Expo Go e no navegador a abertura do login sem sessão, restauração de sessão,
+  entrada em Escalas após login e retorno ao login após logout, também em desenvolvimento.
+  Tipos e testes de navegação/autenticação passaram localmente; falta validar a interação no dispositivo.
 - [ ] Validar em Android/iOS, com contas fictícias: login/troca de conta, Minhas/Gerenciadas,
   criação/montagem/confirmação, trocas/histórico/notificações, indisponibilidade, repertório,
   reservas, Equipe e Perfil/logout. Repetir rede lenta, erros e retorno à tela; conferir

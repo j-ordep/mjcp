@@ -5,10 +5,15 @@ Mobile e suas telas ficam em [TASKS do mobile](../../mobile/docs/TASKS.md); exec
 
 ## Foco agora: API da escala mensal
 
+Fluxo em foco — o líder prepara uma escala mensal em rascunho, salva e consegue continuar seu preenchimento depois. As microentregas acompanham uma ação completa pela API.
+
 - [ ] Validar o encerramento em `src/server.ts` com `Ctrl+C` e falha de inicialização (porta ocupada). Conceito: ciclo de vida do Fastify. Concluir: confirmar fechamento do PostgreSQL e saída com código `1` quando a inicialização falhar.
 - [ ] Definir os contratos de geração por padrões de dias/horários e exceções, alterações em lote com IDs preservados, filtros de período e erros HTTP.
-- [ ] Criar somente `insertScheduleOccurrence` no mesmo `repository.ts`, recebendo a transação, plano, ministério e os dados de uma ocorrência. Conceito: FK e conversão de datas ISO para os valores de persistência. Concluir: verificar vínculo com o plano/ministério e preservar término ausente como `NULL` em transação de teste.
-- [ ] Criar somente `insertScheduleOccurrenceAssignments` no mesmo `repository.ts`, recebendo a transação, ocorrência, ministério e a lista de participações. Conceito: inserção de várias linhas e unicidade da pessoa na ocorrência. Concluir: aceitar lista vazia e pessoas diferentes na mesma função; rejeitar a mesma pessoa repetida na ocorrência em transação de teste.
+- [ ] Salvar um rascunho mensal com ocorrências, ainda com `assignments: []`, pelo mesmo `POST /ministries/:ministryId/schedule-plans`.
+  - Objetivo e arquivos. Acompanhar o corpo validado em `dto.ts`, o controller, `createSchedulePlan` no service e a persistência no repository. Gravar plano e ocorrências na mesma transação, mantendo o cliente Drizzle no repository e a dependência do service por contrato.
+  - Conceito. Uma microentrega atravessa as camadas para entregar uma ação do usuário. Converter horários ISO, preservar término ausente como `NULL` e manter as FKs do plano/ministério.
+  - Conclusão. Um pedido com mês e ocorrência retorna `201` e grava ambos; uma falha desfaz todo o pedido. Rejeitar equipe preenchida até a próxima entrega, preservando o rascunho vazio já suportado.
+- [ ] Preencher pessoas e funções nas ocorrências durante a criação do rascunho, acompanhando entrada, service, repository e resposta. Conceito: vínculo, habilitação e unicidade da pessoa na ocorrência. Concluir: aceitar equipe vazia e pessoas diferentes na mesma função, rejeitar a mesma pessoa repetida e desfazer o pedido inteiro se uma atribuição falhar.
 - [ ] Orquestrar a criação mensal em uma única transação usando as funções de persistência, gravando o rascunho sem avisos à equipe e retornando ao autor conflitos e integrantes alternativos elegíveis. Os repositories devem ser criados com a mesma transação do chamador, preservando a confirmação conjunta das gravações. Habilitar a rota somente com autenticação e autorização.
 - [ ] Proteger no banco os períodos publicados por ministério e por pessoa, inclusive na publicação concorrente, trocas e edições; usar 60 minutos sem término e permitir períodos consecutivos.
 - [ ] Garantir vínculo e função habilitada, ocorrência dentro do mês do plano no fuso da igreja e alterações atômicas de equipe/funções; as FKs já mantêm plano/ocorrência/função no mesmo ministério.

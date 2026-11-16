@@ -30,12 +30,11 @@ export type { RootStackParamList, EventDetailsScreenProps, CreateEventScreenProp
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
-  const skipLogin = __DEV__;
   const { session, isLoading, sessionRevision } = useAuthStore();
   useAuthBootstrap();
   useNotificationSubscription(session?.user?.id, sessionRevision);
 
-  if (isLoading && !skipLogin) {
+  if (isLoading) {
     return (
       <View
         style={{
@@ -53,7 +52,7 @@ export default function AppNavigator() {
   return (
     <NavigationContainer key={sessionRevision} theme={navigationTheme}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {!session && !skipLogin ? (
+        {!session ? (
           <>
             <Stack.Screen name="SignIn" component={SignInScreen} />
             <Stack.Screen name="SignUp" component={SignUpScreen} />
