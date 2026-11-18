@@ -9,7 +9,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 
-import { users } from "../users/schema.ts";
+import { users } from "../users/users.tables.ts";
 
 export const ministries = pgTable("ministries", {
   id: uuid("id").defaultRandom().primaryKey(),

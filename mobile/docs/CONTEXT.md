@@ -1,57 +1,63 @@
 # Contexto do mobile
 
 Aplicativo interno para organizar escalas, equipe, salas e músicas de uma igreja.
+As regras do produto ficam em [REGRAS_DE_NEGOCIO](../../api/docs/REGRAS_DE_NEGOCIO.md).
+Este arquivo distingue o código do cliente da estrutura remota durante a migração.
 
-As regras do produto ficam em [REGRAS_DE_NEGOCIO](../../backend-node/docs/REGRAS_DE_NEGOCIO.md).
-Este arquivo descreve o cliente atual; regras definidas para o novo backend ainda dependem da migração.
+## Confirmado no código
 
-## Confirmado no codigo
+O cliente ainda usa o SDK Supabase para autenticação e acesso direto aos dados.
+A navegação aguarda a restauração da sessão no Expo Go e na web. Sem sessão válida,
+mostra o login em desenvolvimento e produção; após entrar, abre em Escalas. Sair retorna ao login.
+O login usa componentes locais de `src/components/ui`; no navegador, o formulário não
+intercepta os cliques para executar `Keyboard.dismiss`.
 
-O mobile usa Supabase diretamente para autenticação, dados e notificações internas.
-Em desenvolvimento (`__DEV__`), a navegação abre diretamente em Escalas no Expo Go e na web,
-mesmo sem sessão; em produção, exige login. Esse atalho não cria uma sessão nem altera a
-autorização dos dados no Supabase: consultas e ações protegidas ainda exigem usuário autenticado.
-Escalas ainda dependem de `events`, com uma escala por `(event_id, ministry_id)`.
-Repertórios também dependem de eventos; reservas podem ser avulsas ou vinculadas a eles.
-Eventos públicos são visíveis a usuários autenticados; privados usam audiência e permissões próprias.
+Em Escalas, o botão de criação aparece para admin ou para quem lidera algum ministério,
+conforme os vínculos do usuário da sessão. A criação agora abre uma prévia mensal local:
+admin escolhe qualquer ministério; líder escolhe entre os que lidera. Uma única opção
+fica selecionada e fixa. O calendário permite marcar dias e usar atalhos por dia da semana;
+a prévia mostra uma ocorrência por data, em ordem, com horário informativo opcional.
+Datas anteriores a hoje, no fuso da igreja, ficam desabilitadas. Trocar mês ou ministério
+limpa a seleção. Não há gravação, publicação, montagem de equipe nem conexão à API;
+o conteúdo da prévia é descartado ao sair da tela.
 
-Escalas abre em Minhas; Gerenciadas consulta apenas o escopo de administração/liderança.
-A lista filtra por ministério, busca e próximas/anteriores; confirmação e troca ficam no detalhe.
-Trocas separa pendentes próprios, disponíveis e histórico, sem inferir o solicitante original
-de uma atribuição já transferida. Perfil e notificações ficam no cabeçalho das abas.
+As demais telas e services antigos ainda esperam eventos, `schedules`, `schedule_assignments`,
+funções antigas e RPCs do Supabase. Esses contratos não correspondem mais ao banco remoto.
+O código contém equipe/funções, confirmação, trocas, indisponibilidade, salas, catálogo e
+repertório, mas esses fluxos precisam ser adaptados e verificados antes de serem considerados
+funcionais com o novo schema. Os caches e a invalidação por sessão devem ser preservados.
 
-Já existem equipe/funções, confirmação, trocas, indisponibilidade, reservas, catálogo musical,
-tom base e tom por repertório. Equipe é restrita a administradores e líderes com vínculo confirmado.
-Repertório é acessível por Músicas ou escala, identificado pelo evento compartilhado, com edição
-por gestor antes do início e rascunho preservado em erro. Salas consulta ocupação e reservas,
-sem contadores de integrantes. Eventos de apoio ficam no Perfil dos gestores autorizados.
-Os caches são invalidados ao sair/trocar de usuário e descartam respostas ultrapassadas.
-Salvar liderança/integrante e capabilities ainda pode resultar em gravação parcial: a tela relê
-o estado persistido e mantém a edição para conferência; não existe transação simulada no cliente.
-Tons por cantor, escalas sem eventos e integração Fastify ainda não existem.
-CRUD completo dos catálogos administrativos e push externo também não estão implementados no mobile.
+## Banco remoto alinhado à API
 
-A autorização atual depende de RLS, triggers e RPCs. Gestão de eventos ainda usa admin ou
-`profiles.can_manage_events`; perfis usam `profiles.role` e liderança usa `ministry_members.is_leader`.
-Essas estruturas precisam continuar protegidas enquanto fizerem parte do sistema.
+Em 2026-11-16 foi aplicada a migration `20261116031253_align_api_daily_schema`:
 
-## Transição
+- As 16 tabelas de domínio correspondem ao schema exportado de `api/src/modules/**/*.tables.ts`.
+- `users`, `ministry_positions` e `ministry_member_capabilities` substituem os nomes antigos.
+- `schedule_plans`, `schedule_occurrences` e `schedule_occurrence_assignments` representam o fluxo mensal.
+- Contas do Auth, usuários, ministérios, funções, vínculos, capabilities, indisponibilidade,
+  salas, reservas e músicas foram mantidos. Eventos, escalas, trocas e avisos antigos de teste
+  foram descartados com autorização do usuário; planos e ocorrências iniciam vazios.
+- O banco mantém tipos, FKs, unicidades e checks simples. Não há triggers de negócio de escalas.
+  Conflitos, publicação e bloqueio após o fim do dia serão executados na API TypeScript.
+- As tabelas novas têm RLS habilitado. A view `profiles` permite apenas ler o próprio perfil,
+  mantendo o login atual; o trigger do Auth somente cria o correspondente registro em `users`.
+- A migration `20261116033652_read_monthly_preview_ministries` libera somente leitura
+  dos próprios vínculos e dos ministérios dos quais a pessoa participa; admin lê todos
+  os ministérios. O service restringe as opções de criação aos vínculos de liderança.
+  Não há permissão de escrita do cliente nem funções/triggers de negócio novos.
+  Os demais dados de domínio continuam fechados ao acesso direto do cliente.
 
-A API Fastify possui schemas e migrations em `backend-node`. Persistência, autenticação
-e integração HTTP ainda precisam ser implementadas. O exemplo de eventos em memória
-não define o domínio do produto.
+## Transição e pendências
 
-A criação mensal com rascunho/publicação, os presets e as novas consultas por ministério
-estão planejados, ainda sem implementação no cliente. As regras compartilhadas ficam no
-arquivo de negócio citado acima; tarefas de interface e HTTP ficam em [TASKS](TASKS.md).
+O contrato de ocorrência usa `date` civil e `time` informativo opcional, sem evento nem
+intervalo de horário. As regras completas ficam na referência de negócio, sem duplicação aqui.
+A API ainda cria somente o rascunho mensal vazio; autenticação por token, persistência das
+ocorrências, publicação e consultas continuam pendentes no backend.
 
-Preserve contratos, dados, RLS, triggers e RPCs do Supabase até verificar seus substitutos.
-As refatorações do mobile atual devem preservar seu comportamento durante essa transição.
+A adaptação das telas e services para HTTP fica em [TASKS](TASKS.md). Ela ainda não foi
+implementada. A prévia mensal serve para avaliar a interação sem depender dessa adaptação.
+Não recriar os fluxos antigos em RPCs/triggers para compensar essa lacuna.
+Tipos e testes locais não comprovam integração nem interação nativa após a troca de schema.
 
-## Pendências
-
-- [TASKS](TASKS.md): ajustes, validação e integração do mobile.
-- [TASK do backend](../../backend-node/docs/TASK.md): banco, API, definições e migração dos dados.
-- [README](../README.md): execução e operação do cliente atual.
-
-Aplicação remota de migrations e validação em Android/iOS exigem verificação específica.
+- [TASK do backend](../../api/docs/TASK.md): banco, API e definições.
+- [README](../README.md): execução e verificações do cliente.

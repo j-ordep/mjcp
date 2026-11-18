@@ -1,4 +1,4 @@
-import type { ScheduleOccurrenceInput } from "./dto.ts";
+import type { ScheduleOccurrenceInput } from "./schedules.schema.ts";
 
 // Registro devolvido pela operação, sem depender dos tipos do Drizzle.
 export type SchedulePlan = {

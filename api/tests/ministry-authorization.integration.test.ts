@@ -5,14 +5,14 @@ import { test } from "node:test";
 import { and, eq, inArray } from "drizzle-orm";
 import Fastify from "fastify";
 import { createDatabaseClient } from "../src/db/client.ts";
-import { createMinistryAuthorizationRepository } from "../src/modules/ministries/repository.ts";
-import { ministries, ministryMembers } from "../src/modules/ministries/schema.ts";
-import { createMinistryAuthorizationService } from "../src/modules/ministries/service.ts";
-import { createSchedulePlanRepository } from "../src/modules/schedules/repository.ts";
-import { schedulesRoutes } from "../src/modules/schedules/routes.ts";
-import { schedulePlans } from "../src/modules/schedules/schema.ts";
-import { createSchedulePlanService } from "../src/modules/schedules/service.ts";
-import { users } from "../src/modules/users/schema.ts";
+import { createMinistryAuthorizationRepository } from "../src/modules/ministries/ministries.repository.ts";
+import { createMinistryAuthorizationService } from "../src/modules/ministries/ministries.service.ts";
+import { ministries, ministryMembers } from "../src/modules/ministries/ministries.tables.ts";
+import { createSchedulePlanRepository } from "../src/modules/schedules/schedules.repository.ts";
+import { schedulesRoutes } from "../src/modules/schedules/schedules.routes.ts";
+import { createSchedulePlanService } from "../src/modules/schedules/schedules.service.ts";
+import { schedulePlans } from "../src/modules/schedules/schedules.tables.ts";
+import { users } from "../src/modules/users/users.tables.ts";
 
 test("autoriza gestão por papel e vínculo, bloqueia acessos e revalida permissões", { timeout: 15_000 }, async (t) => {
 	const databaseUrl = process.env.DATABASE_URL;

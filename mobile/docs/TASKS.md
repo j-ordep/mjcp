@@ -1,9 +1,33 @@
 # Próximos passos
 
-Revisado em 2026-11-11. Este é o backlog do mobile.
+Revisado em 2026-11-16. Este é o backlog do mobile.
 Comportamento atual em [CONTEXT](CONTEXT.md); execução e banco atual no [README](../README.md).
 
+O Supabase recebeu o schema da API, sem os contratos antigos de eventos/escalas/RPCs.
+O login, a leitura dos próprios vínculos/ministérios e a prévia mensal local estão disponíveis;
+os demais fluxos dependem da adaptação descrita na seção de integração. As refatorações
+do cliente antigo abaixo não corrigem essa incompatibilidade.
+
 ## Ajustes de navegação e filtros
+
+### Avaliar a prévia mensal antes de ampliar o fluxo
+
+A primeira versão usa ministérios reais e estado local na criação, sem API ou gravação.
+Comportamento em [CONTEXT](CONTEXT.md). Tipos, testes da tela e escopos de leitura do banco
+foram conferidos; a interação autenticada no navegador e no dispositivo segue pendente.
+
+- [ ] Conferir `CreateScheduleScreen.tsx` na web e no Expo Go, após login: botão somente
+  para admin/líder, ministério único fixo, múltiplos ministérios, mês e atalhos semanais,
+  exceções, horários opcionais, remoção e aviso de descarte. Conceito: validar uma interação
+  antes de persistir seu fluxo. Concluir sem criar planos ou avisos no banco.
+- [ ] Definir a próxima pequena entrega para montar equipe por ocorrência e copiar a
+  seleção para outros dias. Reaproveitar integrantes e funções reais sem reativar os RPCs
+  legados. Conceito: reduzir repetição e revisar exceções. Concluir a definição de como
+  pessoa/função são escolhidas e de como substituir uma equipe já preenchida antes de codificar.
+
+Ideias posteriores: reaproveitar o mês anterior e importar CSV com revisão dos dados.
+
+### Outros ajustes
 
 - [ ] Usar barra inferior de abas nativa do iOS em `src/components/TabNavigator.tsx`.
   Conferir a opção compatível com as versões atuais de Expo/React Navigation antes de escolher
@@ -27,9 +51,9 @@ simplificação já estão no código. As pendências abaixo são verificações
 refazer essas implementações. Comandos e alternativa para saída de testes bloqueada
 estão no [README](../README.md).
 
-- [ ] Conferir no Expo Go e no navegador a abertura direta em Escalas sem sessão em desenvolvimento,
-  incluindo navegação entre abas e retorno após logout. Tipos e testes de navegação/autenticação
-  passaram localmente; falta validar a interação no dispositivo.
+- [ ] Conferir no Expo Go e no navegador a abertura do login sem sessão, restauração de sessão,
+  entrada em Escalas após login e retorno ao login após logout, também em desenvolvimento.
+  Tipos e testes de navegação/autenticação passaram localmente; falta validar a interação no dispositivo.
 - [ ] Validar em Android/iOS, com contas fictícias: login/troca de conta, Minhas/Gerenciadas,
   criação/montagem/confirmação, trocas/histórico/notificações, indisponibilidade, repertório,
   reservas, Equipe e Perfil/logout. Repetir rede lenta, erros e retorno à tela; conferir
@@ -40,10 +64,9 @@ estão no [README](../README.md).
 - [ ] Conferir calendário, selects com muitas opções e rolagem, inclusive dentro de modais.
   Testar fechamento por X, toque fora e Voltar do Android; na reserva, Voltar deve fechar
   primeiro o select e depois o modal. Bundles e testes Node não validam interação nativa.
-- [ ] Executar autorização SQL, aceites concorrentes e reservas simultâneas em ambiente
-  de testes preparado, com dados fictícios. Conferir liderança fora do próprio ministério,
-  confirmação, limite exato do início, histórico, audiência privada, edição de sala/repertório
-  e notificações/logout. Mocks e inspeção textual não comprovam garantias do banco remoto.
+- [ ] Após a integração HTTP, validar autorização, concorrência e regras devolvidas pela API
+  com dados fictícios: liderança no próprio ministério, confirmação/troca até o fim do dia,
+  histórico, salas, repertório e notificações/logout. Não recriar o fluxo antigo em SQL.
 
 ## Refatorações do mobile — prontas para outro agente
 
@@ -159,13 +182,13 @@ audência/sala já possuem estado próprio, e a migração retirará esse módul
 
 ## Integração com o novo backend
 
-Banco, API e migração dos dados ficam no [TASK do backend](../../backend-node/docs/TASK.md).
-As [regras de negócio](../../backend-node/docs/REGRAS_DE_NEGOCIO.md) são a referência única do produto.
+Banco, API e migração dos dados ficam no [TASK do backend](../../api/docs/TASK.md).
+As [regras de negócio](../../api/docs/REGRAS_DE_NEGOCIO.md) são a referência única do produto.
 O foco atual é a API; implementar estes fluxos no cliente depois de validar seus contratos no backend.
 
 - [ ] Adaptar os services para HTTP por fluxo, preservando sessão, logout, tratamento de erros,
   falhas de SecureStore, descarte de respostas atrasadas e invalidação dos caches.
-- [ ] Implementar o fluxo principal de criação mensal: ministério/mês, padrões de dias e horários,
+- [ ] Implementar o fluxo principal de criação mensal: ministério/mês, dias e horário informativo opcional,
   geração com exceções, edição de pessoas/funções e gravação em lote com IDs preservados.
 - [ ] Integrar rascunho persistido e publicação pela API; mostrar ao autor avisos de conflito,
   preservar o trabalho em erro e só atualizar a equipe após confirmação do servidor.

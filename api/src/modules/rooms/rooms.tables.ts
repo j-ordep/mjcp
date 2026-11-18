@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import { check, index, integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
-import { users } from "../users/schema.ts";
+import { users } from "../users/users.tables.ts";
 
 export const rooms = pgTable(
   "rooms",
@@ -52,7 +52,7 @@ export const roomReservations = pgTable(
       sql`${table.category} IN ('geral', 'culto', 'ensino', 'jovens', 'oração', 'reunião', 'especial')`,
     ),
     index("room_reservations_room_start_idx").on(table.roomId, table.startAt),
-    // constraints.sql is the source for the custom exclusion migration.
+    // rooms.constraints.sql is the source for the custom exclusion migration.
     // Drizzle 0.44 has no EXCLUDE builder; generate a custom migration and copy
     // that SQL before migrating. This index only supports queries.
   ],

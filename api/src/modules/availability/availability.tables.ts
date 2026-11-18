@@ -1,6 +1,6 @@
 import { date, pgTable, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
 
-import { users } from "../users/schema.ts";
+import { users } from "../users/users.tables.ts";
 
 // Preserve the current whole-day unavailability model. Partial-day periods
 // need a separate product decision; a date is not a UTC timestamp.

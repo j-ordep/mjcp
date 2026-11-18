@@ -1,8 +1,8 @@
 import { DrizzleQueryError } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { schedulePlans } from "./schema.ts";
-import { SchedulePlanAlreadyExistsError, type SchedulePlanRepository } from "./service.ts";
+import { SchedulePlanAlreadyExistsError, type SchedulePlanRepository } from "./schedules.service.ts";
+import { schedulePlans } from "./schedules.tables.ts";
 
 // O cliente ou a transação ficam guardados no repository.
 export function createSchedulePlanRepository(db: PostgresJsDatabase): SchedulePlanRepository {

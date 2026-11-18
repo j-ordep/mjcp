@@ -1,5 +1,5 @@
 import type { FastifyRequest } from "fastify";
-import type { MinistryAuthorizationService } from "./service.ts";
+import type { MinistryAuthorizationService } from "./ministries.service.ts";
 
 // A identidade é preenchida no servidor pelo futuro hook de autenticação.
 type MinistryAuthorizationRequest = FastifyRequest & {

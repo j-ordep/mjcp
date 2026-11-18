@@ -105,6 +105,12 @@ test("schedule actions retain creation permission and existing destinations", as
   assert.equal(screen.findAll("Button")[0].props.accessibilityLabel, "Criar escala");
   screen.findAll("Button")[0].props.onPress();
   assert.equal(destinations[2], "CreateSchedule");
+  scope.userMinistriesUserId = "another-user-example";
+  screen.rerender(); await screen.flush();
+  assert.equal(screen.findAll("Button").length, 0);
+  (modules.useAuthStore.useAuthStore.getState() as any).profile.role = "admin";
+  screen.rerender(); await screen.flush();
+  assert.equal(screen.findAll("Button").length, 1);
   screen.cleanup();
 });
 
@@ -244,78 +250,3 @@ test("an old participation callback cannot replace assignments of another schedu
   assert.deepEqual(reads, ["schedule-a", "schedule-b"]);
   screen.cleanup();
 });
-
-test("creation opens the persisted schedule ID and retains valid context on focus", async () => {
-  const auth = { session: { user: { id: "user-example" } }, profile: { role: "leader" }, sessionRevision: 1 };
-  const authStore = Object.assign(() => auth, { getState: () => auth });
-  const events = { events: [event], fetchUpcomingEvents: async () => {}, isLoadingEvents: false, error: null };
-  let ministryReads = 0;
-  const replacements: any[] = [];
-  const screen = mountScreen("src/screens/app/CreateScheduleScreen.tsx", {
-    useAuthStore: { useAuthStore: authStore },
-    useEventStore: { useEventStore: Object.assign(() => events, { getState: () => events }) },
-    useScheduleStore: { useScheduleStore: Object.assign(() => ({ fetchScheduleCards: async () => {} }), { getState: () => ({ viewMode: "personal" }) }) },
-    ministryService: { getManageableMinistries: async () => { ministryReads++; return { data: [ministry], error: null }; } },
-    scheduleService: { createScheduleValidated: async () => ({ data: { id: "persisted-schedule-example" }, error: null }) },
-    scheduleRules: rules,
-    formatDate: { formatDateTime: (value: string) => value },
-    eventPermissions: { canManageEvents: () => false },
-    "lucide-react-native": { ShieldAlert: "ShieldAlert" },
-  });
-  (screen.navigation as any).replace = (...args: any[]) => replacements.push(args);
-  await screen.flush();
-  const context = screen.findAll("ScheduleContextSection")[0];
-  context.props.onSelectEvent(event.id);
-  context.props.onSelectMinistry(ministry.id);
-  await screen.flush();
-  screen.focus(false); await screen.flush();
-  screen.focus(true); await screen.flush();
-  assert.equal(ministryReads, 2);
-  const resumed = screen.findAll("ScheduleContextSection")[0];
-  assert.equal(resumed.props.selectedEventId, event.id);
-  assert.equal(resumed.props.selectedMinistryId, ministry.id);
-  await resumed.props.onSubmit();
-  await screen.flush();
-  assert.equal(replacements.length, 1);
-  assert.equal(replacements[0][0], "EditSchedule");
-  assert.equal(replacements[0][1].scheduleId, "persisted-schedule-example");
-  screen.cleanup();
-});
-
-for (const sessionChanged of [false, true]) {
-  test(`late creation refreshes only its session's hub (sessionChanged=${sessionChanged})`, async () => {
-    const write = deferred<any>();
-    const auth = { session: { user: { id: "user-example" } }, profile: { role: "leader" }, sessionRevision: 1 };
-    const events = { events: [event], fetchUpcomingEvents: async () => {}, isLoadingEvents: false, error: null };
-    let refreshes = 0;
-    let replacements = 0;
-    const screen = mountScreen("src/screens/app/CreateScheduleScreen.tsx", {
-      useAuthStore: { useAuthStore: Object.assign(() => auth, { getState: () => auth }) },
-      useEventStore: { useEventStore: Object.assign(() => events, { getState: () => events }) },
-      useScheduleStore: { useScheduleStore: Object.assign(() => ({ fetchScheduleCards: async () => { refreshes++; } }), { getState: () => ({ viewMode: "personal" }) }) },
-      ministryService: { getManageableMinistries: async () => ({ data: [ministry], error: null }) },
-      scheduleService: { createScheduleValidated: async () => write.promise },
-      scheduleRules: rules,
-      formatDate: { formatDateTime: (value: string) => value },
-      eventPermissions: { canManageEvents: () => false },
-      "lucide-react-native": { ShieldAlert: "ShieldAlert" },
-    });
-    (screen.navigation as any).replace = () => { replacements++; };
-    await screen.flush();
-    const context = screen.findAll("ScheduleContextSection")[0].props;
-    context.onSelectEvent(event.id);
-    context.onSelectMinistry(ministry.id);
-    await screen.flush();
-    const save = screen.findAll("ScheduleContextSection")[0].props.onSubmit();
-    screen.focus(false);
-    await screen.flush();
-    if (sessionChanged) auth.sessionRevision++;
-    write.resolve({ data: { id: "persisted-schedule-example" }, error: null });
-    await save;
-    await screen.flush();
-    assert.equal(refreshes, sessionChanged ? 0 : 1);
-    assert.equal(replacements, 0);
-    assert.equal(screen.alerts.length, 0);
-    screen.cleanup();
-  });
-}
