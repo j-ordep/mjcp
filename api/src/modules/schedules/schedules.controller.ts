@@ -1,16 +1,16 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { AuthenticationRequiredError, MinistryManagementDeniedError } from "../ministries/service.ts";
+import { AuthenticationRequiredError, MinistryManagementDeniedError } from "../ministries/ministries.service.ts";
 import type {
 	CreateSchedulePlanBody,
 	CreateSchedulePlanErrorResponse,
 	CreateSchedulePlanParams,
 	CreateSchedulePlanResponse,
-} from "./dto.ts";
+} from "./schedules.schema.ts";
 import {
 	ScheduleOccurrencesNotSupportedError,
 	SchedulePlanAlreadyExistsError,
 	type SchedulePlanService,
-} from "./service.ts";
+} from "./schedules.service.ts";
 
 export type SchedulePlanControllerDependencies = {
 	service: SchedulePlanService;

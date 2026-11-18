@@ -6,14 +6,15 @@ import {
   index,
   pgTable,
   text,
+  time,
   timestamp,
   unique,
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 
-import { ministries, ministryPositions } from "../ministries/schema.ts";
-import { users } from "../users/schema.ts";
+import { ministries, ministryPositions } from "../ministries/ministries.tables.ts";
+import { users } from "../users/users.tables.ts";
 
 // A monthly plan groups occurrences. Ownership and publication operations
 // must be authorized by the API; these columns alone do not enforce access.
@@ -72,9 +73,9 @@ export const scheduleOccurrences = pgTable(
 
     title: text("title"),
 
-    startAt: timestamp("start_at", { withTimezone: true }).notNull(),
+    date: date("date", { mode: "string" }).notNull(),
 
-    endAt: timestamp("end_at", { withTimezone: true }),
+    time: time("time", { precision: 0 }),
 
     notes: text("notes"),
 
@@ -89,14 +90,11 @@ export const scheduleOccurrences = pgTable(
       foreignColumns: [schedulePlans.id, schedulePlans.ministryId],
     }),
     check(
-      "occurrences_end_after_start",
-      sql`${table.endAt} IS NULL OR ${table.endAt} > ${table.startAt}`,
+      "occurrences_time_check",
+      sql`${table.time} IS NULL OR ${table.time} < TIME '24:00'`,
     ),
     unique("occurrences_id_ministry_unique").on(table.id, table.ministryId),
-    // This only prevents equal starts, including in drafts. Published-period
-    // overlap, the 60-minute fallback and month consistency need the write operation
-    // and further database protection before exposing the API.
-    unique("occurrences_ministry_start_unique").on(table.ministryId, table.startAt),
+    unique("occurrences_ministry_date_unique").on(table.ministryId, table.date),
   ],
 );
 
@@ -138,8 +136,7 @@ export const scheduleOccurrenceAssignments = pgTable(
       sql`${table.status} IN ('pending', 'confirmed', 'declined', 'swapped')`,
     ),
     index("assignments_user_status_idx").on(table.userId, table.status),
-    // Current membership/capability and the start-time lock require a
-    // transactional operation and database enforcement when writes are added.
+    // Daily conflicts, publication and the end-of-day lock belong to the TypeScript service.
   ],
 );
 

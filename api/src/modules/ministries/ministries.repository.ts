@@ -1,8 +1,8 @@
 import { and, eq } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { users } from "../users/schema.ts";
-import { ministries, ministryMembers } from "./schema.ts";
-import type { MinistryAuthorizationRepository } from "./service.ts";
+import { users } from "../users/users.tables.ts";
+import type { MinistryAuthorizationRepository } from "./ministries.service.ts";
+import { ministries, ministryMembers } from "./ministries.tables.ts";
 
 export function createMinistryAuthorizationRepository(db: PostgresJsDatabase): MinistryAuthorizationRepository {
 	return {

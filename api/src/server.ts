@@ -2,12 +2,12 @@ import "dotenv/config";
 import Fastify from "fastify";
 import { validatorCompiler } from "fastify-type-provider-zod";
 import { checkDatabaseConnection, createDatabaseClient } from "./db/client.ts";
-import { createMinistryManagementAuthorizer } from "./modules/ministries/authorization.ts";
-import { createMinistryAuthorizationRepository } from "./modules/ministries/repository.ts";
-import { createMinistryAuthorizationService } from "./modules/ministries/service.ts";
-import { createSchedulePlanRepository } from "./modules/schedules/repository.ts";
-import { schedulesRoutes } from "./modules/schedules/routes.ts";
-import { createSchedulePlanService } from "./modules/schedules/service.ts";
+import { createMinistryManagementAuthorizer } from "./modules/ministries/ministries.authorization.ts";
+import { createMinistryAuthorizationRepository } from "./modules/ministries/ministries.repository.ts";
+import { createMinistryAuthorizationService } from "./modules/ministries/ministries.service.ts";
+import { createSchedulePlanRepository } from "./modules/schedules/schedules.repository.ts";
+import { schedulesRoutes } from "./modules/schedules/schedules.routes.ts";
+import { createSchedulePlanService } from "./modules/schedules/schedules.service.ts";
 
 const databaseUrl = process.env.DATABASE_URL;
 

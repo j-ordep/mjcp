@@ -4,7 +4,9 @@
 import { z } from "zod";
 
 // Valida a data de calendário completa usada na checagem do mês.
-const dateSchema = z.iso.date();
+const dateSchema = z.iso.date().refine((value) => !value.startsWith("0000-"), {
+	error: "Informe uma data válida no formato YYYY-MM-DD.",
+});
 
 // Valida o mês no corpo e na resposta. Acrescenta o dia 01 durante a checagem.
 const monthSchema = z
@@ -13,9 +15,9 @@ const monthSchema = z
 		error: "Informe um mês válido no formato YYYY-MM.",
 	});
 
-// O JavaScript compara instantes com precisão de milissegundos.
-const scheduleTimestampSchema = z.iso.datetime({ offset: true }).refine((value) => !/\.\d{4}/.test(value), {
-	error: "Informe no máximo três casas decimais nos segundos.",
+// Horário local opcional, apenas para orientar os integrantes; não ocupa um intervalo.
+const informationalTimeSchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, {
+	error: "Informe o horário no formato HH:mm.",
 });
 
 // Valida cada item de assignments com a pessoa escalada e a função dela.
@@ -24,17 +26,13 @@ export const scheduleOccurrenceAssignmentInputSchema = z.strictObject({
 	positionId: z.uuid(),
 });
 
-// Valida cada item de occurrences com horários, equipe e observações.
+// Valida cada item de occurrences pela data civil, equipe e observações.
 export const scheduleOccurrenceInputSchema = z
 	.strictObject({
-		startAt: scheduleTimestampSchema,
-		endAt: scheduleTimestampSchema.optional(),
+		date: dateSchema,
+		time: informationalTimeSchema.optional(),
 		notes: z.string().trim().optional(),
 		assignments: z.array(scheduleOccurrenceAssignmentInputSchema),
-	})
-	.refine((data) => data.endAt === undefined || Date.parse(data.endAt) > Date.parse(data.startAt), {
-		error: "O término deve ser posterior ao início.",
-		path: ["endAt"],
 	})
 	.refine(
 		({ assignments }) => {
@@ -53,10 +51,19 @@ export const createSchedulePlanParamsSchema = z.strictObject({
 });
 
 // Valida o corpo da requisição com o mês e a lista de ocorrências.
-export const createSchedulePlanBodySchema = z.strictObject({
-	month: monthSchema,
-	occurrences: z.array(scheduleOccurrenceInputSchema),
-});
+export const createSchedulePlanBodySchema = z
+	.strictObject({
+		month: monthSchema,
+		occurrences: z.array(scheduleOccurrenceInputSchema),
+	})
+	.refine(({ month, occurrences }) => occurrences.every((occurrence) => occurrence.date.startsWith(`${month}-`)), {
+		error: "Cada ocorrência deve pertencer ao mês do planejamento.",
+		path: ["occurrences"],
+	})
+	.refine(({ occurrences }) => new Set(occurrences.map(({ date }) => date)).size === occurrences.length, {
+		error: "O ministério pode ter apenas uma ocorrência por dia.",
+		path: ["occurrences"],
+	});
 
 // Valida a resposta da criação com o ID do planejamento, ministério, mês e estado de rascunho.
 export const createSchedulePlanResponseSchema = z.strictObject({

@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import { boolean, check, index, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
-import { users } from "../users/schema.ts";
+import { users } from "../users/users.tables.ts";
 
 export const notifications = pgTable(
   "notifications",

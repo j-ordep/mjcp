@@ -8,7 +8,7 @@ Backend em Fastify, TypeScript e PostgreSQL para o aplicativo MJCP.
 
 ## Executar
 
-Dentro de `backend-node`, instale as dependências, configure `.env` a partir de
+Dentro de `api`, instale as dependências, configure `.env` a partir de
 `.env.example` e execute:
 
 ```sh
@@ -24,7 +24,7 @@ um rascunho mensal vazio. Próximas entregas em TASK.
 
 ## Banco e migrations
 
-No WSL, dentro de `backend-node`, suba o PostgreSQL de desenvolvimento:
+No WSL, dentro de `api`, suba o PostgreSQL de desenvolvimento:
 
 ```sh
 docker compose up -d --wait
@@ -33,18 +33,22 @@ docker compose ps
 
 Configure `DATABASE_URL` com a porta publicada no Compose. O endereço local pode ser
 `127.0.0.1`; a porta externa pode diferir da `5432` interna do container.
-Os schemas ficam em `src/modules/**/schema.ts` e as migrations em `drizzle/`.
+As definições do banco ficam em `src/modules/**/*.tables.ts` e as migrations em `drizzle/`.
 `drizzle.config.ts` configura a CLI; a conexão usada pela API é uma implementação separada.
 
-Para gerar uma base inicial com Drizzle Kit 0.31, dentro de `backend-node`:
+Os arquivos dos módulos recebem o nome do módulo como prefixo: `schedules.tables.ts`
+define tabelas Drizzle e `schedules.schema.ts` define validações Zod e tipos inferidos.
+O mesmo prefixo identifica controller, service, repository e rotas.
+
+Para gerar uma base inicial com Drizzle Kit 0.31, dentro de `api`:
 
 ```sh
 bunx drizzle-kit generate --name=initial_schema
 bunx drizzle-kit generate --custom --name=room_reservations_no_overlap
-cp src/modules/rooms/constraints.sql drizzle/0001_room_reservations_no_overlap.sql
+cp src/modules/rooms/rooms.constraints.sql drizzle/0001_room_reservations_no_overlap.sql
 ```
 
-O segundo arquivo precisa receber o SQL de [constraints.sql](src/modules/rooms/constraints.sql):
+O segundo arquivo precisa receber o SQL de [rooms.constraints.sql](src/modules/rooms/rooms.constraints.sql):
 o construtor do Drizzle 0.44 não representa a exclusão que protege reservas sobrepostas.
 Gerar uma migration customizada vazia sem copiar esse SQL não ativa a proteção.
 
@@ -54,7 +58,7 @@ Revise os arquivos gerados e aplique:
 bunx drizzle-kit migrate
 ```
 
-Para evoluir uma base já criada, altere o schema e gere uma nova migration:
+Para evoluir uma base já criada, altere as definições em `*.tables.ts` e gere uma nova migration:
 
 ```sh
 bunx drizzle-kit generate --name=nome_da_mudanca
@@ -63,6 +67,13 @@ bunx drizzle-kit generate --name=nome_da_mudanca
 Versione SQL e metadados. Preserve migrations já aplicadas em bases mantidas.
 Essa geração inicial exige banco vazio; remover só o container não apaga seu volume.
 Criar a estrutura não transfere contas nem dados do Supabase; essa migração está em TASK.
+
+A migration `0002_schedule_days.sql` substitui início/término da ocorrência por uma data
+civil obrigatória e horário informativo opcional. As regras de conflito diário e limite
+de edição pertencem ao service TypeScript e ainda serão implementadas nos fluxos de escrita.
+O schema exportado da API também foi aplicado ao Supabase pela migration
+`mobile/supabase/migrations/20261116031253_align_api_daily_schema.sql`. A API mantém sua
+conexão configurada em `DATABASE_URL`; esse alinhamento não troca automaticamente seu banco.
 
 ## Teste de integração
 

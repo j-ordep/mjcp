@@ -1,8 +1,8 @@
 import { sql } from "drizzle-orm";
 import { check, foreignKey, index, integer, pgTable, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
 
-import { scheduleOccurrences } from "../schedules/schema.ts";
-import { users } from "../users/schema.ts";
+import { scheduleOccurrences } from "../schedules/schedules.tables.ts";
+import { users } from "../users/users.tables.ts";
 
 export const songs = pgTable(
   "songs",
